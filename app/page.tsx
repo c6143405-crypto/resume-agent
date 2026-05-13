@@ -2,6 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FileText, X } from "lucide-react";
+import type {
+  CurrentStep,
+  PrototypeType,
+  UserIntent,
+  DecisionStatus,
+  SelectedDraft,
+  Draft,
+} from "./agent-state";
+import { DEFAULT_AGENT_STATE } from "./agent-state";
+import { classifyUserIntent } from "./classify-intent";
+import { findDraftBySampleIndex, SAMPLE_DRAFTS } from "./drafts";
 
 const USE_AI = process.env.NEXT_PUBLIC_USE_AI === "true";
 
@@ -41,21 +52,21 @@ type StageCard = {
 const STAGES: Record<string, { triggers: string[]; response: string; chips?: string[]; card?: StageCard }> = {
   stage1: {
     triggers: ["샘플 경력기술서 1을 고치고 싶어", "샘플 경력기술서 2를 고치고 싶어"],
-    response: "좋아요. 어떤 부분을 다듬어드릴까요? 자주 묻는 수정을 골라보시거나, 직접 말씀해주세요.",
-    chips: ["👀 AI 추정 부분 다듬기", "✏️ 빠진 경험 추가하기", "💭 표현을 더 간결하게"],
+    response: "좋아요. 선택한 샘플 경력기술서를 어떤 방식으로 다듬을지 골라주세요.",
+    chips: ["AI가 추정한 표현 확인하기", "빠진 경험 보강하기", "문장 표현 다듬기"],
   },
   stage2a: {
-    triggers: ["👀 AI 추정 부분 다듬기"],
+    triggers: ["AI가 추정한 표현 확인하기", "👀 AI 추정 부분 다듬기"],
     response: "샘플 경력기술서에서 AI가 추정한 부분이 두 곳 있어요. 어느 부분부터 다듬을까요?",
     chips: ["✅ 정합성 100% 유지 (AI · 정확율 70%)", "❗ 12년 연속 0건 (AI · 정확율 50%)", "✅ 월 평균 1,500여 건 (AI · 정확율 80%)"],
   },
   stage2b: {
-    triggers: ["✏️ 빠진 경험 추가하기"],
+    triggers: ["빠진 경험 보강하기", "✏️ 빠진 경험 추가하기"],
     response: "어떤 경험을 추가하고 싶으세요? 직접 말씀해주시거나 아래에서 골라주세요.",
     chips: ["📊 프로젝트 성과 수치 추가", "🤝 협업 경험 추가", "🎓 교육/자격증 추가"],
   },
   stage2c: {
-    triggers: ["💭 표현을 더 간결하게"],
+    triggers: ["문장 표현 다듬기", "💭 표현을 더 간결하게"],
     response: "어떤 부분을 간결하게 다듬을까요?",
     chips: ["✂️ 중복된 표현 줄이기", "📝 문장 길이 짧게", "🎯 핵심만 남기기"],
   },
@@ -418,6 +429,49 @@ export default function Page() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const lastSpacerRef = useRef(300);
 
+  // [판단보조형 Agent 상태값] T3 단계, CM1/CM2 흐름에서 추적
+  // 현재는 선언만 해두고, AI 응답 로직과 묶는 작업은 다음 단계에서 진행한다.
+  const [currentStep, setCurrentStep] = useState<CurrentStep>(
+    DEFAULT_AGENT_STATE.currentStep
+  );
+  const [prototypeType, setPrototypeType] = useState<PrototypeType>(
+    DEFAULT_AGENT_STATE.prototypeType
+  );
+  const [userIntent, setUserIntent] = useState<UserIntent | null>(
+    DEFAULT_AGENT_STATE.userIntent
+  );
+  const [decisionStatus, setDecisionStatus] = useState<DecisionStatus>(
+    DEFAULT_AGENT_STATE.decisionStatus
+  );
+  // CM1에서 사용자가 비교 가능한 전체 초안 목록.
+  // 현재는 SAMPLE_DRAFTS로 초기화하지만, 추후 API에서 받아오도록 바꿀 수 있다.
+  const [draftOptions, setDraftOptions] = useState<Draft[]>(SAMPLE_DRAFTS);
+  // CM1에서 사용자가 선택한 '전체 초안'. CM2로 진입할 때 채워진다.
+  const [selectedDraft, setSelectedDraft] = useState<SelectedDraft>(
+    DEFAULT_AGENT_STATE.selectedDraft
+  );
+
+  // [API payload용 보조 상태값]
+  // 아직 UI 흐름과 연결하지 않고 빈 문자열 기본값으로만 둔다. 다음 단계에서 채운다.
+  const [currentAiDraft, setCurrentAiDraft] = useState<string>("");
+  const [userExperienceRaw, setUserExperienceRaw] = useState<string>("");
+
+  // dev: 상태 변화 시 콘솔 로그
+  useEffect(() => {
+    console.log("[AgentState]", {
+      currentStep,
+      prototypeType,
+      userIntent,
+      decisionStatus,
+      selectedDraft: selectedDraft?.draftId ?? null,
+    });
+  }, [currentStep, prototypeType, userIntent, decisionStatus, selectedDraft]);
+
+  // 미사용 경고 방지(현재 단계에서 직접 호출하지 않는 setter들)
+  void setPrototypeType;
+  void setUserExperienceRaw;
+  void setDraftOptions;
+
   useEffect(() => {
     if (messages.length > 0 && messages[messages.length - 1].type === "user") {
       const container = scrollContainerRef.current;
@@ -481,10 +535,33 @@ export default function Page() {
     }
 
     console.log("[DEBUG] sendMessage 실행", { text: trimmedMessage });
+
+    // [3단계] 사용자 입력 → userIntent 분류 (키워드 기반)
+    // 아직 API/Agent 로직과는 연결하지 않고, state에만 반영한다.
+    const classifiedIntent = classifyUserIntent(trimmedMessage);
+    setUserIntent(classifiedIntent);
+    console.log("[UserIntent]", {
+      message: trimmedMessage,
+      intent: classifiedIntent,
+    });
+
+    // [CM1 → CM2 전이]
+    // 사용자가 두 초안 중 하나를 '고치고 싶다'고 선택한 순간 CM2로 넘어간다.
+    // selectedDraft / currentAiDraft / decisionStatus를 함께 갱신한다.
     if (trimmedMessage.includes("샘플 경력기술서 1")) {
+      const draft = findDraftBySampleIndex(0);
       setEditingSampleIndex(0);
+      setSelectedDraft(draft);
+      setCurrentStep("CM2");
+      setCurrentAiDraft(draft.draftContent);
+      setDecisionStatus("selected");
     } else if (trimmedMessage.includes("샘플 경력기술서 2")) {
+      const draft = findDraftBySampleIndex(1);
       setEditingSampleIndex(1);
+      setSelectedDraft(draft);
+      setCurrentStep("CM2");
+      setCurrentAiDraft(draft.draftContent);
+      setDecisionStatus("selected");
     }
 
     if (trimmedMessage === "수정안 확정하기") {
@@ -608,34 +685,39 @@ export default function Page() {
 
     setIsLoading(true);
 
+    const matched = Object.entries(STAGES).find(([, stage]) =>
+      stage.triggers.includes(trimmedMessage)
+    );
+
+    if (matched) {
+      setTimeout(() => {
+        const [, stage] = matched;
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "agent",
+            text: stage.response,
+            chips: stage.chips ?? [],
+            card: stage.card ?? null,
+          },
+        ]);
+        setIsLoading(false);
+      }, 300);
+      return;
+    }
+
     if (!USE_AI) {
       // STAGES 모드 — 트리거 매칭으로 즉시 응답
       setTimeout(() => {
-        const matched = Object.entries(STAGES).find(([, stage]) =>
-          stage.triggers.includes(trimmedMessage)
-        );
-        if (matched) {
-          const [, stage] = matched;
-          setMessages((prev) => [
-            ...prev,
-            {
-              type: "agent",
-              text: stage.response,
-              chips: stage.chips ?? [],
-              card: stage.card ?? null,
-            },
-          ]);
-        } else {
-          setMessages((prev) => [
-            ...prev,
-            {
-              type: "agent",
-              text: "좋아요. 그 부분 한 번 같이 다듬어볼까요?",
-              chips: [],
-              card: null,
-            },
-          ]);
-        }
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "agent",
+            text: "좋아요. 그 부분 한 번 같이 다듬어볼까요?",
+            chips: [],
+            card: null,
+          },
+        ]);
         setIsLoading(false);
       }, 300);
       return;
@@ -675,10 +757,32 @@ export default function Page() {
 
         setAiCallCount((prev) => prev + 1);
 
+        // [판단보조형 Agent payload] 기존 messages는 그대로 유지하고,
+        // 상태값/컨텍스트를 함께 보낸다. 없는 값은 빈 문자열을 기본값으로.
+        const targetJob =
+          ROLE_OPTIONS.find((role) => role.id === selectedRoleId)?.title ?? "";
+
+        const payload = {
+          messages: updatedMessages, // 기존 호환 유지
+          currentStep,
+          prototypeType,
+          // 방금 분류한 intent(상태 반영 전이라도 최신 값 사용)
+          userIntent: classifiedIntent,
+          decisionStatus,
+          userMessage: trimmedMessage,
+          currentAiDraft,
+          userExperienceRaw,
+          targetJob,
+          draftOptions, // CM1 비교 대상 초안 전체
+          selectedDraft, // CM2면 채워져 있고, CM1이면 null
+        };
+
+        console.log("[api/chat payload]", payload);
+
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: updatedMessages }),
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
@@ -783,6 +887,39 @@ export default function Page() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#EEF0F3] p-8 font-['Pretendard',sans-serif]">
+      {/* dev: 판단보조형 Agent 상태값 확인 패널 (개발 확인용) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed left-4 top-4 z-50 select-none rounded-lg bg-black/85 px-3 py-2 font-mono text-[11px] leading-[18px] text-white shadow-lg"
+      >
+        <div className="mb-1 text-[10px] uppercase tracking-wider text-white/60">
+          Agent State (dev)
+        </div>
+        <div>
+          currentStep: <span className="text-cyan-300">{currentStep}</span>
+        </div>
+        <div>
+          prototypeType: <span className="text-cyan-300">{prototypeType}</span>
+        </div>
+        <div>
+          userIntent: <span className="text-cyan-300">{userIntent ?? "null"}</span>
+        </div>
+        <div>
+          decisionStatus: <span className="text-cyan-300">{decisionStatus}</span>
+        </div>
+        <div>
+          draftOptions:{" "}
+          <span className="text-cyan-300">
+            [{draftOptions.map((d) => d.draftId).join(", ")}]
+          </span>
+        </div>
+        <div>
+          selectedDraft:{" "}
+          <span className="text-cyan-300">
+            {selectedDraft ? selectedDraft.draftId : "null"}
+          </span>
+        </div>
+      </div>
       <section
         className="relative mx-auto flex h-[812px] w-[375px] flex-col overflow-hidden bg-white shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
         style={{ borderRadius: 40 }}

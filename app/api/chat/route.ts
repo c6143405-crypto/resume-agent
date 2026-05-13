@@ -1,9 +1,61 @@
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 
-const MODEL = 'gpt-5.4-mini';
-const SYSTEM_PROMPT =
-  '너는 한국어 경력기술서 작성 에이전트다. 사용자의 경험을 채용 언어로 정리하고, 반드시 JSON 형식으로만 답한다.';
+const MODEL = 'gpt-4o-mini';
+
+// [최소 시스템 프롬프트]
+// 이번 단계에서는 A/B/C/D 타입별 출력 규칙은 적용하지 않는다.
+// CM1/CM2의 의미를 새로 반영: CM1은 '전체 초안' 비교/선택, CM2는 선택한 초안 내부 문장 수정.
+const SYSTEM_PROMPT = `
+당신은 시니어 재취업 준비자의 경험을 경력기술서 문장으로 재구성하는 과정에서 작동하는 Human-AI 협업형 판단 보조 Agent입니다.
+당신의 목적은 경력기술서를 대신 완성하는 것이 아니라, 사용자가 자신의 경험을 이해하고, AI가 제안한 표현의 근거를 확인하며, 스스로 선택·수정·확정할 수 있도록 돕는 것입니다.
+
+[CM1 / CM2의 의미]
+CM1은 '문장 후보'를 고르는 단계가 아닙니다.
+CM1에서 AI는 서로 다른 작성 방향(예: 성과 강조형, 직무 적합형, 경험 서사형, 담백한 표현형)을 가진 여러 개의 '전체 초안'을 제공하고,
+사용자는 이 전체 초안들을 비교한 뒤 한 초안의 방향을 선택하거나, 다른 초안의 일부를 반영해 달라는 등의 의견을 제시합니다.
+CM2는 사용자가 선택한 초안(selectedDraft)을 기준으로 진행됩니다.
+CM2에서는 selectedDraft 내부의 문장이나 표현을 사용자의 실제 경험에 맞게 수정·확정합니다.
+
+[currentStep별 행동 원칙]
+- currentStep이 "CM1"인 경우:
+  - 전체 초안 단위로 응답합니다. 각 초안의 draftDirection, whyRecommended, caution을 함께 설명할 수 있어야 합니다.
+  - 사용자가 한 초안을 고르거나 "다른 초안의 ~를 이쪽에 반영해줘"처럼 합치는 의견을 줄 수 있음을 가정합니다.
+  - 개별 문장 수정 제안은 자제합니다(문장 수정은 CM2의 일).
+- currentStep이 "CM2"인 경우:
+  - selectedDraft 안의 특정 문장·표현을 대상으로 응답합니다.
+  - 다른 초안 전체로 갈아엎는 제안은 자제합니다(초안 단위 결정은 CM1의 일).
+
+[userIntent별 응답 규칙]
+ACCEPT: 선택한 문장(또는 초안)의 장점을 요약하고 최종 확정 전 확인 질문을 하세요.
+REJECT: 거절을 수용하고, 다른 후보를 제안하세요.
+  - CM1이면 다른 초안 방향을 제안하고, CM2면 selectedDraft 안에서 대체 표현을 제안하세요.
+MODIFY_TONE: 표현 톤을 조정하고 변경 전/후 차이를 설명하세요. (CM2 우선)
+MODIFY_CONTENT: 사용자 경험과 문장의 차이를 확인하고 누락된 내용을 반영하세요. (CM2 우선)
+ASK_REASON: 판단 근거를 직무 관련성, 성과 표현 가능성, 경험 반영도 기준으로 설명하세요.
+  - CM2에서는 selectedDraft 안의 해당 표현에 한정해 설명하세요.
+ASK_ALTERNATIVE: 다른 표현 후보를 2개 제안하세요. (CM2 우선)
+UNCERTAIN: 선택지를 줄이고 쉽게 비교하게 하세요.
+LOW_CONFIDENCE: 쉬운 말로 설명하고 사용자가 선택만 해도 되게 안내하세요.
+
+항상 판단 근거와 다음 선택지를 포함하세요.
+사용자의 경험에 없는 성과나 수치를 만들지 마세요.
+사용자의 동의 없이 최종 확정하지 마세요.
+
+[출력 형식 — 반드시 아래 JSON 스키마로만 응답]
+{
+  "text": string,        // 본문(추천 문장 + 판단 근거 + 다음 선택 안내 등)
+  "chips": string[],     // 사용자가 다음에 누를 수 있는 행동 라벨
+  "card": {              // 후보 비교가 필요할 때만, 그 외엔 null
+    "title": string,
+    "subtitle": string,
+    "options": [
+      { "emoji": string, "title": string, "description": string }
+    ]
+  } | null
+}
+JSON 외 텍스트는 절대 출력하지 않습니다.
+`;
 
 type CardOption = { emoji: string; title: string; description: string };
 type Card = { title: string; subtitle: string; options: CardOption[] };
@@ -44,9 +96,62 @@ function parseOpenAIResponse(content: string): ChatResponse {
   return { text: raw.text, chips, card };
 }
 
+type DraftPayload = {
+  draftId?: string;
+  draftTitle?: string;
+  draftContent?: string;
+  draftDirection?: string;
+  whyRecommended?: string;
+  caution?: string;
+};
+
+function formatSelectedDraft(d: DraftPayload | null | undefined): string {
+  if (!d) return '(없음 — 현재 CM1이거나 초안 미선택)';
+  return [
+    `draftId: ${d.draftId ?? ''}`,
+    `draftTitle: ${d.draftTitle ?? ''}`,
+    `draftDirection: ${d.draftDirection ?? ''}`,
+    `whyRecommended: ${d.whyRecommended ?? ''}`,
+    `caution: ${d.caution ?? ''}`,
+    `draftContent: ${d.draftContent ?? ''}`,
+  ].join('\n  ');
+}
+
+function formatDraftOptions(options: DraftPayload[] | null | undefined): string {
+  if (!options || options.length === 0) {
+    return '(비어있음)';
+  }
+  return options
+    .map((d, i) => {
+      const lines = [
+        `[${i + 1}] draftId: ${d.draftId ?? ''}`,
+        `    draftTitle: ${d.draftTitle ?? ''}`,
+        `    draftDirection: ${d.draftDirection ?? ''}`,
+        `    whyRecommended: ${d.whyRecommended ?? ''}`,
+        `    caution: ${d.caution ?? ''}`,
+        `    draftContent: ${d.draftContent ?? ''}`,
+      ];
+      return lines.join('\n');
+    })
+    .join('\n');
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { messages } = await req.json();
+    const body = await req.json();
+    const {
+      messages,
+      currentStep = '',
+      prototypeType = '',
+      userIntent = '',
+      decisionStatus = '',
+      userMessage = '',
+      currentAiDraft = '',
+      userExperienceRaw = '',
+      targetJob = '',
+      selectedDraft = null,
+      draftOptions = [],
+    } = body ?? {};
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
@@ -59,13 +164,50 @@ export async function POST(req: NextRequest) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
+    // [현재 턴 컨텍스트] — 시스템 메시지로 함께 주입.
+    // 프론트에서 분류한 userIntent와 사용자가 선택한 selectedDraft를 그대로 전달한다.
+    const contextSystemMessage = {
+      role: 'system' as const,
+      content: `
+[현재 턴 컨텍스트]
+- currentStep: ${currentStep || '(미지정)'}
+- prototypeType: ${prototypeType || '(미지정)'}
+- userIntent: ${userIntent || '(미분류)'}
+- decisionStatus: ${decisionStatus || '(미지정)'}
+- targetJob: ${targetJob || '(미지정)'}
+- userMessage: ${userMessage || '(없음)'}
+- userExperienceRaw: ${userExperienceRaw || '(없음)'}
+- currentAiDraft: ${currentAiDraft || '(없음)'}
+- draftOptions:
+  ${formatDraftOptions(draftOptions as DraftPayload[])}
+- selectedDraft:
+  ${formatSelectedDraft(selectedDraft)}
+
+위 currentStep과 userIntent의 규칙을 따르세요.
+CM1이면 draftOptions 안의 전체 초안들을 비교 대상으로 삼아 응답하고,
+CM2이면 selectedDraft 내부의 문장/표현 단위로 응답해야 합니다.
+`,
+    };
+
     const openAIMessages = [
       { role: 'system' as const, content: SYSTEM_PROMPT },
-      ...messages.map((msg: { type: string; text: string }) => ({
+      contextSystemMessage,
+      ...((messages ?? []) as { type: string; text: string }[]).map((msg) => ({
         role: msg.type === 'user' ? ('user' as const) : ('assistant' as const),
         content: msg.text,
       })),
     ];
+
+    console.log('[api/chat] using model:', MODEL);
+    console.log('[api/chat] received state:', {
+      currentStep,
+      prototypeType,
+      userIntent,
+      decisionStatus,
+      targetJob,
+      draftOptionsCount: Array.isArray(draftOptions) ? draftOptions.length : 0,
+      selectedDraftId: (selectedDraft as DraftPayload | null)?.draftId ?? null,
+    });
 
     const completion = await openai.chat.completions.create({
       model: MODEL,

@@ -12,3 +12,107 @@ body {
   font-family: "Pretendard JP", "Pretendard", -apple-system, BlinkMacSystemFont,
     "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
 }
+
+@keyframes loadingDraftFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes loadingDraftOrbIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes loadingDraftFloat {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.01);
+  }
+}
+
+.ai-orb {
+  isolation: isolate;
+}
+
+.ai-orb::after {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  border-radius: 999px;
+  background: radial-gradient(circle at 48% 44%, rgba(255, 255, 255, 0) 54%, rgba(255, 255, 255, 0.46) 72%, rgba(255, 255, 255, 0) 88%);
+  filter: blur(8px);
+}
+
+.ai-orb-animated {
+  animation: aiOrbBreath 4200ms ease-in-out infinite;
+}
+
+.ai-orb-layer {
+  filter: blur(14px);
+  mix-blend-mode: multiply;
+}
+
+.ai-orb-layer-drift-a {
+  animation: aiOrbLayerDriftA 4800ms ease-in-out infinite;
+}
+
+.ai-orb-layer-drift-b {
+  animation: aiOrbLayerDriftB 5600ms ease-in-out infinite;
+}
+
+.ai-orb-band-flow {
+  animation: aiOrbBandFlow 4600ms ease-in-out infinite;
+}
+
+@keyframes aiOrbBreath {
+  0%,
+  100% {
+    transform: scale(0.98);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+@keyframes aiOrbLayerDriftA {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(7px, -5px, 0) rotate(8deg);
+  }
+}
+
+@keyframes aiOrbLayerDriftB {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(-6px, 6px, 0) rotate(-10deg);
+  }
+}
+
+@keyframes aiOrbBandFlow {
+  0%,
+  100% {
+    transform: translate3d(-4px, 1px, 0) rotate(-14deg) scaleX(0.98);
+  }
+  50% {
+    transform: translate3d(6px, -2px, 0) rotate(-10deg) scaleX(1.04);
+  }
+}
