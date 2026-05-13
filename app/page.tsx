@@ -391,12 +391,19 @@ export default function Page() {
         subtitle: string;
         options: { emoji: string; title: string; description: string }[];
       } | null;
+      resultCard?: {
+        previous: string;
+        revised: string;
+        message: string;
+      };
     }[]
   >([]);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [selectedRewriteOption, setSelectedRewriteOption] = useState<number | null>(null);
+  const [editingSampleIndex, setEditingSampleIndex] = useState<0 | 1 | null>(null);
   const [flowStep, setFlowStep] = useState<"selectRole" | "loadingDraft" | "draftReady">("selectRole");
   const [spacerHeight, setSpacerHeight] = useState(300);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -467,6 +474,11 @@ export default function Page() {
     }
 
     console.log("[DEBUG] sendMessage 실행", { text: trimmedMessage });
+    if (trimmedMessage.includes("샘플 경력기술서 1")) {
+      setEditingSampleIndex(0);
+    } else if (trimmedMessage.includes("샘플 경력기술서 2")) {
+      setEditingSampleIndex(1);
+    }
     setMessages((prevMessages) => [
       ...prevMessages,
       { type: "user", text: trimmedMessage, displayStyle: options?.displayStyle ?? "bubble" },
@@ -574,6 +586,44 @@ export default function Page() {
     }
   };
 
+  const handleRewriteOptionSelect = (optionIndex: number, optionTitle: string) => {
+    if (selectedRewriteOption !== null) {
+      return;
+    }
+
+    setSelectedRewriteOption(optionIndex);
+    setMessages((prev) => [
+      ...prev,
+      {
+        type: "user",
+        text: optionTitle,
+        displayStyle: "bubble",
+      },
+    ]);
+
+    setTimeout(() => {
+      setMessages((prev) => {
+        const lastMessage = prev[prev.length - 1];
+        if (lastMessage?.type === "agent" && lastMessage.resultCard) {
+          return prev;
+        }
+
+        return [
+          ...prev,
+          {
+            type: "agent",
+            text: "말씀해주신 표현으로 변경되었어요. 수정된 샘플 경력기술서를 다시 확인해보세요.",
+            resultCard: {
+              previous: "12년 연속 마감 지연 0건",
+              revised: optionTitle,
+              message: "말씀해주신 표현으로 변경되었어요. 수정된 샘플 경력기술서를 다시 확인해보세요.",
+            },
+          },
+        ];
+      });
+    }, 500);
+  };
+
   const lastUserMessageIndex = (() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       if (messages[index].type === "user") {
@@ -583,6 +633,7 @@ export default function Page() {
     return -1;
   })();
   const showDraftQuickButtons = flowStep === "draftReady" && view === "home";
+  const resultSampleIndex = editingSampleIndex ?? 0;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#EEF0F3] p-8 font-['Pretendard',sans-serif]">
@@ -888,66 +939,150 @@ export default function Page() {
                               }}
                             />
                             <div className="flex flex-col gap-2">
-                              {card.options.map((option, optionIndex) => (
-                                <div
-                                  className="flex w-full"
-                                  key={optionIndex}
-                                  style={{
-                                    padding: 20,
-                                    borderRadius: 10,
-                                    border: "1px solid #EAF2FE",
-                                    background: "#FFF",
-                                    gap: 12,
-                                    alignItems: "flex-start",
-                                  }}
-                                >
-                                  <div
+                              {card.options.map((option, optionIndex) => {
+                                const isSelected = selectedRewriteOption === optionIndex;
+
+                                return (
+                                  <button
+                                    className="flex w-full text-left"
+                                    disabled={selectedRewriteOption !== null}
+                                    key={optionIndex}
+                                    onClick={() => handleRewriteOptionSelect(optionIndex, option.title)}
                                     style={{
-                                      display: "flex",
-                                      flexDirection: "column",
-                                      justifyContent: "center",
-                                      width: 16,
-                                      height: 20,
-                                      fontSize: 16,
-                                      lineHeight: "20px",
-                                      flexShrink: 0,
-                                      textAlign: "center",
+                                      padding: 20,
+                                      borderRadius: 10,
+                                      border: isSelected ? "1px solid #0066FF" : "1px solid #EAF2FE",
+                                      background: "#FFF",
+                                      boxShadow: isSelected ? "0 8px 20px rgba(0, 102, 255, 0.08)" : "none",
+                                      gap: 12,
+                                      alignItems: "flex-start",
+                                      cursor: selectedRewriteOption !== null ? "default" : "pointer",
                                     }}
+                                    type="button"
                                   >
-                                    {option.emoji}
-                                  </div>
-                                  <div className="flex flex-col" style={{ gap: 4, flex: 1 }}>
                                     <div
                                       style={{
-                                        fontFamily: "Pretendard",
-                                        fontSize: 14,
-                                        fontWeight: 600,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        justifyContent: "center",
+                                        width: 16,
+                                        height: 20,
+                                        fontSize: 16,
                                         lineHeight: "20px",
-                                        letterSpacing: "0.203px",
-                                        color: "#000",
+                                        flexShrink: 0,
+                                        textAlign: "center",
                                       }}
                                     >
-                                      {option.title}
+                                      {option.emoji}
                                     </div>
-                                    <div
-                                      style={{
-                                        fontFamily: "Pretendard",
-                                        fontSize: 12,
-                                        fontWeight: 400,
-                                        lineHeight: "16px",
-                                        letterSpacing: "0.302px",
-                                        color: "#999",
-                                      }}
-                                    >
-                                      {option.description}
+                                    <div className="flex flex-col" style={{ gap: 4, flex: 1 }}>
+                                      <div
+                                        style={{
+                                          fontFamily: "Pretendard",
+                                          fontSize: 14,
+                                          fontWeight: 600,
+                                          lineHeight: "20px",
+                                          letterSpacing: "0.203px",
+                                          color: "#000",
+                                        }}
+                                      >
+                                        {option.title}
+                                      </div>
+                                      <div
+                                        style={{
+                                          fontFamily: "Pretendard",
+                                          fontSize: 12,
+                                          fontWeight: 400,
+                                          lineHeight: "16px",
+                                          letterSpacing: "0.302px",
+                                          color: "#999",
+                                        }}
+                                      >
+                                        {option.description}
+                                      </div>
                                     </div>
-                                  </div>
-                                </div>
-                              ))}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         );
                       })()}
+                    {chatMessage.resultCard && (
+                      <div
+                        className="mt-3 w-full"
+                        style={{
+                          padding: 16,
+                          borderRadius: 16,
+                          border: "1px solid #EAF2FE",
+                          background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%)",
+                        }}
+                      >
+                        <div className="flex flex-col gap-3">
+                          <div>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 500,
+                                lineHeight: "16px",
+                                color: "rgba(55,56,60,0.61)",
+                              }}
+                            >
+                              기존 표현
+                            </div>
+                            <div
+                              style={{
+                                marginTop: 4,
+                                fontSize: 14,
+                                fontWeight: 500,
+                                lineHeight: "20px",
+                                color: "#171719",
+                              }}
+                            >
+                              {chatMessage.resultCard.previous}
+                            </div>
+                          </div>
+                          <div
+                            style={{
+                              height: 1,
+                              background: "#EAF2FE",
+                            }}
+                          />
+                          <div>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 600,
+                                lineHeight: "16px",
+                                color: "#0066FF",
+                              }}
+                            >
+                              바뀐 표현
+                            </div>
+                            <div
+                              style={{
+                                marginTop: 4,
+                                fontSize: 14,
+                                fontWeight: 600,
+                                lineHeight: "20px",
+                                color: "#171719",
+                              }}
+                            >
+                              {chatMessage.resultCard.revised}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {chatMessage.resultCard && (
+                      <div className="mt-4">
+                        <ResumeRow
+                          index={resultSampleIndex}
+                          label={resultSampleIndex === 0 ? "샘플 경력기술서 01" : "샘플 경력기술서 02"}
+                          onClick={openBottomSheet}
+                        />
+                      </div>
+                    )}
                     {index === messages.length - 1 &&
                       !isLoading &&
                       (() => {
@@ -1048,14 +1183,20 @@ export default function Page() {
               <div className="mb-[12px] flex flex-col items-end gap-[8px]">
                 <button
                   className="h-[38px] rounded-[10px] border border-[#70737C29] bg-white px-[10px] text-[14px] font-medium leading-[22px] tracking-[1.45px] text-black"
-                  onClick={() => sendMessage("샘플 경력기술서 1을 고치고 싶어", { displayStyle: "header" })}
+                  onClick={() => {
+                    setEditingSampleIndex(0);
+                    sendMessage("샘플 경력기술서 1을 고치고 싶어", { displayStyle: "header" });
+                  }}
                   type="button"
                 >
                   샘플 경력기술서 1을 고치고 싶어
                 </button>
                 <button
                   className="h-[38px] rounded-[10px] border border-[#70737C29] bg-white px-[10px] text-[14px] font-medium leading-[22px] tracking-[1.45px] text-black"
-                  onClick={() => sendMessage("샘플 경력기술서 2를 고치고 싶어", { displayStyle: "header" })}
+                  onClick={() => {
+                    setEditingSampleIndex(1);
+                    sendMessage("샘플 경력기술서 2를 고치고 싶어", { displayStyle: "header" });
+                  }}
                   type="button"
                 >
                   샘플 경력기술서 2를 고치고 싶어
