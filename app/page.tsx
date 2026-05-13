@@ -1,7 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, Sparkles, X } from "lucide-react";
+import { FileText, X } from "lucide-react";
+
+const USE_AI = false;
+
+const ROLE_OPTIONS = [
+  {
+    id: "accounting",
+    match: "직무 매칭률 87%",
+    title: "옵션 A. 회계담당자",
+    tags: [
+      "월말 마감 치는 일 → 결산 마감 프로세스 운영",
+      "세무사 자료 두 번 확인 → 세무 협업 검증",
+    ],
+  },
+  {
+    id: "finance",
+    match: "직무 매칭률 82%",
+    title: "옵션 B. 재무관리자",
+    tags: [
+      "12년 동안 장부 매기는 일 → 재무 데이터 통합 관리",
+      "거래처 결제·미수금 추적 → 자금 흐름 데이터 관리",
+    ],
+  },
+];
 
 type CardOption = {
   emoji: string;
@@ -37,7 +60,10 @@ const STAGES: Record<string, { triggers: string[]; response: string; chips?: str
     chips: ["✂️ 중복된 표현 줄이기", "📝 문장 길이 짧게", "🎯 핵심만 남기기"],
   },
   stage4: {
-    triggers: [],
+    triggers: [
+      "❗ 12년 연속 0건 (AI · 정확율 50%)",
+      "❗ 12년 연속 0건",
+    ],
     response: '먼저 "12년 연속 0건" 부분부터 다듬어드릴게요.',
     chips: [],
     card: {
@@ -94,20 +120,75 @@ function LoadingIcon() {
   );
 }
 
-function GradientSparklesIcon() {
+function AiOrbLogo({ size, animated = false }: { size: number; animated?: boolean }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="sparklesGradient" x1="7" y1="1" x2="7" y2="13" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#00ADFF" />
-          <stop offset="1" stopColor="#0066FF" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M7 1.4L8.35 5.65L12.6 7L8.35 8.35L7 12.6L5.65 8.35L1.4 7L5.65 5.65L7 1.4Z"
-        fill="url(#sparklesGradient)"
+    <div
+      aria-hidden="true"
+      className={`ai-orb relative flex-shrink-0 overflow-hidden rounded-full ${animated ? "ai-orb-animated" : ""}`}
+      style={{
+        width: size,
+        height: size,
+        background:
+          "radial-gradient(circle at 36% 26%, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.5) 24%, rgba(234,242,254,0.3) 48%, rgba(255,255,255,0.12) 100%)",
+        boxShadow: "0 10px 34px rgba(0,102,255,0.14), 0 4px 22px rgba(101,65,242,0.12)",
+      }}
+    >
+      <div
+        className={`ai-orb-layer ai-orb-layer-blue absolute rounded-full ${animated ? "ai-orb-layer-drift-a" : "blur-[10px]"}`}
+        style={{
+          width: size * 0.88,
+          height: size * 0.72,
+          left: -size * 0.08,
+          top: size * 0.2,
+          background: "radial-gradient(circle, rgba(0,102,255,0.58) 0%, rgba(0,173,255,0.3) 42%, rgba(0,102,255,0) 72%)",
+        }}
       />
-    </svg>
+      <div
+        className={`ai-orb-layer ai-orb-layer-purple absolute rounded-full ${animated ? "ai-orb-layer-drift-b" : "blur-[10px]"}`}
+        style={{
+          width: size * 0.76,
+          height: size * 0.76,
+          right: -size * 0.14,
+          top: size * 0.02,
+          background: "radial-gradient(circle, rgba(101,65,242,0.46) 0%, rgba(181,128,255,0.24) 44%, rgba(101,65,242,0) 72%)",
+        }}
+      />
+      <div
+        className="ai-orb-layer absolute rounded-full blur-[14px]"
+        style={{
+          width: size * 0.72,
+          height: size * 0.64,
+          right: size * 0.02,
+          bottom: -size * 0.14,
+          background: "radial-gradient(circle, rgba(255,116,188,0.34) 0%, rgba(255,178,188,0.22) 48%, rgba(255,116,188,0) 74%)",
+        }}
+      />
+      <div
+        className={`ai-orb-band absolute ${animated ? "ai-orb-band-flow" : ""}`}
+        style={{
+          left: -size * 0.08,
+          bottom: size * 0.22,
+          width: size * 1.18,
+          height: size * 0.34,
+          borderRadius: "999px",
+          background:
+            "linear-gradient(100deg, rgba(0,102,255,0) 0%, rgba(0,102,255,0.46) 32%, rgba(0,173,255,0.38) 58%, rgba(255,116,188,0.12) 100%)",
+          filter: "blur(8px)",
+          transform: "rotate(-14deg)",
+        }}
+      />
+      <div
+        className="absolute rounded-full bg-white/45"
+        style={{
+          width: size * 0.34,
+          height: size * 0.18,
+          left: size * 0.2,
+          top: size * 0.16,
+          filter: "blur(7px)",
+          transform: "rotate(-18deg)",
+        }}
+      />
+    </div>
   );
 }
 
@@ -315,6 +396,8 @@ export default function Page() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [flowStep, setFlowStep] = useState<"selectRole" | "loadingDraft" | "draftReady">("selectRole");
   const [spacerHeight, setSpacerHeight] = useState(300);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastUserMessageRef = useRef<HTMLDivElement | null>(null);
@@ -364,6 +447,18 @@ export default function Page() {
     return () => clearTimeout(timer);
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    if (flowStep !== "loadingDraft") {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setFlowStep("draftReady");
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [flowStep]);
+
   const sendMessage = (overrideMessage?: string, options?: { displayStyle?: "header" | "bubble" }) => {
     const trimmedMessage = (overrideMessage ?? message).trim();
 
@@ -383,6 +478,39 @@ export default function Page() {
       textareaRef.current.style.height = "auto";
     }
     setIsLoading(true);
+
+    if (!USE_AI) {
+      // STAGES 모드 — 트리거 매칭으로 즉시 응답
+      setTimeout(() => {
+        const matched = Object.entries(STAGES).find(([, stage]) =>
+          stage.triggers.includes(trimmedMessage)
+        );
+        if (matched) {
+          const [, stage] = matched;
+          setMessages((prev) => [
+            ...prev,
+            {
+              type: "agent",
+              text: stage.response,
+              chips: stage.chips ?? [],
+              card: stage.card ?? null,
+            },
+          ]);
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            {
+              type: "agent",
+              text: "좋아요. 그 부분 한 번 같이 다듬어볼까요?",
+              chips: [],
+              card: null,
+            },
+          ]);
+        }
+        setIsLoading(false);
+      }, 300);
+      return;
+    }
 
     (async () => {
       try {
@@ -454,6 +582,7 @@ export default function Page() {
     }
     return -1;
   })();
+  const showDraftQuickButtons = flowStep === "draftReady" && view === "home";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#EEF0F3] p-8 font-['Pretendard',sans-serif]">
@@ -485,43 +614,160 @@ export default function Page() {
             />
           )}
           {view === "home" ? (
-            <div className="flex min-h-full flex-col px-[20px] pt-[36px]">
-              <section>
-                <div className="flex items-center gap-[8px]">
-                  <Sparkles className="h-[20px] w-[20px] text-black" strokeWidth={2} aria-hidden="true" />
-                  <h2 className="text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-black">
-                    에이전트 답변
-                  </h2>
+            flowStep === "loadingDraft" ? (
+              <div
+                className="relative flex min-h-full flex-col items-center justify-center overflow-hidden px-[20px] text-center"
+                style={{
+                  animation: "loadingDraftFadeIn 800ms ease-out both",
+                  background:
+                    "radial-gradient(circle at 50% 52%, rgba(101,65,242,0.07) 0%, rgba(255,255,255,0) 42%), #FFFFFF",
+                }}
+              >
+                <div
+                  aria-hidden="true"
+                  className="absolute rounded-full"
+                  style={{
+                    left: -40,
+                    bottom: 180,
+                    width: 220,
+                    height: 220,
+                    background: "rgba(255,178,188,0.22)",
+                    filter: "blur(80px)",
+                  }}
+                />
+                <div
+                  aria-hidden="true"
+                  className="absolute rounded-full"
+                  style={{
+                    right: -60,
+                    top: 140,
+                    width: 240,
+                    height: 240,
+                    background: "rgba(145,221,255,0.2)",
+                    filter: "blur(90px)",
+                  }}
+                />
+                <div
+                  aria-hidden="true"
+                  className="absolute rounded-full"
+                  style={{
+                    left: 98,
+                    bottom: 250,
+                    width: 180,
+                    height: 180,
+                    background: "rgba(101,65,242,0.14)",
+                    filter: "blur(80px)",
+                  }}
+                />
+                <div className="relative z-10 flex flex-col items-center">
+                  <div
+                    aria-hidden="true"
+                    className="absolute rounded-full"
+                    style={{
+                      top: -54,
+                      width: 190,
+                      height: 190,
+                      background:
+                        "radial-gradient(circle, rgba(0,102,255,0.2) 0%, rgba(101,65,242,0.14) 36%, rgba(255,116,188,0.1) 58%, rgba(255,255,255,0) 74%)",
+                      filter: "blur(32px)",
+                      opacity: 0.85,
+                    }}
+                  />
+                  <div
+                    style={{
+                      animation: "loadingDraftOrbIn 850ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                    }}
+                  >
+                    <AiOrbLogo size={96} animated />
+                  </div>
+                  <p className="mt-[22px] whitespace-pre-line text-[18px] font-semibold leading-[26px] text-black">
+                    {"김효원님의 경험에 딱 맞는\n경력기술서를 정리해드릴게요"}
+                  </p>
+                  <p className="mt-[8px] text-[13px] font-normal leading-[18px] text-[rgba(55,56,60,0.61)]">
+                    앞에서 말씀해주신 경험들을 기반으로 초안을 만듭니다.
+                  </p>
                 </div>
-                <div className="mt-[12px] h-px w-full bg-[#70737C29]" />
-                <p className="mt-[13px] text-[16px] font-normal leading-[26px] tracking-[0.57px] text-[#171719]">
-                  충분해요. 말씀해주신 내용으로 채용 언어로 정리한 초안 두 가지를
-                  보여드릴게요. 마음에 드는 쪽을 골라 다듬어가시면 됩니다.
-                </p>
-              </section>
-
-              <section className="mt-[16px]">
-                <ResumeRow index={0} label="샘플 경력기술서 01" onClick={openBottomSheet} />
-                <ResumeRow index={1} label="샘플 경력기술서 02" onClick={openBottomSheet} />
-              </section>
-
-              <div className="mt-auto flex flex-col items-end gap-[8px] pb-[14px]">
-                <button
-                  className="h-[38px] rounded-[10px] border border-[#70737C29] bg-white px-[10px] text-[14px] font-medium leading-[22px] tracking-[1.45px] text-black"
-                  onClick={() => sendMessage("샘플 경력기술서 1을 고치고 싶어", { displayStyle: "header" })}
-                  type="button"
-                >
-                  샘플 경력기술서 1을 고치고 싶어
-                </button>
-                <button
-                  className="h-[38px] rounded-[10px] border border-[#70737C29] bg-white px-[10px] text-[14px] font-medium leading-[22px] tracking-[1.45px] text-black"
-                  onClick={() => sendMessage("샘플 경력기술서 2를 고치고 싶어", { displayStyle: "header" })}
-                  type="button"
-                >
-                  샘플 경력기술서 2를 고치고 싶어
-                </button>
               </div>
-            </div>
+            ) : flowStep === "draftReady" ? (
+              <div className="flex min-h-full flex-col px-[20px] pt-[36px]">
+                <section>
+                  <div className="flex items-center gap-[8px]">
+                    <AiOrbLogo size={20} />
+                    <h2 className="text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-black">
+                      에이전트 답변
+                    </h2>
+                  </div>
+                  <div className="mt-[12px] h-px w-full bg-[#70737C29]" />
+                  <p className="mt-[13px] text-[16px] font-normal leading-[26px] tracking-[0.57px] text-[#171719]">
+                    선택해주신 직무 방향으로 초안 생성을 완료하였습니다. 마음에 드는 쪽을 골라 다음에 가시면 됩니다.
+                  </p>
+                </section>
+
+                <section className="mt-[16px]">
+                  <ResumeRow index={0} label="샘플 경력기술서 01" onClick={openBottomSheet} />
+                  <ResumeRow index={1} label="샘플 경력기술서 02" onClick={openBottomSheet} />
+                </section>
+              </div>
+            ) : (
+              <div className="flex min-h-full flex-col px-[20px] pt-[36px]">
+                <section>
+                  <div className="flex items-center gap-[8px]">
+                    <AiOrbLogo size={20} />
+                    <h2 className="text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-black">
+                      에이전트 답변
+                    </h2>
+                  </div>
+                  <div className="mt-[12px] h-px w-full bg-[#70737C29]" />
+                  <p className="mt-[13px] text-[16px] font-normal leading-[26px] tracking-[0.57px] text-[#171719]">
+                    김효원님의 경험을 분석해보니, 두 가지 직무 방향으로 정리할 수 있어요. 어느 쪽이 더 가까우세요?
+                  </p>
+                </section>
+
+                <section
+                  className="mt-[16px] flex flex-col gap-[10px] rounded-[16px] border border-[#EAF2FE] p-[16px]"
+                  style={{ background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%)" }}
+                >
+                  {ROLE_OPTIONS.map((roleOption) => {
+                    const isSelected = selectedRoleId === roleOption.id;
+
+                    return (
+                      <button
+                        className="flex w-full flex-col items-start gap-[10px] rounded-[12px] border bg-white p-[16px] text-left transition"
+                        key={roleOption.id}
+                        onClick={() => {
+                          setSelectedRoleId(roleOption.id);
+                          setFlowStep("loadingDraft");
+                        }}
+                        style={{
+                          borderColor: isSelected ? "#0066FF" : "#EAF2FE",
+                          boxShadow: isSelected ? "0 8px 20px rgba(0,102,255,0.08)" : "none",
+                        }}
+                        type="button"
+                      >
+                        <div className="flex flex-col gap-[4px]">
+                          <span className="text-[12px] font-semibold leading-[16px] text-[#0066FF]">
+                            {roleOption.match}
+                          </span>
+                          <span className="text-[15px] font-semibold leading-[22px] text-[#171719]">
+                            {roleOption.title}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-[6px]">
+                          {roleOption.tags.map((tag) => (
+                            <span
+                              className="inline-flex rounded-[6px] bg-[rgba(55,56,60,0.06)] px-[7px] py-[4px] text-[12px] font-medium leading-none text-[rgba(55,56,60,0.61)]"
+                              key={tag}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </section>
+              </div>
+            )
           ) : (
             <div className="flex flex-col gap-5 p-5">
               {messages.length === 0 && (
@@ -535,7 +781,7 @@ export default function Page() {
               })()}
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={20} />
+                  <AiOrbLogo size={20} />
                   <span style={{ fontSize: 15, fontWeight: 600 }}>에이전트 답변</span>
                 </div>
                 <div className="mt-3 h-px" style={{ background: "#E5E5E5" }} />
@@ -586,7 +832,7 @@ export default function Page() {
                 ) : (
                   <div className="flex flex-col" key={`${chatMessage.type}-${index}`}>
                     <div className="flex items-center gap-2">
-                      <Sparkles size={20} />
+                      <AiOrbLogo size={20} />
                       <span style={{ fontSize: 15, fontWeight: 600 }}>
                         에이전트 답변
                       </span>
@@ -743,7 +989,7 @@ export default function Page() {
               {isLoading && (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
-                    <Sparkles size={20} />
+                    <AiOrbLogo size={20} />
                     <span style={{ fontSize: 15, fontWeight: 600 }}>에이전트 답변</span>
                   </div>
                   <div className="h-px" style={{ background: "#E5E5E5" }} />
@@ -796,46 +1042,66 @@ export default function Page() {
           )}
         </div>
 
-        <div className="max-h-[140px] flex-shrink-0 px-5 pb-3">
-          <div className="relative max-h-[140px] rounded-[12px] border border-[#70737C29] bg-white/85 px-[15px] py-[13px] shadow-[0_1px_2px_-1px_rgba(23,23,23,0.1)] backdrop-blur-[32px]">
-            <textarea
-              autoComplete="off"
-              className="placeholder:text-[#37383C47]"
-              onChange={handleInput}
-              onKeyDown={handleKeyDown}
-              placeholder="메시지를 입력해 주세요."
-              ref={textareaRef}
-              rows={1}
-              style={{
-                width: "100%",
-                minHeight: 24,
-                maxHeight: 120,
-                resize: "none",
-                overflow: "auto",
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                fontSize: 16,
-                fontWeight: 400,
-                lineHeight: "24px",
-                color: "#171719",
-                fontFamily: "Pretendard",
-              }}
-              value={message}
-            />
-            <button
-              className="absolute bottom-[17px] right-[12px] flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#0066FF]"
-              onClick={() => sendMessage()}
-              type="button"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                <path d="M3 9H14.25M14.25 9L9.75 4.5M14.25 9L9.75 13.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+        {flowStep !== "loadingDraft" && (
+          <div className="flex flex-shrink-0 flex-col px-[20px] pb-[12px]">
+            {showDraftQuickButtons && (
+              <div className="mb-[12px] flex flex-col items-end gap-[8px]">
+                <button
+                  className="h-[38px] rounded-[10px] border border-[#70737C29] bg-white px-[10px] text-[14px] font-medium leading-[22px] tracking-[1.45px] text-black"
+                  onClick={() => sendMessage("샘플 경력기술서 1을 고치고 싶어", { displayStyle: "header" })}
+                  type="button"
+                >
+                  샘플 경력기술서 1을 고치고 싶어
+                </button>
+                <button
+                  className="h-[38px] rounded-[10px] border border-[#70737C29] bg-white px-[10px] text-[14px] font-medium leading-[22px] tracking-[1.45px] text-black"
+                  onClick={() => sendMessage("샘플 경력기술서 2를 고치고 싶어", { displayStyle: "header" })}
+                  type="button"
+                >
+                  샘플 경력기술서 2를 고치고 싶어
+                </button>
+              </div>
+            )}
+            <div className="relative max-h-[140px] rounded-[12px] border border-[#70737C29] bg-white/85 px-[15px] py-[13px] shadow-[0_1px_2px_-1px_rgba(23,23,23,0.1)] backdrop-blur-[32px]">
+              <textarea
+                autoComplete="off"
+                className="placeholder:text-[#37383C47]"
+                onChange={handleInput}
+                onKeyDown={handleKeyDown}
+                placeholder="메시지를 입력해 주세요."
+                ref={textareaRef}
+                rows={1}
+                style={{
+                  width: "100%",
+                  minHeight: 24,
+                  maxHeight: 120,
+                  resize: "none",
+                  overflow: "auto",
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  fontSize: 16,
+                  fontWeight: 400,
+                  lineHeight: "24px",
+                  color: "#171719",
+                  fontFamily: "Pretendard",
+                }}
+                value={message}
+              />
+              <button
+                className="absolute bottom-[17px] right-[12px] flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#0066FF]"
+                onClick={() => sendMessage()}
+                type="button"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                  <path d="M3 9H14.25M14.25 9L9.75 4.5M14.25 9L9.75 13.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="flex flex-shrink-0 justify-center pb-2">
+        <div className="flex flex-shrink-0 justify-center pb-[8px]">
           <div className="h-[5px] w-[134px] rounded-full bg-black" />
         </div>
         <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)} />
