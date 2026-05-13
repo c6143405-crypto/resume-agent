@@ -42,6 +42,66 @@ LOW_CONFIDENCE: 쉬운 말로 설명하고 사용자가 선택만 해도 되게 
 사용자의 경험에 없는 성과나 수치를 만들지 마세요.
 사용자의 동의 없이 최종 확정하지 마세요.
 
+[일관성 규칙 — 매우 중요, 절대 어기지 마세요]
+
+1. draftOptions에 들어있는 초안만 언급하세요.
+   - 컨텍스트에 전달된 draftOptions의 개수와 draftId가 *전부*입니다.
+   - 사용자가 "다른 초안 보기"를 요청해도 *이 목록 안에서만* 선택지를 보여주세요.
+   - 새 초안을 만들거나 "사실 5개의 초안이 있어요" 같이 늘리지 마세요.
+
+2. 응답 라벨을 매번 다르게 만들지 마세요. 같은 종류 응답엔 같은 라벨을 쓰세요.
+   - 수정 제안 → 항상 "1차 수정안" / "2차 수정안" / "변경 이유"
+     "수정 제안", "수정 내용", "수정안" 같은 변형 라벨 금지.
+   - 근거 설명 → 항상 "판단 근거" / "다음 선택지"
+   - 적용 후 안내 → 항상 "적용된 표현" / "확인 필요"
+   - 거절 수용 → 항상 "유지된 문장" / "대안 제안"
+
+3. 같은 userIntent엔 항상 비슷한 chips를 사용하세요. 라벨 단어를 즉흥적으로 바꾸지 마세요.
+   - ACCEPT 후 → ["최종 확정", "다른 부분도 수정"]
+   - REJECT 후 → ["다른 부분 수정", "초안 변경 요청"]
+   - ASK_REASON 후 → ["수정안 적용하기", "기존 문장 유지하기", "다른 표현 제안"]
+   - ASK_ALTERNATIVE 후 → ["1번 표현 선택", "2번 표현 선택", "다른 표현 제안"]
+   - MODIFY_TONE/MODIFY_CONTENT 후 → ["수정안 적용하기", "다시 수정해줘", "기존 유지"]
+
+4. 사용자가 *이미 본 컨텍스트*(selectedDraft, currentAiDraft, 이전 메시지들)를 기억하고
+   거기에 일관된 응답을 하세요. 갑자기 새 정보로 갈아엎지 마세요.
+
+[표준 개념 라벨 — 모든 타입(A/B/C/D) 공통, 매번 동일하게 사용]
+같은 종류의 응답엔 항상 같은 라벨 이름을 사용하세요.
+타입별로 *어디에 담을지*(sections / card / chip 등)는 다를 수 있지만, *라벨 이름*은 동일합니다.
+
+- 수정안 제안 (ASK_ALTERNATIVE / MODIFY_TONE / MODIFY_CONTENT 응답):
+    ▸ 한 응답 안에 *두 개 이상의 대안을 동시에 제시*할 때 (병렬 비교):
+        "수정안 1안" / "수정안 2안" / "수정안 3안" / "변경 이유"
+    ▸ 이전 수정안이 거절돼서 *순차적으로 다시 제시*할 때 (반복):
+        "1차 수정안" / "2차 수정안" / "3차 수정안" / "변경 이유"
+    ▸ 단 *하나의 새 수정안*만 제시할 때:
+        "AI 수정안" / "변경 이유"
+    ▸ 변경 근거는 어떤 경우든 항상 "변경 이유"
+- 근거 설명 (ASK_REASON 응답):
+    "판단 근거" / "다음 선택지"
+- 적용 후 안내 (ACCEPT 응답):
+    "적용된 표현" / "확인 필요"
+- 거절 수용 (REJECT 응답):
+    "유지된 문장" / "대안 제안"
+- 불확실/부담 안내 (UNCERTAIN / LOW_CONFIDENCE 응답):
+    "쉽게 보면" / "추천"
+
+⛔️ 다음 변형 라벨은 사용 금지: "수정 제안", "수정안", "수정 내용", "확인 필요 사항",
+   "최종 답변", "추천 내용" 등 위에 명시되지 않은 어떤 변형도 만들지 마세요.
+
+[표준 chips per userIntent — 모든 타입 공통, 라벨 단어를 즉흥적으로 바꾸지 마세요]
+
+- ACCEPT 후 → ["최종 확정", "다른 부분도 수정"]
+- REJECT 후 → ["다른 부분 수정", "초안 변경 요청"]
+- MODIFY_TONE / MODIFY_CONTENT 후 → ["수정안 적용하기", "다시 수정해줘", "기존 유지"]
+- ASK_REASON 후 → ["수정안 적용하기", "기존 문장 유지하기", "다른 표현 제안"]
+- ASK_ALTERNATIVE 후 → ["1번 표현 선택", "2번 표현 선택", "다른 표현 제안"]
+- UNCERTAIN / LOW_CONFIDENCE 후 → ["쉬운 안 보기", "전문가에게 맡기기"]
+
+이 패턴 안에서만 답하세요. "초안 변경 요청"을 "초안 다시 보기"로 바꾸거나
+"1번 표현 선택"을 "1번 선택"으로 줄이는 등의 변형도 금지.
+
 [출력 형식 — 반드시 아래 JSON 스키마로만 응답]
 응답 형식의 *세부 스타일 규칙*(text 길이, sections vs card 사용처 등)은
 이 SYSTEM 메시지 다음에 오는 "타입별 스타일 가이드"가 정의합니다.
@@ -204,7 +264,7 @@ export async function POST(req: NextRequest) {
 - userMessage: ${userMessage || '(없음)'}
 - userExperienceRaw: ${userExperienceRaw || '(없음)'}
 - currentAiDraft: ${currentAiDraft || '(없음)'}
-- draftOptions:
+- draftOptions (총 ${Array.isArray(draftOptions) ? draftOptions.length : 0}개 — 이 외의 초안을 만들지 마세요):
   ${formatDraftOptions(draftOptions as DraftPayload[])}
 - selectedDraft:
   ${formatSelectedDraft(selectedDraft)}
@@ -246,6 +306,8 @@ CM2이면 selectedDraft 내부의 문장/표현 단위로 응답해야 합니다
       model: MODEL,
       messages: openAIMessages,
       response_format: { type: 'json_object' },
+      // 일관성을 위해 낮은 temperature. 같은 입력엔 비슷한 출력이 나오게.
+      temperature: 0.3,
     });
 
     const content = completion.choices[0]?.message?.content ?? '';

@@ -435,6 +435,31 @@ function BottomSheet({
   );
 }
 
+// [A 타입 sections 라벨 → 스타일 매핑]
+// CM2 카드("기존 문장" / "AI 수정안")와 챗 sections에서 *같은 라벨이면 같은 시각 스타일*로
+// 일관되게 그리기 위한 매핑 함수.
+function getSectionVariant(label: string): "strikethrough" | "underline" | "plain" {
+  // 회색 + 취소선 — 옛 표현
+  if (label === "기존 문장" || label === "유지된 문장") {
+    return "strikethrough";
+  }
+  // 검정 + 파란 밑줄 — AI가 새로 만든 수정안
+  // "AI 수정안", "수정 문장", "N차 수정안" (1~3), "수정안 N안" (1~9) 모두 포함
+  const fixedUnderlineLabels = [
+    "AI 수정안",
+    "수정 문장",
+    "1차 수정안",
+    "2차 수정안",
+    "3차 수정안",
+  ];
+  const isParallelOption = /^수정안 \d+안$/.test(label);
+  if (fixedUnderlineLabels.includes(label) || isParallelOption) {
+    return "underline";
+  }
+  // 평문 — 변경 이유, 판단 근거, 확인 필요, 대안 제안, 적용된 표현, 쉽게 보면, 추천, 다음 선택지 등
+  return "plain";
+}
+
 export default function Page() {
   const MAX_REFINEMENT_TURNS = 3;
   const MAX_AI_CALLS_PER_SESSION = 3;
@@ -615,20 +640,25 @@ export default function Page() {
     // [CM1 → CM2 전이]
     // 사용자가 두 초안 중 하나를 '고치고 싶다'고 선택한 순간 CM2로 넘어간다.
     // selectedDraft / currentAiDraft / decisionStatus를 함께 갱신한다.
+    // findDraftBySampleIndex는 Draft | undefined를 반환하므로 가드 필요.
     if (trimmedMessage.includes("샘플 경력기술서 1")) {
       const draft = findDraftBySampleIndex(0);
-      setEditingSampleIndex(0);
-      setSelectedDraft(draft);
-      setCurrentStep("CM2");
-      setCurrentAiDraft(draft.draftContent);
-      setDecisionStatus("selected");
+      if (draft) {
+        setEditingSampleIndex(0);
+        setSelectedDraft(draft);
+        setCurrentStep("CM2");
+        setCurrentAiDraft(draft.draftContent);
+        setDecisionStatus("selected");
+      }
     } else if (trimmedMessage.includes("샘플 경력기술서 2")) {
       const draft = findDraftBySampleIndex(1);
-      setEditingSampleIndex(1);
-      setSelectedDraft(draft);
-      setCurrentStep("CM2");
-      setCurrentAiDraft(draft.draftContent);
-      setDecisionStatus("selected");
+      if (draft) {
+        setEditingSampleIndex(1);
+        setSelectedDraft(draft);
+        setCurrentStep("CM2");
+        setCurrentAiDraft(draft.draftContent);
+        setDecisionStatus("selected");
+      }
     }
 
     if (trimmedMessage === "수정안 확정하기") {
@@ -1372,31 +1402,71 @@ export default function Page() {
                     </div>
                     {chatMessage.sections && chatMessage.sections.length > 0 && (
                       <div className="mt-4 flex flex-col gap-[16px]">
-                        {chatMessage.sections.map((section, sIdx) => (
-                          <div key={`section-${sIdx}`}>
-                            <div
-                              style={{
-                                fontSize: 12,
-                                lineHeight: "18px",
-                                color: "rgba(55,56,60,0.61)",
-                              }}
-                            >
-                              {section.label}
+                        {chatMessage.sections.map((section, sIdx) => {
+                          const variant = getSectionVariant(section.label);
+                          return (
+                            <div key={`section-${sIdx}`}>
+                              <div
+                                style={{
+                                  fontSize: 12,
+                                  lineHeight: "18px",
+                                  color: variant === "underline"
+                                    ? "#0066FF"
+                                    : "rgba(55,56,60,0.61)",
+                                }}
+                              >
+                                {section.label}
+                              </div>
+                              {variant === "strikethrough" ? (
+                                <p
+                                  style={{
+                                    marginTop: 4,
+                                    fontSize: 15,
+                                    lineHeight: "22px",
+                                    color: "rgba(55,56,60,0.55)",
+                                    textDecoration: "line-through",
+                                    textDecorationColor: "rgba(55,56,60,0.4)",
+                                    whiteSpace: "pre-line",
+                                  }}
+                                >
+                                  {section.content}
+                                </p>
+                              ) : variant === "underline" ? (
+                                <p
+                                  style={{
+                                    marginTop: 4,
+                                    fontSize: 15,
+                                    lineHeight: "22px",
+                                    color: "#171719",
+                                    whiteSpace: "pre-line",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      borderBottom: "1.5px solid #0066FF",
+                                      paddingBottom: "1px",
+                                    }}
+                                  >
+                                    {section.content}
+                                  </span>
+                                </p>
+                              ) : (
+                                <p
+                                  style={{
+                                    marginTop: 4,
+                                    fontSize: 15,
+                                    fontWeight: 400,
+                                    lineHeight: "22px",
+                                    color: "#171719",
+                                    whiteSpace: "pre-line",
+                                  }}
+                                >
+                                  {section.content}
+                                </p>
+                              )}
                             </div>
-                            <p
-                              style={{
-                                marginTop: 4,
-                                fontSize: 15,
-                                fontWeight: 400,
-                                lineHeight: "22px",
-                                color: "#171719",
-                                whiteSpace: "pre-line",
-                              }}
-                            >
-                              {section.content}
-                            </p>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                     {!isLoading && (() => {
