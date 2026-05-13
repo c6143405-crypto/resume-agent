@@ -379,6 +379,7 @@ function BottomSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
 
 export default function Page() {
   const MAX_REFINEMENT_TURNS = 3;
+  const MAX_AI_CALLS_PER_SESSION = 3;
   const [view, setView] = useState<"home" | "chat">("home");
   const [messages, setMessages] = useState<
     {
@@ -407,6 +408,9 @@ export default function Page() {
   const [editingSampleIndex, setEditingSampleIndex] = useState<0 | 1 | null>(null);
   const [refinementTurnCount, setRefinementTurnCount] = useState(0);
   const [isFlowComplete, setIsFlowComplete] = useState(false);
+  const [aiCallCount, setAiCallCount] = useState(0);
+  const [hasFinalizedRevision, setHasFinalizedRevision] = useState(false);
+  const [hasShownSampleReview, setHasShownSampleReview] = useState(false);
   const [flowStep, setFlowStep] = useState<"selectRole" | "loadingDraft" | "draftReady">("selectRole");
   const [spacerHeight, setSpacerHeight] = useState(300);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -481,6 +485,72 @@ export default function Page() {
       setEditingSampleIndex(0);
     } else if (trimmedMessage.includes("샘플 경력기술서 2")) {
       setEditingSampleIndex(1);
+    }
+
+    if (trimmedMessage === "수정안 확정하기") {
+      setMessages((prevMessages) => {
+        const nextMessages = [
+          ...prevMessages,
+          { type: "user" as const, text: trimmedMessage, displayStyle: options?.displayStyle ?? "bubble" },
+        ];
+
+        if (hasFinalizedRevision) {
+          return nextMessages;
+        }
+
+        return [
+          ...nextMessages,
+          {
+            type: "agent" as const,
+            text: "테스트 흐름에 따라 수정안을 확정했어요. 수정된 샘플 경력기술서를 다시 확인해보세요.",
+            resultCard: {
+              previous: "기존 표현을 기반으로 한 초안",
+              revised: "사용자 피드백을 반영한 수정안",
+              message: "테스트 흐름에 따라 수정안을 확정했어요. 수정된 샘플 경력기술서를 다시 확인해보세요.",
+            },
+          },
+        ];
+      });
+      setView("chat");
+      setMessage("");
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
+      setHasFinalizedRevision(true);
+      setIsFlowComplete(true);
+      setIsLoading(false);
+      return;
+    }
+
+    if (trimmedMessage === "샘플 경력기술서 다시 보기") {
+      setMessages((prevMessages) => {
+        const nextMessages = [
+          ...prevMessages,
+          { type: "user" as const, text: trimmedMessage, displayStyle: options?.displayStyle ?? "bubble" },
+        ];
+
+        if (hasShownSampleReview) {
+          return nextMessages;
+        }
+
+        return [
+          ...nextMessages,
+          {
+            type: "agent" as const,
+            text: "수정 중인 샘플 경력기술서를 다시 열어볼 수 있어요.",
+            chips: [],
+            card: null,
+          },
+        ];
+      });
+      setView("chat");
+      setMessage("");
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
+      setHasShownSampleReview(true);
+      setIsLoading(false);
+      return;
     }
 
     const limitGuideText =
@@ -575,6 +645,35 @@ export default function Page() {
       try {
         // 새 messages 상태로 push된 직후 그 messages를 API에 보냄
         const updatedMessages = [...messages, { type: "user", text: trimmedMessage }];
+        const aiLimitGuideText =
+          "이번 테스트에서 사용할 수 있는 AI 응답 횟수에 도달했어요. 지금까지의 내용을 바탕으로 수정안을 확정해볼게요.";
+
+        if (aiCallCount >= MAX_AI_CALLS_PER_SESSION) {
+          setMessages((prev) => {
+            const alreadyShowingAiLimitGuide = prev.some(
+              (prevMessage) => prevMessage.type === "agent" && prevMessage.text === aiLimitGuideText
+            );
+
+            if (alreadyShowingAiLimitGuide) {
+              return prev;
+            }
+
+            return [
+              ...prev,
+              {
+                type: "agent",
+                text: aiLimitGuideText,
+                chips: ["수정안 확정하기", "샘플 경력기술서 다시 보기"],
+                card: null,
+              },
+            ];
+          });
+          setIsFlowComplete(true);
+          setIsLoading(false);
+          return;
+        }
+
+        setAiCallCount((prev) => prev + 1);
 
         const response = await fetch("/api/chat", {
           method: "POST",
