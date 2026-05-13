@@ -27,6 +27,39 @@ export type DecisionStatus =
   | "confirmed"
   | "rejected";
 
+// 바텀시트 본문에서 사용하는 칩 색상.
+// gray: 사용자가 실제로 말한 표현 / blue: AI 추정 표현(정확율 ≥ 70%) / purple: AI 추정(정확율 < 70%)
+export type ChipVariant = "gray" | "blue" | "purple";
+
+export interface DraftChip {
+  label: string;
+  variant?: ChipVariant;
+}
+
+export interface DraftBullet {
+  text: string;
+  chips?: DraftChip[];
+}
+
+// 바텀시트 본문 = 한 초안이 실제로 어떤 경력기술서로 표현되는지.
+// 초안 방향(성과 강조형/직무 적합형/경험 서사형)에 따라 같은 경험을 다르게 정리한다.
+export interface DraftBody {
+  company: string;
+  period: string;
+  projectTitle: string;
+  projectChip?: DraftChip;
+  overview: string;
+  goals: DraftBullet[];
+  roleAndResults: DraftBullet[];
+}
+
+// CM2에서 다듬을 한 문장 단위. 초안마다 첫 수정 대상 1건씩 정의해둔다.
+export interface DraftRefinementTarget {
+  originalSentence: string;
+  revisedSentence: string;
+  changeReason: string;
+}
+
 // CM1에서 비교 대상이 되는 '전체 초안' 단위.
 export interface Draft {
   draftId: string;
@@ -35,6 +68,8 @@ export interface Draft {
   draftDirection: string; // 예: 성과 강조형 / 직무 적합형 / 경험 서사형 / 담백한 표현형
   whyRecommended: string;
   caution: string;
+  body: DraftBody;
+  refinementTarget: DraftRefinementTarget;
 }
 
 export type SelectedDraft = Draft | null;

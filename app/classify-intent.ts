@@ -15,11 +15,18 @@ const INTENT_KEYWORDS: Array<{ intent: UserIntent; keywords: string[] }> = [
   },
   {
     intent: "ASK_ALTERNATIVE",
-    keywords: ["다른 안", "다른 표현", "다시 추천", "또 보여"],
+    keywords: ["다른 안", "다른 표현", "다시 추천", "또 보여", "다시 수정"],
   },
   {
     intent: "REJECT",
-    keywords: ["아닌 것 같아요", "싫어요", "빼주세요", "맞지 않아요"],
+    keywords: [
+      "아닌 것 같아요",
+      "싫어요",
+      "빼주세요",
+      "맞지 않아요",
+      "기존 문장 유지",
+      "내 경험이 아니",
+    ],
   },
   {
     intent: "MODIFY_TONE",
@@ -46,7 +53,14 @@ const INTENT_KEYWORDS: Array<{ intent: UserIntent; keywords: string[] }> = [
   },
   {
     intent: "ACCEPT",
-    keywords: ["좋아요", "이걸로 할게요", "이걸로 갈게요", "확정", "사용할게요"],
+    keywords: [
+      "좋아요",
+      "이걸로 할게요",
+      "이걸로 갈게요",
+      "확정",
+      "사용할게요",
+      "수정안 적용",
+    ],
   },
 ];
 
