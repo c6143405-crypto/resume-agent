@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText, X } from "lucide-react";
 
-const USE_AI = false;
+const USE_AI = process.env.NEXT_PUBLIC_USE_AI === "true";
 
 const ROLE_OPTIONS = [
   {
@@ -378,6 +378,7 @@ function BottomSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
 }
 
 export default function Page() {
+  const MAX_REFINEMENT_TURNS = 3;
   const [view, setView] = useState<"home" | "chat">("home");
   const [messages, setMessages] = useState<
     {
@@ -404,6 +405,8 @@ export default function Page() {
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [selectedRewriteOption, setSelectedRewriteOption] = useState<number | null>(null);
   const [editingSampleIndex, setEditingSampleIndex] = useState<0 | 1 | null>(null);
+  const [refinementTurnCount, setRefinementTurnCount] = useState(0);
+  const [isFlowComplete, setIsFlowComplete] = useState(false);
   const [flowStep, setFlowStep] = useState<"selectRole" | "loadingDraft" | "draftReady">("selectRole");
   const [spacerHeight, setSpacerHeight] = useState(300);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -479,16 +482,60 @@ export default function Page() {
     } else if (trimmedMessage.includes("샘플 경력기술서 2")) {
       setEditingSampleIndex(1);
     }
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { type: "user", text: trimmedMessage, displayStyle: options?.displayStyle ?? "bubble" },
-    ]);
+
+    const limitGuideText =
+      "테스트 흐름상 여기까지의 답변을 바탕으로 수정안을 확정해볼게요. 아래 선택지 중 하나를 골라주세요.";
+    const shouldCountRefinementTurn =
+      view === "chat" &&
+      !isFlowComplete &&
+      trimmedMessage !== "수정안 확정하기" &&
+      trimmedMessage !== "샘플 경력기술서 다시 보기";
+    const nextRefinementTurnCount = shouldCountRefinementTurn
+      ? refinementTurnCount + 1
+      : refinementTurnCount;
+    const hasReachedRefinementLimit =
+      shouldCountRefinementTurn && nextRefinementTurnCount >= MAX_REFINEMENT_TURNS;
+
+    if (shouldCountRefinementTurn) {
+      setRefinementTurnCount(nextRefinementTurnCount);
+    }
+
+    setMessages((prevMessages) => {
+      const nextMessages = [
+        ...prevMessages,
+        { type: "user" as const, text: trimmedMessage, displayStyle: options?.displayStyle ?? "bubble" },
+      ];
+      const alreadyShowingLimitGuide = prevMessages.some(
+        (prevMessage) => prevMessage.type === "agent" && prevMessage.text === limitGuideText
+      );
+
+      if ((hasReachedRefinementLimit || isFlowComplete) && !alreadyShowingLimitGuide) {
+        return [
+          ...nextMessages,
+          {
+            type: "agent" as const,
+            text: limitGuideText,
+            chips: ["수정안 확정하기", "샘플 경력기술서 다시 보기"],
+            card: null,
+          },
+        ];
+      }
+
+      return nextMessages;
+    });
     setView("chat");
     console.log("[DEBUG] view 전환 완료");
     setMessage("");
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
+
+    if (hasReachedRefinementLimit || isFlowComplete) {
+      setIsFlowComplete(true);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
 
     if (!USE_AI) {
