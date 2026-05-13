@@ -1,0 +1,845 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { FileText, Sparkles, X } from "lucide-react";
+
+type CardOption = {
+  emoji: string;
+  title: string;
+  description: string;
+};
+
+type StageCard = {
+  title: string;
+  subtitle: string;
+  options: CardOption[];
+};
+
+const STAGES: Record<string, { triggers: string[]; response: string; chips?: string[]; card?: StageCard }> = {
+  stage1: {
+    triggers: ["샘플 경력기술서 1을 고치고 싶어", "샘플 경력기술서 2를 고치고 싶어"],
+    response: "좋아요. 어떤 부분을 다듬어드릴까요? 자주 묻는 수정을 골라보시거나, 직접 말씀해주세요.",
+    chips: ["👀 AI 추정 부분 다듬기", "✏️ 빠진 경험 추가하기", "💭 표현을 더 간결하게"],
+  },
+  stage2a: {
+    triggers: ["👀 AI 추정 부분 다듬기"],
+    response: "샘플 경력기술서에서 AI가 추정한 부분이 두 곳 있어요. 어느 부분부터 다듬을까요?",
+    chips: ["✅ 정합성 100% 유지 (AI · 정확율 70%)", "❗ 12년 연속 0건 (AI · 정확율 50%)", "✅ 월 평균 1,500여 건 (AI · 정확율 80%)"],
+  },
+  stage2b: {
+    triggers: ["✏️ 빠진 경험 추가하기"],
+    response: "어떤 경험을 추가하고 싶으세요? 직접 말씀해주시거나 아래에서 골라주세요.",
+    chips: ["📊 프로젝트 성과 수치 추가", "🤝 협업 경험 추가", "🎓 교육/자격증 추가"],
+  },
+  stage2c: {
+    triggers: ["💭 표현을 더 간결하게"],
+    response: "어떤 부분을 간결하게 다듬을까요?",
+    chips: ["✂️ 중복된 표현 줄이기", "📝 문장 길이 짧게", "🎯 핵심만 남기기"],
+  },
+  stage4: {
+    triggers: [],
+    response: '먼저 "12년 연속 0건" 부분부터 다듬어드릴게요.',
+    chips: [],
+    card: {
+      title: "12년 연속 마감 지연 0건",
+      subtitle: "이력서 '목표' 섹션의 기존 표현",
+      options: [
+        {
+          emoji: "🚀",
+          title: "안정적인 결산 마감 프로세스 운영",
+          description: "보수적 표현 · 수치 대신 안정성으로",
+        },
+        {
+          emoji: "📊",
+          title: "최근 10년 결산 마감 지연 0건",
+          description: "기간 한정 · 헤맸던 2년 제외",
+        },
+        {
+          emoji: "⭐",
+          title: "꼼꼼한 자료 검증을 통한 결산 정확도",
+          description: "강점 중심 · 0건 대신 일하는 방식",
+        },
+      ],
+    },
+  },
+};
+
+function ChevronRightIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M9 5L16 12L9 19" stroke="#C4C6CA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function LoadingIcon() {
+  return (
+    <svg className="animate-spin" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="loadingGradient" x1="10" y1="2" x2="10" y2="18" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#00ADFF" />
+          <stop offset="1" stopColor="#0066FF" />
+        </linearGradient>
+      </defs>
+      <circle
+        cx="10"
+        cy="10"
+        r="7"
+        stroke="url(#loadingGradient)"
+        strokeLinecap="round"
+        strokeWidth="1.5"
+        strokeDasharray="32 12"
+      />
+    </svg>
+  );
+}
+
+function GradientSparklesIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="sparklesGradient" x1="7" y1="1" x2="7" y2="13" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#00ADFF" />
+          <stop offset="1" stopColor="#0066FF" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M7 1.4L8.35 5.65L12.6 7L8.35 8.35L7 12.6L5.65 8.35L1.4 7L5.65 5.65L7 1.4Z"
+        fill="url(#sparklesGradient)"
+      />
+    </svg>
+  );
+}
+
+function StatusBar() {
+  return (
+    <div className="relative h-[44px] w-full bg-white">
+      <div className="absolute left-[30px] top-[13px] text-center text-[15px] font-semibold leading-[18px] tracking-[-0.237px] text-black">
+        9:41
+      </div>
+      <div className="absolute right-[14px] top-[17px] flex items-center gap-[5px]">
+        <svg width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden="true">
+          <rect x="1" y="7" width="3" height="4" rx="1" fill="black" />
+          <rect x="5.5" y="5" width="3" height="6" rx="1" fill="black" />
+          <rect x="10" y="3" width="3" height="8" rx="1" fill="black" />
+          <rect x="14.5" y="1" width="3" height="10" rx="1" fill="black" />
+        </svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+          <path d="M1 4.4C4.9 1.2 11.1 1.2 15 4.4" stroke="black" strokeWidth="1.6" strokeLinecap="round" />
+          <path d="M4 7.2C6.2 5.5 9.8 5.5 12 7.2" stroke="black" strokeWidth="1.6" strokeLinecap="round" />
+          <path d="M7.15 10.1C7.65 9.75 8.35 9.75 8.85 10.1" stroke="black" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none" aria-hidden="true">
+          <rect x="0.75" y="1.25" width="21" height="9.5" rx="2.25" stroke="black" strokeWidth="1.5" />
+          <rect x="2.75" y="3.25" width="17" height="5.5" rx="1.25" fill="black" />
+          <path d="M23 4V8" stroke="black" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function ResumeRow({
+  index,
+  label,
+  onClick,
+}: {
+  index: number;
+  label: string;
+  onClick: (index: number) => void;
+}) {
+  return (
+    <button
+      className="flex h-[52px] w-full items-center justify-between border-b border-[#70737C29]"
+      onClick={() => onClick(index)}
+      type="button"
+    >
+      <div className="flex items-center gap-[8px]">
+        <FileText className="h-[20px] w-[20px] text-black" strokeWidth={1.8} aria-hidden="true" />
+        <span className="text-[16px] font-medium leading-[24px] tracking-[0.57px] text-black">
+          {label}
+        </span>
+      </div>
+      <ChevronRightIcon />
+    </button>
+  );
+}
+
+function Chip({
+  children,
+  variant = "gray",
+}: {
+  children: React.ReactNode;
+  variant?: "gray" | "blue" | "purple";
+}) {
+  const variantClassName = {
+    gray: "bg-[rgba(55,56,60,0.06)] text-[rgba(55,56,60,0.61)]",
+    blue: "border border-[rgba(0,102,255,0.24)] bg-[rgba(0,102,255,0.08)] text-[#0066FF]",
+    purple: "border border-[rgba(101,65,242,0.24)] bg-[rgba(101,65,242,0.08)] text-[#6541F2]",
+  }[variant];
+
+  return (
+    <span
+      className={`inline-flex items-center gap-[4px] rounded-[6px] px-[7px] py-[4px] text-[12px] font-medium leading-none ${variantClassName}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function BottomSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  return (
+    <div
+      className={`absolute inset-0 z-50 flex justify-center transition-opacity duration-300 ${
+        isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+      }`}
+    >
+      <button
+        aria-label="닫기"
+        className="absolute inset-0 bg-black/80"
+        onClick={onClose}
+        type="button"
+      />
+      <section
+        className={`absolute bottom-0 left-0 max-h-[720px] w-[375px] rounded-t-[40px] bg-white px-[20px] py-[20px] font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
+          isOpen ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
+        <div className="mb-[16px] flex h-[44px] w-[335px] items-center justify-center">
+          <h2 className="text-center text-[17px] font-semibold leading-[24px] text-black">
+            샘플 경력기술서
+          </h2>
+          <button
+            aria-label="닫기"
+            className="absolute right-[20px] top-[30px] flex h-[24px] w-[24px] items-center justify-center"
+            onClick={onClose}
+            type="button"
+          >
+            <X className="h-[24px] w-[24px] text-black" strokeWidth={2} aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="max-h-[620px] overflow-y-scroll pr-[10px] [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#7D7D7D] [&::-webkit-scrollbar-track]:bg-transparent">
+          <div className="flex flex-col gap-[8px]">
+            <p className="text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-black">
+              김효원님이 말씀해주신 경험을 바탕으로 AI가 채용 언어로 정리한 경력기술서입니다.
+            </p>
+            <p className="text-[13px] font-normal leading-[18px] tracking-[0.252px] text-[rgba(55,56,60,0.61)]">
+              AI가 작성한 내용이니, 중요한 부분은 꼭 확인해주세요.
+            </p>
+          </div>
+
+          <div className="my-[12px] h-px w-full bg-[#E5E5E5]" />
+
+          <div className="flex flex-col gap-[24px] text-[14px] tracking-[0.203px] text-black">
+            <section className="flex flex-col gap-[8px]">
+              <p className="font-semibold leading-[22px]">(주) A 의류 — 의류 유통 기업</p>
+              <p className="font-normal leading-[22px]">
+                2012.03 ~ 현재 (12년 2개월) · 회계팀 과장
+              </p>
+            </section>
+
+            <section className="flex flex-col gap-[8px]">
+              <p className="font-semibold leading-[22px]">
+                프로젝트 1 · 월·연 결산 마감 프로세스 운영
+              </p>
+              <div>
+                <Chip>월말 마감 칠 때 자료부터 미리 챙겨놨어요</Chip>
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-[8px]">
+              <p className="font-semibold leading-[22px]">개요</p>
+              <p className="font-normal leading-[22px]">
+                직원 30명 규모 의류 유통 기업의 월·연 결산 마감 프로세스를 12년간 전담 운영한 프로젝트
+              </p>
+            </section>
+
+            <section className="flex flex-col gap-[12px]">
+              <p className="font-semibold leading-[22px]">목표</p>
+              <div className="flex flex-col gap-[8px]">
+                <p className="font-normal leading-[22px]">
+                  - 매월 결산 마감 일정 안정화 및 정확성 확보
+                </p>
+                <div className="flex flex-wrap gap-[6px]">
+                  <Chip>매년 결산을 대표님께 보고했어요</Chip>
+                  <Chip variant="blue">AI · 정확율 70%</Chip>
+                </div>
+              </div>
+              <div className="flex flex-col gap-[8px]">
+                <p className="font-normal leading-[22px]">
+                  - 외부 회계 감사 12년 연속 지적 사항 0건 달성
+                </p>
+                <div className="flex flex-wrap gap-[6px]">
+                  <Chip>외부 회계 관리도 했었어요</Chip>
+                  <Chip variant="purple">AI · 정확율 50%</Chip>
+                </div>
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-[12px] pb-[20px]">
+              <p className="font-semibold leading-[22px]">역할 및 성과</p>
+              <div className="flex flex-col gap-[8px]">
+                <p className="font-normal leading-[22px]">
+                  - 매입·매출 전표 월 평균 1,500여 건 처리 및 검증
+                </p>
+                <div className="flex flex-wrap gap-[6px]">
+                  <Chip>장부 매기고 세금계산서 끊는 일이요</Chip>
+                  <Chip variant="blue">AI · 정확율 80%</Chip>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default function Page() {
+  const [view, setView] = useState<"home" | "chat">("home");
+  const [messages, setMessages] = useState<
+    {
+      type: "user" | "agent";
+      text: string;
+      displayStyle?: "header" | "bubble";
+      stageId?: string;
+      chips?: string[];
+      card?: {
+        title: string;
+        subtitle: string;
+        options: { emoji: string; title: string; description: string }[];
+      } | null;
+    }[]
+  >([]);
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [spacerHeight, setSpacerHeight] = useState(300);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastUserMessageRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const lastSpacerRef = useRef(300);
+
+  useEffect(() => {
+    if (messages.length > 0 && messages[messages.length - 1].type === "user") {
+      const container = scrollContainerRef.current;
+      const target = lastUserMessageRef.current;
+
+      if (container && target) {
+        const containerRect = container.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const offset = targetRect.top - containerRect.top + container.scrollTop;
+
+        container.scrollTo({
+          top: Math.max(0, offset - 20),
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const container = scrollContainerRef.current;
+      const lastUserEl = lastUserMessageRef.current;
+
+      if (!container || !lastUserEl) {
+        return;
+      }
+
+      const containerHeight = container.clientHeight;
+      const userMessageTop = lastUserEl.offsetTop;
+      const totalContentHeight = container.scrollHeight;
+      const actualContentHeight = totalContentHeight - lastSpacerRef.current;
+      const contentBelowUser = Math.max(0, actualContentHeight - userMessageTop);
+      const neededSpacer = Math.max(0, containerHeight - contentBelowUser - 20);
+
+      if (Math.abs(neededSpacer - lastSpacerRef.current) > 2) {
+        lastSpacerRef.current = neededSpacer;
+        setSpacerHeight(neededSpacer);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [messages, isLoading]);
+
+  const sendMessage = (overrideMessage?: string, options?: { displayStyle?: "header" | "bubble" }) => {
+    const trimmedMessage = (overrideMessage ?? message).trim();
+
+    if (!trimmedMessage) {
+      return;
+    }
+
+    console.log("[DEBUG] sendMessage 실행", { text: trimmedMessage });
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { type: "user", text: trimmedMessage, displayStyle: options?.displayStyle ?? "bubble" },
+    ]);
+    setView("chat");
+    console.log("[DEBUG] view 전환 완료");
+    setMessage("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+    setIsLoading(true);
+
+    (async () => {
+      try {
+        // 새 messages 상태로 push된 직후 그 messages를 API에 보냄
+        const updatedMessages = [...messages, { type: "user", text: trimmedMessage }];
+
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: updatedMessages }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`API 응답 에러: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "agent",
+            text: data.text,
+            chips: Array.isArray(data.chips) ? data.chips : [],
+            card: data.card ?? null,
+          },
+        ]);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("AI 호출 에러:", error);
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "agent",
+            text: "죄송해요, 답변을 가져오지 못했어요. 다시 시도해주세요.",
+          },
+        ]);
+        setIsLoading(false);
+      }
+    })();
+  };
+
+  const openBottomSheet = (index: number) => {
+    console.log("샘플 경력기술서 클릭됨", index);
+    setIsOpen(true);
+  };
+
+  const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(event.target.value);
+
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const lastUserMessageIndex = (() => {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      if (messages[index].type === "user") {
+        return index;
+      }
+    }
+    return -1;
+  })();
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#EEF0F3] p-8 font-['Pretendard',sans-serif]">
+      <section
+        className="relative mx-auto flex h-[812px] w-[375px] flex-col overflow-hidden bg-white shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
+        style={{ borderRadius: 40 }}
+      >
+        <div className="flex-shrink-0">
+          <StatusBar />
+        </div>
+
+        <div className="flex h-[44px] flex-shrink-0 items-center justify-center px-[16px] py-[10px]">
+          <div className="flex h-[24px] w-full items-center justify-center">
+            <h1 className="text-center text-[17px] font-semibold leading-[24px] text-black">
+              경력기술서 에이전트
+            </h1>
+          </div>
+        </div>
+
+        <div ref={scrollContainerRef} className="relative flex-1 overflow-y-auto">
+          {view === "chat" && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-0 right-0 top-0 z-10"
+              style={{
+                height: 24,
+                background: "linear-gradient(to bottom, #FFF 0%, #FFF 60%, rgba(255,255,255,0) 100%)",
+              }}
+            />
+          )}
+          {view === "home" ? (
+            <div className="flex min-h-full flex-col px-[20px] pt-[36px]">
+              <section>
+                <div className="flex items-center gap-[8px]">
+                  <Sparkles className="h-[20px] w-[20px] text-black" strokeWidth={2} aria-hidden="true" />
+                  <h2 className="text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-black">
+                    에이전트 답변
+                  </h2>
+                </div>
+                <div className="mt-[12px] h-px w-full bg-[#70737C29]" />
+                <p className="mt-[13px] text-[16px] font-normal leading-[26px] tracking-[0.57px] text-[#171719]">
+                  충분해요. 말씀해주신 내용으로 채용 언어로 정리한 초안 두 가지를
+                  보여드릴게요. 마음에 드는 쪽을 골라 다듬어가시면 됩니다.
+                </p>
+              </section>
+
+              <section className="mt-[16px]">
+                <ResumeRow index={0} label="샘플 경력기술서 01" onClick={openBottomSheet} />
+                <ResumeRow index={1} label="샘플 경력기술서 02" onClick={openBottomSheet} />
+              </section>
+
+              <div className="mt-auto flex flex-col items-end gap-[8px] pb-[14px]">
+                <button
+                  className="h-[38px] rounded-[10px] border border-[#70737C29] bg-white px-[10px] text-[14px] font-medium leading-[22px] tracking-[1.45px] text-black"
+                  onClick={() => sendMessage("샘플 경력기술서 1을 고치고 싶어", { displayStyle: "header" })}
+                  type="button"
+                >
+                  샘플 경력기술서 1을 고치고 싶어
+                </button>
+                <button
+                  className="h-[38px] rounded-[10px] border border-[#70737C29] bg-white px-[10px] text-[14px] font-medium leading-[22px] tracking-[1.45px] text-black"
+                  onClick={() => sendMessage("샘플 경력기술서 2를 고치고 싶어", { displayStyle: "header" })}
+                  type="button"
+                >
+                  샘플 경력기술서 2를 고치고 싶어
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-5 p-5">
+              {messages.length === 0 && (
+                <p className="text-center text-sm text-gray-400">
+                  [DEBUG] 메시지가 없습니다. view: chat
+                </p>
+              )}
+              {(() => {
+                console.log("[DEBUG] messages 현재 상태:", messages, "view:", view);
+                return null;
+              })()}
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={20} />
+                  <span style={{ fontSize: 15, fontWeight: 600 }}>에이전트 답변</span>
+                </div>
+                <div className="mt-3 h-px" style={{ background: "#E5E5E5" }} />
+                <div style={{ marginTop: 12, fontSize: 16, fontWeight: 400, lineHeight: "26px", color: "#000" }}>
+                  충분해요. 말씀해주신 내용으로 채용 언어로 정리한 초안 두 가지를 보여드릴게요. 마음에 드는 쪽을 골라 다듬어가시면 됩니다.
+                </div>
+                <div className="mt-6 flex flex-col gap-6">
+                  <ResumeRow index={0} label="샘플 경력기술서 01" onClick={openBottomSheet} />
+                  <ResumeRow index={1} label="샘플 경력기술서 02" onClick={openBottomSheet} />
+                </div>
+              </div>
+              {messages.map((chatMessage, index) =>
+                chatMessage.type === "user" ? (
+                  chatMessage.displayStyle === "header" ? (
+                    <div
+                      key={`${chatMessage.type}-${index}`}
+                      ref={index === lastUserMessageIndex ? lastUserMessageRef : null}
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 600,
+                        lineHeight: "26px",
+                        letterSpacing: "-0.004px",
+                        color: "#000",
+                      }}
+                    >
+                      {chatMessage.text}
+                    </div>
+                  ) : (
+                    <div
+                      className="flex justify-end"
+                      key={`${chatMessage.type}-${index}`}
+                      ref={index === lastUserMessageIndex ? lastUserMessageRef : null}
+                    >
+                      <div
+                        className="max-w-[300px] rounded-2xl px-4 py-3 text-black"
+                        style={{
+                          background: "#F4F4F5",
+                          fontSize: 16,
+                          fontWeight: 400,
+                          lineHeight: "26px",
+                          letterSpacing: "0.091px",
+                        }}
+                      >
+                        {chatMessage.text}
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <div className="flex flex-col" key={`${chatMessage.type}-${index}`}>
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={20} />
+                      <span style={{ fontSize: 15, fontWeight: 600 }}>
+                        에이전트 답변
+                      </span>
+                    </div>
+                    <div className="mt-3 h-px" style={{ background: "#E5E5E5" }} />
+                    <div style={{ marginTop: 12, fontSize: 16, fontWeight: 400, lineHeight: "24px", color: "#000" }}>
+                      {chatMessage.text}
+                    </div>
+                    {!isLoading && (() => {
+                        const card = chatMessage.card
+                          ?? (chatMessage.stageId ? STAGES[chatMessage.stageId]?.card : undefined);
+                        if (!card) return null;
+                        return (
+                          <div
+                            className="mt-3 w-full"
+                            style={{
+                              padding: 20,
+                              borderRadius: 16,
+                              border: "1px solid #EAF2FE",
+                              background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontFamily: "Pretendard",
+                                fontSize: 15,
+                                fontWeight: 600,
+                                lineHeight: "22px",
+                                letterSpacing: "0.144px",
+                                color: "#000",
+                              }}
+                            >
+                              {card.title}
+                            </div>
+                            <div
+                              style={{
+                                marginTop: 4,
+                                fontFamily: "Pretendard",
+                                fontSize: 12,
+                                fontWeight: 400,
+                                lineHeight: "16px",
+                                letterSpacing: "0.302px",
+                                color: "#999",
+                              }}
+                            >
+                              {card.subtitle}
+                            </div>
+                            <div
+                              className="mb-3 mt-3"
+                              style={{
+                                height: 1,
+                                background: "#EAF2FE",
+                              }}
+                            />
+                            <div className="flex flex-col gap-2">
+                              {card.options.map((option, optionIndex) => (
+                                <div
+                                  className="flex w-full"
+                                  key={optionIndex}
+                                  style={{
+                                    padding: 20,
+                                    borderRadius: 10,
+                                    border: "1px solid #EAF2FE",
+                                    background: "#FFF",
+                                    gap: 12,
+                                    alignItems: "flex-start",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      justifyContent: "center",
+                                      width: 16,
+                                      height: 20,
+                                      fontSize: 16,
+                                      lineHeight: "20px",
+                                      flexShrink: 0,
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    {option.emoji}
+                                  </div>
+                                  <div className="flex flex-col" style={{ gap: 4, flex: 1 }}>
+                                    <div
+                                      style={{
+                                        fontFamily: "Pretendard",
+                                        fontSize: 14,
+                                        fontWeight: 600,
+                                        lineHeight: "20px",
+                                        letterSpacing: "0.203px",
+                                        color: "#000",
+                                      }}
+                                    >
+                                      {option.title}
+                                    </div>
+                                    <div
+                                      style={{
+                                        fontFamily: "Pretendard",
+                                        fontSize: 12,
+                                        fontWeight: 400,
+                                        lineHeight: "16px",
+                                        letterSpacing: "0.302px",
+                                        color: "#999",
+                                      }}
+                                    >
+                                      {option.description}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    {index === messages.length - 1 &&
+                      !isLoading &&
+                      (() => {
+                        // AI가 보낸 chips 우선, 없으면 STAGES fallback
+                        const chips = (chatMessage.chips && chatMessage.chips.length > 0)
+                          ? chatMessage.chips
+                          : (chatMessage.stageId && STAGES[chatMessage.stageId]?.chips) || [];
+                        if (chips.length === 0) return null;
+                        return (
+                          <div className="mt-5 flex flex-col items-start gap-2">
+                            {chips.map((chipLabel, chipIndex) => (
+                              <button
+                                className="inline-flex cursor-pointer items-center hover:bg-[#F9F9F9]"
+                                key={chipIndex}
+                                onClick={() => sendMessage(chipLabel, { displayStyle: "bubble" })}
+                                style={{
+                                  padding: "8px 10px",
+                                  borderRadius: 10,
+                                  border: "1px solid #E5E5E5",
+                                  background: "#FFF",
+                                  fontSize: 14,
+                                  fontWeight: 500,
+                                  lineHeight: "22px",
+                                  letterSpacing: "0.203px",
+                                  color: "#000",
+                                  fontFamily: "Pretendard",
+                                }}
+                                type="button"
+                              >
+                                {chipLabel}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                  </div>
+                ),
+              )}
+              {isLoading && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={20} />
+                    <span style={{ fontSize: 15, fontWeight: 600 }}>에이전트 답변</span>
+                  </div>
+                  <div className="h-px" style={{ background: "#E5E5E5" }} />
+                  <div className="flex items-center gap-2">
+                    <svg className="animate-spin" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="loadingGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0" stopColor="#00ADFF" />
+                          <stop offset="1" stopColor="#0066FF" />
+                        </linearGradient>
+                      </defs>
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r="8.25"
+                        stroke="url(#loadingGradient)"
+                        strokeWidth="1.5"
+                        fill="none"
+                        strokeDasharray="38"
+                        strokeDashoffset="19"
+                      />
+                    </svg>
+                    <span
+                      style={{
+                        fontFamily: "Pretendard",
+                        fontSize: 16,
+                        fontWeight: 400,
+                        lineHeight: "26px",
+                        letterSpacing: "0.091px",
+                        background: "linear-gradient(180deg, #00ADFF 0%, #0066FF 100%)",
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        color: "transparent",
+                      }}
+                    >
+                      에이전트가 답변을 준비하고 있어요.
+                    </span>
+                  </div>
+                </div>
+              )}
+              <div
+                aria-hidden="true"
+                style={{
+                  minHeight: "60vh",
+                  flexShrink: 0,
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="max-h-[140px] flex-shrink-0 px-5 pb-3">
+          <div className="relative max-h-[140px] rounded-[12px] border border-[#70737C29] bg-white/85 px-[15px] py-[13px] shadow-[0_1px_2px_-1px_rgba(23,23,23,0.1)] backdrop-blur-[32px]">
+            <textarea
+              autoComplete="off"
+              className="placeholder:text-[#37383C47]"
+              onChange={handleInput}
+              onKeyDown={handleKeyDown}
+              placeholder="메시지를 입력해 주세요."
+              ref={textareaRef}
+              rows={1}
+              style={{
+                width: "100%",
+                minHeight: 24,
+                maxHeight: 120,
+                resize: "none",
+                overflow: "auto",
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                fontSize: 16,
+                fontWeight: 400,
+                lineHeight: "24px",
+                color: "#171719",
+                fontFamily: "Pretendard",
+              }}
+              value={message}
+            />
+            <button
+              className="absolute bottom-[17px] right-[12px] flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#0066FF]"
+              onClick={() => sendMessage()}
+              type="button"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M3 9H14.25M14.25 9L9.75 4.5M14.25 9L9.75 13.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-shrink-0 justify-center pb-2">
+          <div className="h-[5px] w-[134px] rounded-full bg-black" />
+        </div>
+        <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      </section>
+    </main>
+  );
+}
