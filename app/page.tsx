@@ -814,10 +814,9 @@ export default function Page() {
   const resultSampleIndex = editingSampleIndex ?? 0;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#EEF0F3] p-8 font-['Pretendard',sans-serif]">
+    <main className="min-h-screen bg-white font-['Pretendard',sans-serif]">
       <section
-        className="relative mx-auto flex h-[812px] w-[375px] flex-col overflow-hidden bg-white shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
-        style={{ borderRadius: 40 }}
+        className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white"
       >
         <div className="flex-shrink-0">
           <StatusBar />

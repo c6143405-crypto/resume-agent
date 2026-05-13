@@ -1098,43 +1098,44 @@ export default function Page() {
   const resultSampleIndex = editingSampleIndex ?? 0;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#EEF0F3] p-8 font-['Pretendard',sans-serif]">
-      {/* dev: 판단보조형 Agent 상태값 확인 패널 (개발 확인용) */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed left-4 top-4 z-50 select-none rounded-lg bg-black/85 px-3 py-2 font-mono text-[11px] leading-[18px] text-white shadow-lg"
-      >
-        <div className="mb-1 text-[10px] uppercase tracking-wider text-white/60">
-          Agent State (dev)
+    <main className="min-h-screen bg-white font-['Pretendard',sans-serif]">
+      {/* dev: 판단보조형 Agent 상태값 확인 패널 — 로컬 개발에서만 표시, 배포(production)에선 자동 숨김 */}
+      {process.env.NODE_ENV === "development" && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed left-4 top-4 z-50 select-none rounded-lg bg-black/85 px-3 py-2 font-mono text-[11px] leading-[18px] text-white shadow-lg"
+        >
+          <div className="mb-1 text-[10px] uppercase tracking-wider text-white/60">
+            Agent State (dev)
+          </div>
+          <div>
+            currentStep: <span className="text-cyan-300">{currentStep}</span>
+          </div>
+          <div>
+            prototypeType: <span className="text-cyan-300">{prototypeType}</span>
+          </div>
+          <div>
+            userIntent: <span className="text-cyan-300">{userIntent ?? "null"}</span>
+          </div>
+          <div>
+            decisionStatus: <span className="text-cyan-300">{decisionStatus}</span>
+          </div>
+          <div>
+            draftOptions:{" "}
+            <span className="text-cyan-300">
+              [{draftOptions.map((d) => d.draftId).join(", ")}]
+            </span>
+          </div>
+          <div>
+            selectedDraft:{" "}
+            <span className="text-cyan-300">
+              {selectedDraft ? selectedDraft.draftId : "null"}
+            </span>
+          </div>
         </div>
-        <div>
-          currentStep: <span className="text-cyan-300">{currentStep}</span>
-        </div>
-        <div>
-          prototypeType: <span className="text-cyan-300">{prototypeType}</span>
-        </div>
-        <div>
-          userIntent: <span className="text-cyan-300">{userIntent ?? "null"}</span>
-        </div>
-        <div>
-          decisionStatus: <span className="text-cyan-300">{decisionStatus}</span>
-        </div>
-        <div>
-          draftOptions:{" "}
-          <span className="text-cyan-300">
-            [{draftOptions.map((d) => d.draftId).join(", ")}]
-          </span>
-        </div>
-        <div>
-          selectedDraft:{" "}
-          <span className="text-cyan-300">
-            {selectedDraft ? selectedDraft.draftId : "null"}
-          </span>
-        </div>
-      </div>
+      )}
       <section
-        className="relative mx-auto flex h-[812px] w-[375px] flex-col overflow-hidden bg-white shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
-        style={{ borderRadius: 40 }}
+        className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white"
       >
         <div className="flex-shrink-0">
           <StatusBar />
