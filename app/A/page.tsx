@@ -2,6 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FileText, X } from "lucide-react";
+import type {
+  CurrentStep,
+  PrototypeType,
+  UserIntent,
+  DecisionStatus,
+  SelectedDraft,
+  Draft,
+} from "../agent-state";
+import { DEFAULT_AGENT_STATE } from "../agent-state";
+import { classifyUserIntent } from "../classify-intent";
+import { findDraftBySampleIndex, SAMPLE_DRAFTS } from "../drafts";
+import { A_TYPE_PROMPT } from "./style-prompt";
 
 const USE_AI = process.env.NEXT_PUBLIC_USE_AI === "true";
 
@@ -41,21 +53,21 @@ type StageCard = {
 const STAGES: Record<string, { triggers: string[]; response: string; chips?: string[]; card?: StageCard }> = {
   stage1: {
     triggers: ["샘플 경력기술서 1을 고치고 싶어", "샘플 경력기술서 2를 고치고 싶어"],
-    response: "좋아요. 어떤 부분을 다듬어드릴까요? 자주 묻는 수정을 골라보시거나, 직접 말씀해주세요.",
-    chips: ["👀 AI 추정 부분 다듬기", "✏️ 빠진 경험 추가하기", "💭 표현을 더 간결하게"],
+    response: "좋아요. 선택한 샘플 경력기술서를 어떤 방식으로 다듬을지 골라주세요.",
+    chips: ["AI가 추정한 표현 확인하기", "빠진 경험 보강하기", "문장 표현 다듬기"],
   },
   stage2a: {
-    triggers: ["👀 AI 추정 부분 다듬기"],
+    triggers: ["AI가 추정한 표현 확인하기", "👀 AI 추정 부분 다듬기"],
     response: "샘플 경력기술서에서 AI가 추정한 부분이 두 곳 있어요. 어느 부분부터 다듬을까요?",
     chips: ["✅ 정합성 100% 유지 (AI · 정확율 70%)", "❗ 12년 연속 0건 (AI · 정확율 50%)", "✅ 월 평균 1,500여 건 (AI · 정확율 80%)"],
   },
   stage2b: {
-    triggers: ["✏️ 빠진 경험 추가하기"],
+    triggers: ["빠진 경험 보강하기", "✏️ 빠진 경험 추가하기"],
     response: "어떤 경험을 추가하고 싶으세요? 직접 말씀해주시거나 아래에서 골라주세요.",
     chips: ["📊 프로젝트 성과 수치 추가", "🤝 협업 경험 추가", "🎓 교육/자격증 추가"],
   },
   stage2c: {
-    triggers: ["💭 표현을 더 간결하게"],
+    triggers: ["문장 표현 다듬기", "💭 표현을 더 간결하게"],
     response: "어떤 부분을 간결하게 다듬을까요?",
     chips: ["✂️ 중복된 표현 줄이기", "📝 문장 길이 짧게", "🎯 핵심만 남기기"],
   },
@@ -268,7 +280,19 @@ function Chip({
   );
 }
 
-function BottomSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+function BottomSheet({
+  isOpen,
+  onClose,
+  draft,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  draft: Draft | null;
+}) {
+  // 근거 보기 아코디언은 시트 내부 로컬 상태로 관리.
+  // 다른 초안 시트를 열면 이전 펼침은 유지되지만, 시트가 다시 열릴 때 명시적으로 접고 싶다면
+  // useEffect로 isOpen/draft 변할 때 false로 리셋하면 된다.
+  const [isRationaleOpen, setIsRationaleOpen] = useState(false);
   return (
     <div
       className={`absolute inset-0 z-50 flex justify-center transition-opacity duration-300 ${
@@ -288,7 +312,7 @@ function BottomSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
       >
         <div className="mb-[16px] flex h-[44px] w-[335px] items-center justify-center">
           <h2 className="text-center text-[17px] font-semibold leading-[24px] text-black">
-            샘플 경력기술서
+            {draft?.draftTitle ?? "샘플 경력기술서"}
           </h2>
           <button
             aria-label="닫기"
@@ -301,74 +325,108 @@ function BottomSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
         </div>
 
         <div className="max-h-[620px] overflow-y-scroll pr-[10px] [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#7D7D7D] [&::-webkit-scrollbar-track]:bg-transparent">
-          <div className="flex flex-col gap-[8px]">
-            <p className="text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-black">
-              김효원님이 말씀해주신 경험을 바탕으로 AI가 채용 언어로 정리한 경력기술서입니다.
-            </p>
-            <p className="text-[13px] font-normal leading-[18px] tracking-[0.252px] text-[rgba(55,56,60,0.61)]">
-              AI가 작성한 내용이니, 중요한 부분은 꼭 확인해주세요.
-            </p>
+          {/* [근거 보기 아코디언] 초안의 방향·추천 이유·주의점을 시트 상단에서 보여줌 */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setIsRationaleOpen((v) => !v)}
+              className="flex w-full items-center justify-between py-[4px] text-left"
+              aria-expanded={isRationaleOpen}
+            >
+              <span className="text-[14px] font-medium leading-[20px] text-black">
+                근거 {isRationaleOpen ? "접기" : "보기"}
+              </span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+                style={{
+                  transform: isRationaleOpen ? "rotate(180deg)" : "none",
+                  transition: "transform 120ms ease",
+                }}
+              >
+                <path
+                  d="M4 6L8 10L12 6"
+                  stroke="#999"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            {isRationaleOpen && (
+              <div className="mt-[8px] rounded-[8px] bg-[rgba(55,56,60,0.04)] px-[12px] py-[10px]">
+                <div className="text-[12px] font-medium leading-[18px] text-[rgba(55,56,60,0.61)]">
+                  이 초안의 방향
+                </div>
+                <p className="mt-[2px] text-[13px] leading-[20px] text-black">
+                  {draft?.draftDirection ?? "—"}
+                </p>
+
+                <div className="mt-[8px] text-[12px] font-medium leading-[18px] text-[rgba(55,56,60,0.61)]">
+                  추천 이유
+                </div>
+                <p className="mt-[2px] text-[13px] leading-[20px] text-black">
+                  {draft?.whyRecommended ?? "—"}
+                </p>
+
+                <div className="mt-[8px] text-[12px] font-medium leading-[18px] text-[rgba(55,56,60,0.61)]">
+                  주의할 점
+                </div>
+                <p className="mt-[2px] text-[13px] leading-[20px] text-black">
+                  {draft?.caution ?? "—"}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="my-[12px] h-px w-full bg-[#E5E5E5]" />
 
+          {/* [동적 본문]
+              - 회사/프로젝트/개요/목표/역할 및 성과 — draft.body 기준
+              - A 타입: AI 정확율 칩(blue/purple)은 렌더 안 함.
+                gray 칩(사용자 실제 발화)만 본문 아래에 회색 언더라인 텍스트로 표시. */}
           <div className="flex flex-col gap-[24px] text-[14px] tracking-[0.203px] text-black">
             <section className="flex flex-col gap-[8px]">
-              <p className="font-semibold leading-[22px]">(주) A 의류 — 의류 유통 기업</p>
+              <p className="font-semibold leading-[22px]">
+                {draft?.body.company ?? "—"}
+              </p>
               <p className="font-normal leading-[22px]">
-                2012.03 ~ 현재 (12년 2개월) · 회계팀 과장
+                {draft?.body.period ?? "—"}
               </p>
             </section>
 
-            <section className="flex flex-col gap-[8px]">
+            <section className="flex flex-col gap-[6px]">
               <p className="font-semibold leading-[22px]">
-                프로젝트 1 · 월·연 결산 마감 프로세스 운영
+                {draft?.body.projectTitle ?? "—"}
               </p>
-              <div>
-                <Chip>월말 마감 칠 때 자료부터 미리 챙겨놨어요</Chip>
-              </div>
             </section>
 
             <section className="flex flex-col gap-[8px]">
               <p className="font-semibold leading-[22px]">개요</p>
               <p className="font-normal leading-[22px]">
-                직원 30명 규모 의류 유통 기업의 월·연 결산 마감 프로세스를 12년간 전담 운영한 프로젝트
+                {draft?.body.overview ?? "—"}
               </p>
             </section>
 
-            <section className="flex flex-col gap-[12px]">
+            <section className="flex flex-col gap-[8px]">
               <p className="font-semibold leading-[22px]">목표</p>
-              <div className="flex flex-col gap-[8px]">
-                <p className="font-normal leading-[22px]">
-                  - 매월 결산 마감 일정 안정화 및 정확성 확보
+              {(draft?.body.goals ?? []).map((bullet, idx) => (
+                <p key={`goal-${idx}`} className="font-normal leading-[22px]">
+                  - {bullet.text}
                 </p>
-                <div className="flex flex-wrap gap-[6px]">
-                  <Chip>매년 결산을 대표님께 보고했어요</Chip>
-                  <Chip variant="blue">AI · 정확율 70%</Chip>
-                </div>
-              </div>
-              <div className="flex flex-col gap-[8px]">
-                <p className="font-normal leading-[22px]">
-                  - 외부 회계 감사 12년 연속 지적 사항 0건 달성
-                </p>
-                <div className="flex flex-wrap gap-[6px]">
-                  <Chip>외부 회계 관리도 했었어요</Chip>
-                  <Chip variant="purple">AI · 정확율 50%</Chip>
-                </div>
-              </div>
+              ))}
             </section>
 
-            <section className="flex flex-col gap-[12px] pb-[20px]">
+            <section className="flex flex-col gap-[8px] pb-[20px]">
               <p className="font-semibold leading-[22px]">역할 및 성과</p>
-              <div className="flex flex-col gap-[8px]">
-                <p className="font-normal leading-[22px]">
-                  - 매입·매출 전표 월 평균 1,500여 건 처리 및 검증
+              {(draft?.body.roleAndResults ?? []).map((bullet, idx) => (
+                <p key={`role-${idx}`} className="font-normal leading-[22px]">
+                  - {bullet.text}
                 </p>
-                <div className="flex flex-wrap gap-[6px]">
-                  <Chip>장부 매기고 세금계산서 끊는 일이요</Chip>
-                  <Chip variant="blue">AI · 정확율 80%</Chip>
-                </div>
-              </div>
+              ))}
             </section>
           </div>
         </div>
@@ -398,6 +456,15 @@ export default function Page() {
         revised: string;
         message: string;
       };
+      // [CM2] 수정 카드: 기존 문장 / AI 수정안 / 변경 이유를 한 카드로 보여줌.
+      refinementCard?: {
+        draftTitle: string;
+        originalSentence: string;
+        revisedSentence: string;
+        changeReason: string;
+      };
+      // [A 타입 챗] 라벨드 섹션 배열 — 소타이틀 + 내용을 반복 렌더.
+      sections?: { label: string; content: string }[];
     }[]
   >([]);
   const [message, setMessage] = useState("");
@@ -405,18 +472,72 @@ export default function Page() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [selectedRewriteOption, setSelectedRewriteOption] = useState<number | null>(null);
-  const [editingSampleIndex, setEditingSampleIndex] = useState<0 | 1 | null>(null);
+  const [editingSampleIndex, setEditingSampleIndex] = useState<number | null>(null);
   const [refinementTurnCount, setRefinementTurnCount] = useState(0);
   const [isFlowComplete, setIsFlowComplete] = useState(false);
   const [aiCallCount, setAiCallCount] = useState(0);
   const [hasFinalizedRevision, setHasFinalizedRevision] = useState(false);
   const [hasShownSampleReview, setHasShownSampleReview] = useState(false);
-  const [flowStep, setFlowStep] = useState<"selectRole" | "loadingDraft" | "draftReady">("selectRole");
+  // [임시 숨김] 직무 선택(selectRole) 화면만 숨김. 로딩(loadingDraft) → 초안(draftReady) 흐름은 유지.
+  // 마크업/로직은 모두 보존되어 있고, 초기값만 "loadingDraft"로 바꿔 진입 시 selectRole만 건너뛴다.
+  // 되살리려면 아래 초기값을 "selectRole"로 바꾸기만 하면 된다.
+  const [flowStep, setFlowStep] = useState<"selectRole" | "loadingDraft" | "draftReady">("loadingDraft");
   const [spacerHeight, setSpacerHeight] = useState(300);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastUserMessageRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const lastSpacerRef = useRef(300);
+
+  // [판단보조형 Agent 상태값] T3 단계, CM1/CM2 흐름에서 추적
+  // 현재는 선언만 해두고, AI 응답 로직과 묶는 작업은 다음 단계에서 진행한다.
+  const [currentStep, setCurrentStep] = useState<CurrentStep>(
+    DEFAULT_AGENT_STATE.currentStep
+  );
+  const [prototypeType, setPrototypeType] = useState<PrototypeType>(
+    DEFAULT_AGENT_STATE.prototypeType
+  );
+  const [userIntent, setUserIntent] = useState<UserIntent | null>(
+    DEFAULT_AGENT_STATE.userIntent
+  );
+  const [decisionStatus, setDecisionStatus] = useState<DecisionStatus>(
+    DEFAULT_AGENT_STATE.decisionStatus
+  );
+  // CM1에서 사용자가 비교 가능한 전체 초안 목록.
+  // 현재는 SAMPLE_DRAFTS로 초기화하지만, 추후 API에서 받아오도록 바꿀 수 있다.
+  const [draftOptions, setDraftOptions] = useState<Draft[]>(SAMPLE_DRAFTS);
+  // CM1에서 사용자가 선택한 '전체 초안'. CM2로 진입할 때 채워진다.
+  const [selectedDraft, setSelectedDraft] = useState<SelectedDraft>(
+    DEFAULT_AGENT_STATE.selectedDraft
+  );
+  // [CM1 라디오 후보] '이 초안 선택하기' 버튼을 누르기 전, 임시로 골라둔 초안.
+  const [cm1Candidate, setCm1Candidate] = useState<Draft | null>(null);
+  // [바텀시트 대상] 어느 초안의 상세를 시트에 띄울지.
+  const [bottomSheetDraft, setBottomSheetDraft] = useState<Draft | null>(null);
+  // [CM2 수정 카드의 결정 결과] "apply" | "keep" | "retry" — 한 번 누르면 그 카드의 버튼들은 비활성된다.
+  const [refinementCardOutcome, setRefinementCardOutcome] = useState<
+    "apply" | "keep" | "retry" | null
+  >(null);
+
+  // [API payload용 보조 상태값]
+  // 아직 UI 흐름과 연결하지 않고 빈 문자열 기본값으로만 둔다. 다음 단계에서 채운다.
+  const [currentAiDraft, setCurrentAiDraft] = useState<string>("");
+  const [userExperienceRaw, setUserExperienceRaw] = useState<string>("");
+
+  // dev: 상태 변화 시 콘솔 로그
+  useEffect(() => {
+    console.log("[AgentState]", {
+      currentStep,
+      prototypeType,
+      userIntent,
+      decisionStatus,
+      selectedDraft: selectedDraft?.draftId ?? null,
+    });
+  }, [currentStep, prototypeType, userIntent, decisionStatus, selectedDraft]);
+
+  // 미사용 경고 방지(현재 단계에서 직접 호출하지 않는 setter들)
+  void setPrototypeType;
+  void setUserExperienceRaw;
+  void setDraftOptions;
 
   useEffect(() => {
     if (messages.length > 0 && messages[messages.length - 1].type === "user") {
@@ -468,7 +589,7 @@ export default function Page() {
 
     const timer = setTimeout(() => {
       setFlowStep("draftReady");
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [flowStep]);
@@ -481,10 +602,33 @@ export default function Page() {
     }
 
     console.log("[DEBUG] sendMessage 실행", { text: trimmedMessage });
+
+    // [3단계] 사용자 입력 → userIntent 분류 (키워드 기반)
+    // 아직 API/Agent 로직과는 연결하지 않고, state에만 반영한다.
+    const classifiedIntent = classifyUserIntent(trimmedMessage);
+    setUserIntent(classifiedIntent);
+    console.log("[UserIntent]", {
+      message: trimmedMessage,
+      intent: classifiedIntent,
+    });
+
+    // [CM1 → CM2 전이]
+    // 사용자가 두 초안 중 하나를 '고치고 싶다'고 선택한 순간 CM2로 넘어간다.
+    // selectedDraft / currentAiDraft / decisionStatus를 함께 갱신한다.
     if (trimmedMessage.includes("샘플 경력기술서 1")) {
+      const draft = findDraftBySampleIndex(0);
       setEditingSampleIndex(0);
+      setSelectedDraft(draft);
+      setCurrentStep("CM2");
+      setCurrentAiDraft(draft.draftContent);
+      setDecisionStatus("selected");
     } else if (trimmedMessage.includes("샘플 경력기술서 2")) {
+      const draft = findDraftBySampleIndex(1);
       setEditingSampleIndex(1);
+      setSelectedDraft(draft);
+      setCurrentStep("CM2");
+      setCurrentAiDraft(draft.draftContent);
+      setDecisionStatus("selected");
     }
 
     if (trimmedMessage === "수정안 확정하기") {
@@ -608,34 +752,39 @@ export default function Page() {
 
     setIsLoading(true);
 
+    const matched = Object.entries(STAGES).find(([, stage]) =>
+      stage.triggers.includes(trimmedMessage)
+    );
+
+    if (matched) {
+      setTimeout(() => {
+        const [, stage] = matched;
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "agent",
+            text: stage.response,
+            chips: stage.chips ?? [],
+            card: stage.card ?? null,
+          },
+        ]);
+        setIsLoading(false);
+      }, 300);
+      return;
+    }
+
     if (!USE_AI) {
       // STAGES 모드 — 트리거 매칭으로 즉시 응답
       setTimeout(() => {
-        const matched = Object.entries(STAGES).find(([, stage]) =>
-          stage.triggers.includes(trimmedMessage)
-        );
-        if (matched) {
-          const [, stage] = matched;
-          setMessages((prev) => [
-            ...prev,
-            {
-              type: "agent",
-              text: stage.response,
-              chips: stage.chips ?? [],
-              card: stage.card ?? null,
-            },
-          ]);
-        } else {
-          setMessages((prev) => [
-            ...prev,
-            {
-              type: "agent",
-              text: "좋아요. 그 부분 한 번 같이 다듬어볼까요?",
-              chips: [],
-              card: null,
-            },
-          ]);
-        }
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "agent",
+            text: "좋아요. 그 부분 한 번 같이 다듬어볼까요?",
+            chips: [],
+            card: null,
+          },
+        ]);
         setIsLoading(false);
       }, 300);
       return;
@@ -675,10 +824,34 @@ export default function Page() {
 
         setAiCallCount((prev) => prev + 1);
 
+        // [판단보조형 Agent payload] 기존 messages는 그대로 유지하고,
+        // 상태값/컨텍스트를 함께 보낸다. 없는 값은 빈 문자열을 기본값으로.
+        const targetJob =
+          ROLE_OPTIONS.find((role) => role.id === selectedRoleId)?.title ?? "";
+
+        const payload = {
+          messages: updatedMessages, // 기존 호환 유지
+          currentStep,
+          prototypeType,
+          // 방금 분류한 intent(상태 반영 전이라도 최신 값 사용)
+          userIntent: classifiedIntent,
+          decisionStatus,
+          userMessage: trimmedMessage,
+          currentAiDraft,
+          userExperienceRaw,
+          targetJob,
+          draftOptions, // CM1 비교 대상 초안 전체
+          selectedDraft, // CM2면 채워져 있고, CM1이면 null
+          // [타입별 스타일 프롬프트] 이 페이지(A)의 응답 형식 규칙을 함께 전달.
+          typeStylePrompt: A_TYPE_PROMPT,
+        };
+
+        console.log("[api/chat payload]", payload);
+
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: updatedMessages }),
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
@@ -694,6 +867,7 @@ export default function Page() {
             text: data.text,
             chips: Array.isArray(data.chips) ? data.chips : [],
             card: data.card ?? null,
+            sections: Array.isArray(data.sections) ? data.sections : [],
           },
         ]);
         setIsLoading(false);
@@ -713,6 +887,8 @@ export default function Page() {
 
   const openBottomSheet = (index: number) => {
     console.log("샘플 경력기술서 클릭됨", index);
+    const draft = SAMPLE_DRAFTS[index] ?? selectedDraft ?? null;
+    if (draft) setBottomSheetDraft(draft);
     setIsOpen(true);
   };
 
@@ -730,6 +906,73 @@ export default function Page() {
       event.preventDefault();
       sendMessage();
     }
+  };
+
+  // [A 타입 CM1 헬퍼들]
+  // 라디오 선택 — 임시 후보만 갱신. 확정은 commitCm1Selection에서.
+  const handlePickDraftCandidate = (draft: Draft) => {
+    setCm1Candidate(draft);
+  };
+
+  // 행 또는 chevron 탭 — 기존 바텀시트를 그대로 띄우되, 어떤 초안인지 함께 전달.
+  const openBottomSheetWith = (draft: Draft) => {
+    setBottomSheetDraft(draft);
+    setIsOpen(true);
+  };
+
+  // 확정 버튼 — 라디오로 골라둔 후보를 CM2 selectedDraft로 커밋.
+  // sendMessage 흐름(STAGES/AI) 대신, CM2 진입에 맞는 안내 + 수정 카드를 직접 push한다.
+  const commitCm1Selection = () => {
+    if (!cm1Candidate) return;
+    const index = SAMPLE_DRAFTS.findIndex((d) => d.draftId === cm1Candidate.draftId);
+    if (index >= 0) setEditingSampleIndex(index);
+    setSelectedDraft(cm1Candidate);
+    setCurrentStep("CM2");
+    setCurrentAiDraft(cm1Candidate.draftContent);
+    setDecisionStatus("selected");
+    setRefinementCardOutcome(null);
+
+    setMessages([
+      {
+        type: "user",
+        text: `${cm1Candidate.draftTitle}을(를) 고치고 싶어`,
+        displayStyle: "header",
+      },
+      {
+        type: "agent",
+        text:
+          "선택한 초안을 바탕으로 문장을 다듬는 단계입니다. " +
+          "표현이 과하거나 실제 경험과 맞지 않는 부분이 있으면 수정할 수 있어요.",
+        refinementCard: {
+          draftTitle: cm1Candidate.draftTitle,
+          originalSentence: cm1Candidate.refinementTarget.originalSentence,
+          revisedSentence: cm1Candidate.refinementTarget.revisedSentence,
+          changeReason: cm1Candidate.refinementTarget.changeReason,
+        },
+      },
+    ]);
+    setView("chat");
+  };
+
+  // [CM2 수정 카드 버튼 핸들러들] — 각 버튼은 사용자 메시지로 환산되어 흐름에 들어간다.
+  const handleRefinementApply = () => {
+    if (refinementCardOutcome) return;
+    setRefinementCardOutcome("apply");
+    setDecisionStatus("modified");
+    sendMessage("수정안 적용하기", { displayStyle: "bubble" });
+  };
+
+  const handleRefinementKeep = () => {
+    if (refinementCardOutcome) return;
+    setRefinementCardOutcome("keep");
+    // 기존 문장 유지 — 초안 자체는 selected 상태 유지(수정 안 함).
+    sendMessage("기존 문장 유지하기", { displayStyle: "bubble" });
+  };
+
+  const handleRefinementRetry = () => {
+    if (refinementCardOutcome) return;
+    setRefinementCardOutcome("retry");
+    sendMessage("다시 수정해줘", { displayStyle: "bubble" });
   };
 
   const handleRewriteOptionSelect = (optionIndex: number, optionTitle: string) => {
@@ -778,11 +1021,45 @@ export default function Page() {
     }
     return -1;
   })();
-  const showDraftQuickButtons = flowStep === "draftReady" && view === "home";
+  // 인라인 "이 초안 선택하기" 버튼이 대체하므로 하단 quick 버튼은 노출하지 않는다.
+  const showDraftQuickButtons = false;
   const resultSampleIndex = editingSampleIndex ?? 0;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#EEF0F3] p-8 font-['Pretendard',sans-serif]">
+      {/* dev: 판단보조형 Agent 상태값 확인 패널 (개발 확인용) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed left-4 top-4 z-50 select-none rounded-lg bg-black/85 px-3 py-2 font-mono text-[11px] leading-[18px] text-white shadow-lg"
+      >
+        <div className="mb-1 text-[10px] uppercase tracking-wider text-white/60">
+          Agent State (dev)
+        </div>
+        <div>
+          currentStep: <span className="text-cyan-300">{currentStep}</span>
+        </div>
+        <div>
+          prototypeType: <span className="text-cyan-300">{prototypeType}</span>
+        </div>
+        <div>
+          userIntent: <span className="text-cyan-300">{userIntent ?? "null"}</span>
+        </div>
+        <div>
+          decisionStatus: <span className="text-cyan-300">{decisionStatus}</span>
+        </div>
+        <div>
+          draftOptions:{" "}
+          <span className="text-cyan-300">
+            [{draftOptions.map((d) => d.draftId).join(", ")}]
+          </span>
+        </div>
+        <div>
+          selectedDraft:{" "}
+          <span className="text-cyan-300">
+            {selectedDraft ? selectedDraft.draftId : "null"}
+          </span>
+        </div>
+      </div>
       <section
         className="relative mx-auto flex h-[812px] w-[375px] flex-col overflow-hidden bg-white shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
         style={{ borderRadius: 40 }}
@@ -886,24 +1163,84 @@ export default function Page() {
                 </div>
               </div>
             ) : flowStep === "draftReady" ? (
-              <div className="flex min-h-full flex-col px-[20px] pt-[36px]">
-                <section>
-                  <div className="flex items-center gap-[8px]">
-                    <AiOrbLogo size={20} />
-                    <h2 className="text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-black">
-                      에이전트 답변
-                    </h2>
-                  </div>
-                  <div className="mt-[12px] h-px w-full bg-[#70737C29]" />
-                  <p className="mt-[13px] text-[16px] font-normal leading-[26px] tracking-[0.57px] text-[#171719]">
-                    선택해주신 직무 방향으로 초안 생성을 완료하였습니다. 마음에 드는 쪽을 골라 다음에 가시면 됩니다.
-                  </p>
+              // [A 타입 CM1] 미니멀 텍스트형. 위→아래 순차 읽기.
+              // 시각 라벨/카드/애니메이션 없이 텍스트와 단순 버튼으로만 구성.
+              <div className="flex min-h-full flex-col px-[20px] pb-[24px] pt-[28px]">
+                {/* 에이전트 답변 헤더 — A/B/C/D 어떤 타입이든 공통으로 유지하는 양식 */}
+                <div className="flex items-center gap-[8px]">
+                  <AiOrbLogo size={20} />
+                  <h2 className="text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-black">
+                    에이전트 답변
+                  </h2>
+                </div>
+                <div className="mt-[12px] h-px w-full bg-[#70737C29]" />
+
+                <p className="mt-[13px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                  아래 {SAMPLE_DRAFTS.length}가지 방향의 경력기술서 초안을 준비했습니다.
+                </p>
+                <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                  각 초안은 같은 경험을 바탕으로 하지만, 강조하는 방향이 다릅니다.
+                </p>
+                <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                  먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요.
+                </p>
+                <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                  선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다.
+                </p>
+
+                {/* [A 타입 CM1 리스트] 행은 라디오 + 제목 + chevron만. 근거는 바텀시트 상단에서 노출. */}
+                <section className="mt-[20px]">
+                  {SAMPLE_DRAFTS.map((draft) => {
+                    const isPicked = cm1Candidate?.draftId === draft.draftId;
+                    return (
+                      <div
+                        key={draft.draftId}
+                        className="flex h-[52px] w-full items-center gap-[10px] border-b border-[#70737C29]"
+                      >
+                        <button
+                          type="button"
+                          aria-label="이 초안을 선택지로 두기"
+                          aria-pressed={isPicked}
+                          onClick={() => handlePickDraftCandidate(draft)}
+                          className="flex h-[24px] w-[24px] flex-shrink-0 items-center justify-center"
+                        >
+                          <span
+                            className="flex h-[18px] w-[18px] items-center justify-center rounded-full border"
+                            style={{
+                              borderColor: isPicked ? "#171719" : "#C4C6CA",
+                            }}
+                          >
+                            {isPicked && (
+                              <span
+                                className="block rounded-full"
+                                style={{ width: 10, height: 10, background: "#171719" }}
+                              />
+                            )}
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => openBottomSheetWith(draft)}
+                          className="flex flex-1 items-center justify-between"
+                        >
+                          <div className="flex items-center gap-[8px]">
+                            <FileText
+                              className="h-[20px] w-[20px] text-black"
+                              strokeWidth={1.8}
+                              aria-hidden="true"
+                            />
+                            <span className="text-[16px] font-medium leading-[24px] tracking-[0.57px] text-black">
+                              {draft.draftTitle}
+                            </span>
+                          </div>
+                          <ChevronRightIcon />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </section>
 
-                <section className="mt-[16px]">
-                  <ResumeRow index={0} label="샘플 경력기술서 01" onClick={openBottomSheet} />
-                  <ResumeRow index={1} label="샘플 경력기술서 02" onClick={openBottomSheet} />
-                </section>
               </div>
             ) : (
               <div className="flex min-h-full flex-col px-[20px] pt-[36px]">
@@ -976,20 +1313,6 @@ export default function Page() {
                 console.log("[DEBUG] messages 현재 상태:", messages, "view:", view);
                 return null;
               })()}
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <AiOrbLogo size={20} />
-                  <span style={{ fontSize: 15, fontWeight: 600 }}>에이전트 답변</span>
-                </div>
-                <div className="mt-3 h-px" style={{ background: "#E5E5E5" }} />
-                <div style={{ marginTop: 12, fontSize: 16, fontWeight: 400, lineHeight: "26px", color: "#000" }}>
-                  충분해요. 말씀해주신 내용으로 채용 언어로 정리한 초안 두 가지를 보여드릴게요. 마음에 드는 쪽을 골라 다듬어가시면 됩니다.
-                </div>
-                <div className="mt-6 flex flex-col gap-6">
-                  <ResumeRow index={0} label="샘플 경력기술서 01" onClick={openBottomSheet} />
-                  <ResumeRow index={1} label="샘플 경력기술서 02" onClick={openBottomSheet} />
-                </div>
-              </div>
               {messages.map((chatMessage, index) =>
                 chatMessage.type === "user" ? (
                   chatMessage.displayStyle === "header" ? (
@@ -1035,9 +1358,47 @@ export default function Page() {
                       </span>
                     </div>
                     <div className="mt-3 h-px" style={{ background: "#E5E5E5" }} />
-                    <div style={{ marginTop: 12, fontSize: 16, fontWeight: 400, lineHeight: "24px", color: "#000" }}>
+                    <div
+                      style={{
+                        marginTop: 12,
+                        fontSize: 16,
+                        fontWeight: 400,
+                        lineHeight: "24px",
+                        color: "#000",
+                        whiteSpace: "pre-line",
+                      }}
+                    >
                       {chatMessage.text}
                     </div>
+                    {chatMessage.sections && chatMessage.sections.length > 0 && (
+                      <div className="mt-4 flex flex-col gap-[16px]">
+                        {chatMessage.sections.map((section, sIdx) => (
+                          <div key={`section-${sIdx}`}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                lineHeight: "18px",
+                                color: "rgba(55,56,60,0.61)",
+                              }}
+                            >
+                              {section.label}
+                            </div>
+                            <p
+                              style={{
+                                marginTop: 4,
+                                fontSize: 15,
+                                fontWeight: 400,
+                                lineHeight: "22px",
+                                color: "#171719",
+                                whiteSpace: "pre-line",
+                              }}
+                            >
+                              {section.content}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {!isLoading && (() => {
                         const card = chatMessage.card
                           ?? (chatMessage.stageId ? STAGES[chatMessage.stageId]?.card : undefined);
@@ -1154,6 +1515,133 @@ export default function Page() {
                           </div>
                         );
                       })()}
+                    {chatMessage.refinementCard && (() => {
+                      const rc = chatMessage.refinementCard;
+                      const decided = refinementCardOutcome !== null;
+                      const buttonBase: React.CSSProperties = {
+                        height: 44,
+                        borderRadius: 10,
+                        fontSize: 15,
+                        fontWeight: 500,
+                        lineHeight: "22px",
+                        fontFamily: "Pretendard",
+                        textAlign: "center",
+                      };
+                      return (
+                        <div className="mt-3 w-full" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                          {/* 선택한 초안 */}
+                          <div>
+                            <div style={{ fontSize: 12, lineHeight: "18px", color: "rgba(55,56,60,0.61)" }}>
+                              선택한 초안
+                            </div>
+                            <div style={{ marginTop: 2, fontSize: 15, fontWeight: 600, lineHeight: "22px", color: "#171719" }}>
+                              {rc.draftTitle}
+                            </div>
+                          </div>
+
+                          <div style={{ height: 1, background: "#EAF2FE" }} />
+
+                          {/* 기존 문장 (회색 취소선) */}
+                          <div>
+                            <div style={{ fontSize: 12, lineHeight: "18px", color: "rgba(55,56,60,0.61)" }}>
+                              기존 문장
+                            </div>
+                            <p
+                              style={{
+                                marginTop: 4,
+                                fontSize: 14,
+                                lineHeight: "22px",
+                                color: "rgba(55,56,60,0.55)",
+                                textDecoration: "line-through",
+                                textDecorationColor: "rgba(55,56,60,0.4)",
+                              }}
+                            >
+                              {rc.originalSentence}
+                            </p>
+                          </div>
+
+                          {/* AI 수정안 (파란 밑줄) */}
+                          <div>
+                            <div style={{ fontSize: 12, lineHeight: "18px", color: "#0066FF" }}>
+                              AI 수정안
+                            </div>
+                            <p
+                              style={{
+                                marginTop: 4,
+                                fontSize: 14,
+                                lineHeight: "22px",
+                                color: "#171719",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  borderBottom: "1.5px solid #0066FF",
+                                  paddingBottom: "1px",
+                                }}
+                              >
+                                {rc.revisedSentence}
+                              </span>
+                            </p>
+                          </div>
+
+                          {/* 변경 이유 */}
+                          <div>
+                            <div style={{ fontSize: 12, lineHeight: "18px", color: "rgba(55,56,60,0.61)" }}>
+                              변경 이유
+                            </div>
+                            <p style={{ marginTop: 4, fontSize: 14, lineHeight: "22px", color: "#171719" }}>
+                              {rc.changeReason}
+                            </p>
+                          </div>
+
+                          {/* 버튼 3개 — 결정되면 모두 비활성, 선택된 것만 검정으로 표시 */}
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                            <button
+                              type="button"
+                              disabled={decided}
+                              onClick={handleRefinementApply}
+                              style={{
+                                ...buttonBase,
+                                background: refinementCardOutcome === "apply" ? "#171719" : "#FFFFFF",
+                                color: refinementCardOutcome === "apply" ? "#FFFFFF" : decided ? "rgba(55,56,60,0.4)" : "#171719",
+                                border: "1px solid " + (refinementCardOutcome === "apply" ? "#171719" : "#E5E5E5"),
+                                cursor: decided ? "default" : "pointer",
+                              }}
+                            >
+                              수정안 적용하기
+                            </button>
+                            <button
+                              type="button"
+                              disabled={decided}
+                              onClick={handleRefinementKeep}
+                              style={{
+                                ...buttonBase,
+                                background: refinementCardOutcome === "keep" ? "#171719" : "#FFFFFF",
+                                color: refinementCardOutcome === "keep" ? "#FFFFFF" : decided ? "rgba(55,56,60,0.4)" : "#171719",
+                                border: "1px solid " + (refinementCardOutcome === "keep" ? "#171719" : "#E5E5E5"),
+                                cursor: decided ? "default" : "pointer",
+                              }}
+                            >
+                              기존 문장 유지하기
+                            </button>
+                            <button
+                              type="button"
+                              disabled={decided}
+                              onClick={handleRefinementRetry}
+                              style={{
+                                ...buttonBase,
+                                background: refinementCardOutcome === "retry" ? "#171719" : "#FFFFFF",
+                                color: refinementCardOutcome === "retry" ? "#FFFFFF" : decided ? "rgba(55,56,60,0.4)" : "#171719",
+                                border: "1px solid " + (refinementCardOutcome === "retry" ? "#171719" : "#E5E5E5"),
+                                cursor: decided ? "default" : "pointer",
+                              }}
+                            >
+                              다시 수정하기
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
                     {chatMessage.resultCard && (
                       <div
                         className="mt-3 w-full"
@@ -1224,7 +1712,7 @@ export default function Page() {
                       <div className="mt-4">
                         <ResumeRow
                           index={resultSampleIndex}
-                          label={resultSampleIndex === 0 ? "샘플 경력기술서 01" : "샘플 경력기술서 02"}
+                          label={selectedDraft?.draftTitle ?? `샘플 경력기술서 0${resultSampleIndex + 1}`}
                           onClick={openBottomSheet}
                         />
                       </div>
@@ -1323,7 +1811,26 @@ export default function Page() {
           )}
         </div>
 
-        {flowStep !== "loadingDraft" && (
+        {/* [하단 영역]
+            - CM1(초안 선택 화면)에서는 채팅창 숨기고 '이 초안 선택하기' 버튼만 노출
+            - 그 외(CM2 챗, selectRole 등)에서는 기존 채팅 입력창을 그대로 유지 */}
+        {flowStep === "draftReady" && view === "home" ? (
+          <div className="flex flex-shrink-0 flex-col px-[20px] pb-[16px]">
+            <button
+              type="button"
+              onClick={commitCm1Selection}
+              disabled={!cm1Candidate}
+              className="h-[48px] w-full rounded-[10px] text-[15px] font-medium leading-[22px]"
+              style={{
+                background: cm1Candidate ? "#171719" : "#F4F4F5",
+                color: cm1Candidate ? "#FFFFFF" : "rgba(55,56,60,0.4)",
+                cursor: cm1Candidate ? "pointer" : "default",
+              }}
+            >
+              이 초안 선택하기
+            </button>
+          </div>
+        ) : flowStep !== "loadingDraft" && (
           <div className="flex flex-shrink-0 flex-col px-[20px] pb-[12px]">
             {showDraftQuickButtons && (
               <div className="mb-[12px] flex flex-col items-end gap-[8px]">
@@ -1391,7 +1898,7 @@ export default function Page() {
         <div className="flex flex-shrink-0 justify-center pb-[8px]">
           <div className="h-[5px] w-[134px] rounded-full bg-black" />
         </div>
-        <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)} />
+        <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)} draft={bottomSheetDraft} />
       </section>
     </main>
   );

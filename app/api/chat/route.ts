@@ -43,10 +43,18 @@ LOW_CONFIDENCE: 쉬운 말로 설명하고 사용자가 선택만 해도 되게 
 사용자의 동의 없이 최종 확정하지 마세요.
 
 [출력 형식 — 반드시 아래 JSON 스키마로만 응답]
+응답 형식의 *세부 스타일 규칙*(text 길이, sections vs card 사용처 등)은
+이 SYSTEM 메시지 다음에 오는 "타입별 스타일 가이드"가 정의합니다.
+타입별 가이드가 비어 있으면 기본값으로 자연스러운 단락 텍스트로 응답하세요.
+
+[JSON 스키마]
 {
-  "text": string,        // 본문(추천 문장 + 판단 근거 + 다음 선택 안내 등)
+  "text": string,        // 짧은 안내(1~2문장). 본격 내용은 sections로.
+  "sections": [          // 라벨드 섹션 배열. 없으면 빈 배열 [] 또는 생략.
+    { "label": string, "content": string }
+  ],
   "chips": string[],     // 사용자가 다음에 누를 수 있는 행동 라벨
-  "card": {              // 후보 비교가 필요할 때만, 그 외엔 null
+  "card": {              // 후보 비교가 카드로 명확할 때만, 그 외엔 null
     "title": string,
     "subtitle": string,
     "options": [
@@ -59,12 +67,19 @@ JSON 외 텍스트는 절대 출력하지 않습니다.
 
 type CardOption = { emoji: string; title: string; description: string };
 type Card = { title: string; subtitle: string; options: CardOption[] };
-type ChatResponse = { text: string; chips: string[]; card: Card | null };
+type ChatSection = { label: string; content: string };
+type ChatResponse = {
+  text: string;
+  chips: string[];
+  card: Card | null;
+  sections: ChatSection[];
+};
 
 const FALLBACK_RESPONSE: ChatResponse = {
   text: '좋아요. 말씀해주신 내용을 바탕으로 경력기술서 문장을 함께 다듬어볼게요.',
   chips: ['표현을 더 간결하게', '성과 중심으로 바꾸기', '근거가 부족한 부분 확인하기'],
   card: null,
+  sections: [],
 };
 
 function parseOpenAIResponse(content: string): ChatResponse {
@@ -93,7 +108,17 @@ function parseOpenAIResponse(content: string): ChatResponse {
     };
   }
 
-  return { text: raw.text, chips, card };
+  const sections: ChatSection[] = Array.isArray(raw.sections)
+    ? raw.sections
+        .filter((s: unknown) => s && typeof s === 'object')
+        .map((s: any) => ({
+          label: String(s.label || ''),
+          content: String(s.content || ''),
+        }))
+        .filter((s: ChatSection) => s.label || s.content)
+    : [];
+
+  return { text: raw.text, chips, card, sections };
 }
 
 type DraftPayload = {
@@ -151,6 +176,7 @@ export async function POST(req: NextRequest) {
       targetJob = '',
       selectedDraft = null,
       draftOptions = [],
+      typeStylePrompt = '',
     } = body ?? {};
 
     if (!process.env.OPENAI_API_KEY) {
@@ -189,8 +215,14 @@ CM2이면 selectedDraft 내부의 문장/표현 단위로 응답해야 합니다
 `,
     };
 
+    // 타입별 스타일 가이드를 system 메시지로 끼워넣는다 (공통 → 타입 → 컨텍스트 → 대화 순).
+    const typeStyleSystemMessage = typeStylePrompt
+      ? { role: 'system' as const, content: String(typeStylePrompt) }
+      : null;
+
     const openAIMessages = [
       { role: 'system' as const, content: SYSTEM_PROMPT },
+      ...(typeStyleSystemMessage ? [typeStyleSystemMessage] : []),
       contextSystemMessage,
       ...((messages ?? []) as { type: string; text: string }[]).map((msg) => ({
         role: msg.type === 'user' ? ('user' as const) : ('assistant' as const),
@@ -207,6 +239,7 @@ CM2이면 selectedDraft 내부의 문장/표현 단위로 응답해야 합니다
       targetJob,
       draftOptionsCount: Array.isArray(draftOptions) ? draftOptions.length : 0,
       selectedDraftId: (selectedDraft as DraftPayload | null)?.draftId ?? null,
+      typeStylePromptLen: String(typeStylePrompt || '').length,
     });
 
     const completion = await openai.chat.completions.create({
