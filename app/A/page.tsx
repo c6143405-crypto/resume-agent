@@ -306,7 +306,7 @@ function BottomSheet({
         type="button"
       />
       <section
-        className={`absolute bottom-0 left-0 max-h-[720px] w-[375px] rounded-t-[40px] bg-white px-[20px] py-[20px] font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
+        className={`absolute bottom-0 left-0 h-[720px] w-[375px] rounded-t-[40px] bg-white px-[20px] py-[20px] font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >
@@ -538,6 +538,10 @@ export default function Page() {
   const [cm1Candidate, setCm1Candidate] = useState<Draft | null>(null);
   // [바텀시트 대상] 어느 초안의 상세를 시트에 띄울지.
   const [bottomSheetDraft, setBottomSheetDraft] = useState<Draft | null>(null);
+  // [타이프라이터 스트리밍] AI 응답을 글자/섹션 단위로 점진적으로 그린다.
+  const [streamingMessageIndex, setStreamingMessageIndex] = useState<number | null>(null);
+  const [streamedCharCount, setStreamedCharCount] = useState(0);
+  const [streamedSectionCount, setStreamedSectionCount] = useState(0);
   // [CM2 수정 카드의 결정 결과] "apply" | "keep" | "retry" — 한 번 누르면 그 카드의 버튼들은 비활성된다.
   const [refinementCardOutcome, setRefinementCardOutcome] = useState<
     "apply" | "keep" | "retry" | null
@@ -618,6 +622,44 @@ export default function Page() {
 
     return () => clearTimeout(timer);
   }, [flowStep]);
+
+  // [타이프라이터 스트리밍] 새 agent 메시지가 추가되면 처음부터 다시 그림.
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const lastIdx = messages.length - 1;
+    const lastMsg = messages[lastIdx];
+    if (lastMsg.type !== "agent") return;
+    setStreamingMessageIndex(lastIdx);
+    setStreamedCharCount(0);
+    setStreamedSectionCount(0);
+  }, [messages.length]);
+
+  // [타이프라이터 진행] text 한 글자씩 → sections 하나씩 → 완료.
+  useEffect(() => {
+    if (streamingMessageIndex === null) return;
+    const msg = messages[streamingMessageIndex];
+    if (!msg || msg.type !== "agent") {
+      setStreamingMessageIndex(null);
+      return;
+    }
+    // 1단계: text 글자 타이프라이터 (30ms/글자)
+    if (streamedCharCount < (msg.text || "").length) {
+      const timer = setTimeout(() => {
+        setStreamedCharCount((c) => c + 1);
+      }, 30);
+      return () => clearTimeout(timer);
+    }
+    // 2단계: sections 하나씩 등장 (300ms 간격)
+    const totalSections = msg.sections?.length ?? 0;
+    if (streamedSectionCount < totalSections) {
+      const timer = setTimeout(() => {
+        setStreamedSectionCount((s) => s + 1);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+    // 완료
+    setStreamingMessageIndex(null);
+  }, [streamingMessageIndex, streamedCharCount, streamedSectionCount, messages]);
 
   const sendMessage = (overrideMessage?: string, options?: { displayStyle?: "header" | "bubble" }) => {
     const trimmedMessage = (overrideMessage ?? message).trim();
@@ -1398,11 +1440,22 @@ export default function Page() {
                         whiteSpace: "pre-line",
                       }}
                     >
-                      {chatMessage.text}
+                      {streamingMessageIndex === index
+                        ? chatMessage.text.slice(0, streamedCharCount)
+                        : chatMessage.text}
                     </div>
-                    {chatMessage.sections && chatMessage.sections.length > 0 && (
+                    {chatMessage.sections && chatMessage.sections.length > 0 &&
+                      (streamingMessageIndex !== index ||
+                        streamedCharCount >= (chatMessage.text?.length ?? 0)) && (
                       <div className="mt-4 flex flex-col gap-[16px]">
-                        {chatMessage.sections.map((section, sIdx) => {
+                        {chatMessage.sections
+                          .slice(
+                            0,
+                            streamingMessageIndex === index
+                              ? Math.min(streamedSectionCount, chatMessage.sections.length)
+                              : chatMessage.sections.length
+                          )
+                          .map((section, sIdx) => {
                           const variant = getSectionVariant(section.label);
                           return (
                             <div key={`section-${sIdx}`}>

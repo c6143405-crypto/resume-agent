@@ -282,7 +282,7 @@ function BottomSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
         type="button"
       />
       <section
-        className={`absolute bottom-0 left-0 max-h-[720px] w-[375px] rounded-t-[40px] bg-white px-[20px] py-[20px] font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
+        className={`absolute bottom-0 left-0 h-[720px] w-[375px] rounded-t-[40px] bg-white px-[20px] py-[20px] font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >
@@ -417,6 +417,38 @@ export default function Page() {
   const lastUserMessageRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const lastSpacerRef = useRef(300);
+
+  // [타이프라이터 스트리밍] AI 응답을 글자 단위로 점진적으로 그린다.
+  const [streamingMessageIndex, setStreamingMessageIndex] = useState<number | null>(null);
+  const [streamedCharCount, setStreamedCharCount] = useState(0);
+
+  // 새 agent 메시지가 추가되면 스트리밍 시작
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const lastIdx = messages.length - 1;
+    const lastMsg = messages[lastIdx];
+    if (lastMsg.type !== "agent") return;
+    setStreamingMessageIndex(lastIdx);
+    setStreamedCharCount(0);
+  }, [messages.length]);
+
+  // 글자 한 자씩 진행 (30ms/글자)
+  useEffect(() => {
+    if (streamingMessageIndex === null) return;
+    const msg = messages[streamingMessageIndex];
+    if (!msg || msg.type !== "agent") {
+      setStreamingMessageIndex(null);
+      return;
+    }
+    if (streamedCharCount < (msg.text || "").length) {
+      const timer = setTimeout(() => {
+        setStreamedCharCount((c) => c + 1);
+      }, 30);
+      return () => clearTimeout(timer);
+    }
+    // 완료
+    setStreamingMessageIndex(null);
+  }, [streamingMessageIndex, streamedCharCount, messages]);
 
   useEffect(() => {
     if (messages.length > 0 && messages[messages.length - 1].type === "user") {
@@ -1035,10 +1067,12 @@ export default function Page() {
                       </span>
                     </div>
                     <div className="mt-3 h-px" style={{ background: "#E5E5E5" }} />
-                    <div style={{ marginTop: 12, fontSize: 16, fontWeight: 400, lineHeight: "24px", color: "#000" }}>
-                      {chatMessage.text}
+                    <div style={{ marginTop: 12, fontSize: 16, fontWeight: 400, lineHeight: "24px", color: "#000", whiteSpace: "pre-line" }}>
+                      {streamingMessageIndex === index
+                        ? chatMessage.text.slice(0, streamedCharCount)
+                        : chatMessage.text}
                     </div>
-                    {!isLoading && (() => {
+                    {!isLoading && streamingMessageIndex !== index && (() => {
                         const card = chatMessage.card
                           ?? (chatMessage.stageId ? STAGES[chatMessage.stageId]?.card : undefined);
                         if (!card) return null;
