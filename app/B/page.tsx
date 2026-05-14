@@ -140,6 +140,52 @@ const DRAFT_VISUAL_META: Record<
   },
 };
 
+// [B 타입 — 문장별 실질 키워드]
+// 각 draft의 goals / roleAndResults 문장에서 뽑은 핵심 표현. 파란 chip으로 노출.
+const SENTENCE_KEYWORDS: Record<
+  string,
+  { goals: string[]; roleAndResults: string[] }
+> = {
+  "draft-01": {
+    goals: ["결산 마감", "외부 감사"],
+    roleAndResults: ["전표 처리"],
+  },
+  "draft-02": {
+    goals: ["세무 협업", "결산 마감"],
+    roleAndResults: ["전표 검증", "대표 보고"],
+  },
+  "draft-03": {
+    goals: ["결산 학습", "자료 관리"],
+    roleAndResults: ["회계 운영", "역할 확대"],
+  },
+};
+
+// [B 타입 — 키워드별 툴팁 문구]
+// 어떤 직무를 선택했는지에 따라 일부 문구는 동적으로 직무명을 끼워 넣는다.
+function tooltipForKeyword(keyword: string, roleLabel: string): string {
+  switch (keyword) {
+    case "결산 마감":
+    case "결산 학습":
+      return `최근 선택하신 ${roleLabel} 직무에서 자주 활용되는 표현이에요.`;
+    case "외부 감사":
+    case "세무 협업":
+      return "외부 협업·검증 경험을 강조하는 표현이에요.";
+    case "전표 처리":
+    case "전표 검증":
+      return "실무 처리량과 정확성을 구체적으로 보여주는 표현이에요.";
+    case "대표 보고":
+      return "내부 보고·커뮤니케이션 경험을 보여주는 표현이에요.";
+    case "자료 관리":
+      return "체계적인 자료 관리 능력을 보여주는 표현이에요.";
+    case "회계 운영":
+      return "장기 경력의 연속성을 자연스럽게 보여주는 표현이에요.";
+    case "역할 확대":
+      return "직무 성장 흐름을 자연스럽게 보여주는 표현이에요.";
+    default:
+      return `최근 선택하신 ${roleLabel} 직무에서 자주 활용되는 표현이에요.`;
+  }
+}
+
 function ChevronRightIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -323,6 +369,7 @@ function BottomSheet({
   onClose,
   draft,
   appliedRevision,
+  selectedRoleTitle,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -332,7 +379,30 @@ function BottomSheet({
     revisedSentence: string;
     changeReason: string;
   } | null;
+  selectedRoleTitle: string;
 }) {
+  // [B 타입 — 문장 태그 툴팁] 한 번에 하나의 chip 툴팁만 열림.
+  const [tooltipFor, setTooltipFor] = useState<string | null>(null);
+  const roleLabel = selectedRoleTitle || "선택한 인사";
+
+  // [외부 클릭 시 자동 닫힘] chip / tooltip 영역 밖을 클릭하면 닫는다.
+  // data-keyword-chip / data-keyword-tooltip 마커가 붙은 요소 또는 그 자손이면 무시.
+  useEffect(() => {
+    if (!tooltipFor) return;
+    const handler = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (
+        target.closest("[data-keyword-chip]") ||
+        target.closest("[data-keyword-tooltip]")
+      ) {
+        return;
+      }
+      setTooltipFor(null);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [tooltipFor]);
   // 근거 보기 아코디언은 시트 내부 로컬 상태로 관리.
   // 다른 초안 시트를 열면 이전 펼침은 유지되지만, 시트가 다시 열릴 때 명시적으로 접고 싶다면
   // useEffect로 isOpen/draft 변할 때 false로 리셋하면 된다.
@@ -487,80 +557,144 @@ function BottomSheet({
               </p>
             </section>
 
-            <section className="flex flex-col gap-[8px]">
+            <section className="flex flex-col gap-[10px]">
               <p className="font-semibold leading-[22px]">목표</p>
               {(draft?.body.goals ?? []).map((bullet, idx) => {
                 const isRevised =
                   appliedRevision && bullet.text === appliedRevision.originalSentence;
-                if (isRevised) {
-                  return (
-                    <div key={`goal-${idx}`} className="flex flex-col gap-[4px]">
-                      <p className="font-normal leading-[22px]">
-                        -{" "}
-                        <span
-                          style={{
-                            background: "rgba(255,220,80,0.55)",
-                            padding: "1px 4px",
-                            borderRadius: 2,
-                            boxDecorationBreak: "clone",
-                            WebkitBoxDecorationBreak: "clone",
-                          }}
-                        >
-                          {appliedRevision.revisedSentence}
-                        </span>
-                      </p>
-                      <p
-                        className="leading-[20px]"
-                        style={{ fontSize: 13, color: "#0066FF", paddingLeft: 14 }}
-                      >
-                        {appliedRevision.changeReason}
-                      </p>
-                    </div>
-                  );
-                }
+                const keywords = draft?.draftId ? SENTENCE_KEYWORDS[draft.draftId] : undefined;
+                const tag = keywords?.goals[idx];
+                const chipKey = `goal-${idx}`;
                 return (
-                  <p key={`goal-${idx}`} className="font-normal leading-[22px]">
-                    - {bullet.text}
-                  </p>
+                  <div key={`goal-${idx}`} className="flex flex-col gap-[6px]">
+                    {isRevised ? (
+                      <>
+                        <p className="font-normal leading-[22px]">
+                          -{" "}
+                          <span
+                            style={{
+                              background: "rgba(255,220,80,0.55)",
+                              padding: "1px 4px",
+                              borderRadius: 2,
+                              boxDecorationBreak: "clone",
+                              WebkitBoxDecorationBreak: "clone",
+                            }}
+                          >
+                            {appliedRevision.revisedSentence}
+                          </span>
+                        </p>
+                        <p
+                          className="leading-[20px]"
+                          style={{ fontSize: 13, color: "#0066FF", paddingLeft: 14 }}
+                        >
+                          {appliedRevision.changeReason}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="font-normal leading-[22px]">- {bullet.text}</p>
+                    )}
+                    {tag && (
+                      <div className="relative ml-[14px] self-start">
+                        <button
+                          type="button"
+                          data-keyword-chip="true"
+                          onClick={() =>
+                            setTooltipFor(tooltipFor === chipKey ? null : chipKey)
+                          }
+                          className="inline-flex items-center gap-[4px] rounded-[6px] border px-[8px] py-[4px] text-[12px] font-medium leading-none transition"
+                          style={{
+                            borderColor: "rgba(0,102,255,0.24)",
+                            background: "rgba(0,102,255,0.08)",
+                            color: "#0066FF",
+                          }}
+                          aria-expanded={tooltipFor === chipKey}
+                        >
+                          {tag}
+                        </button>
+                        {tooltipFor === chipKey && (
+                          <div
+                            role="tooltip"
+                            data-keyword-tooltip="true"
+                            className="absolute left-0 top-[calc(100%+6px)] z-50 max-w-[260px] rounded-[8px] px-[10px] py-[8px] text-[12px] leading-[18px] text-white shadow-lg"
+                            style={{ background: "#171719" }}
+                          >
+                            {tooltipForKeyword(tag, roleLabel)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </section>
 
-            <section className="flex flex-col gap-[8px] pb-[20px]">
+            <section className="flex flex-col gap-[10px] pb-[20px]">
               <p className="font-semibold leading-[22px]">역할 및 성과</p>
               {(draft?.body.roleAndResults ?? []).map((bullet, idx) => {
                 const isRevised =
                   appliedRevision && bullet.text === appliedRevision.originalSentence;
-                if (isRevised) {
-                  return (
-                    <div key={`role-${idx}`} className="flex flex-col gap-[4px]">
-                      <p className="font-normal leading-[22px]">
-                        -{" "}
-                        <span
-                          style={{
-                            background: "rgba(255,220,80,0.55)",
-                            padding: "1px 4px",
-                            borderRadius: 2,
-                            boxDecorationBreak: "clone",
-                            WebkitBoxDecorationBreak: "clone",
-                          }}
-                        >
-                          {appliedRevision.revisedSentence}
-                        </span>
-                      </p>
-                      <p
-                        className="leading-[20px]"
-                        style={{ fontSize: 13, color: "#0066FF", paddingLeft: 14 }}
-                      >
-                        {appliedRevision.changeReason}
-                      </p>
-                    </div>
-                  );
-                }
+                const keywords = draft?.draftId ? SENTENCE_KEYWORDS[draft.draftId] : undefined;
+                const tag = keywords?.roleAndResults[idx];
+                const chipKey = `role-${idx}`;
                 return (
-                  <p key={`role-${idx}`} className="font-normal leading-[22px]">
-                    - {bullet.text}
-                  </p>
+                  <div key={`role-${idx}`} className="flex flex-col gap-[6px]">
+                    {isRevised ? (
+                      <>
+                        <p className="font-normal leading-[22px]">
+                          -{" "}
+                          <span
+                            style={{
+                              background: "rgba(255,220,80,0.55)",
+                              padding: "1px 4px",
+                              borderRadius: 2,
+                              boxDecorationBreak: "clone",
+                              WebkitBoxDecorationBreak: "clone",
+                            }}
+                          >
+                            {appliedRevision.revisedSentence}
+                          </span>
+                        </p>
+                        <p
+                          className="leading-[20px]"
+                          style={{ fontSize: 13, color: "#0066FF", paddingLeft: 14 }}
+                        >
+                          {appliedRevision.changeReason}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="font-normal leading-[22px]">- {bullet.text}</p>
+                    )}
+                    {tag && (
+                      <div className="relative ml-[14px] self-start">
+                        <button
+                          type="button"
+                          data-keyword-chip="true"
+                          onClick={() =>
+                            setTooltipFor(tooltipFor === chipKey ? null : chipKey)
+                          }
+                          className="inline-flex items-center gap-[4px] rounded-[6px] border px-[8px] py-[4px] text-[12px] font-medium leading-none transition"
+                          style={{
+                            borderColor: "rgba(0,102,255,0.24)",
+                            background: "rgba(0,102,255,0.08)",
+                            color: "#0066FF",
+                          }}
+                          aria-expanded={tooltipFor === chipKey}
+                        >
+                          {tag}
+                        </button>
+                        {tooltipFor === chipKey && (
+                          <div
+                            role="tooltip"
+                            data-keyword-tooltip="true"
+                            className="absolute left-0 top-[calc(100%+6px)] z-50 max-w-[260px] rounded-[8px] px-[10px] py-[8px] text-[12px] leading-[18px] text-white shadow-lg"
+                            style={{ background: "#171719" }}
+                          >
+                            {tooltipForKeyword(tag, roleLabel)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </section>
@@ -2462,7 +2596,7 @@ export default function Page() {
         <div className="flex flex-shrink-0 justify-center pb-[8px]">
           <div className="h-[5px] w-[134px] rounded-full bg-black" />
         </div>
-        <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)} draft={bottomSheetDraft} appliedRevision={appliedRevision} />
+        <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)} draft={bottomSheetDraft} appliedRevision={appliedRevision} selectedRoleTitle={ROLE_OPTIONS.find((role) => role.id === selectedRoleId)?.title ?? ""} />
       </section>
     </main>
   );
