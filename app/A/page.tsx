@@ -14,6 +14,7 @@ import { DEFAULT_AGENT_STATE } from "../agent-state";
 import { classifyUserIntent } from "../classify-intent";
 import { findDraftBySampleIndex, SAMPLE_DRAFTS } from "../drafts";
 import { A_TYPE_PROMPT } from "./style-prompt";
+import { OrbCanvas } from "../components/OrbCanvas";
 
 const USE_AI = process.env.NEXT_PUBLIC_USE_AI === "true";
 
@@ -1225,7 +1226,7 @@ export default function Page() {
                       animation: "loadingDraftOrbIn 850ms cubic-bezier(0.16, 1, 0.3, 1) both",
                     }}
                   >
-                    <AiOrbLogo size={96} animated />
+                    <OrbCanvas size={220} />
                   </div>
                   <p className="mt-[22px] whitespace-pre-line text-[18px] font-semibold leading-[26px] text-black">
                     {"김효원님의 경험에 딱 맞는\n경력기술서를 정리해드릴게요"}
