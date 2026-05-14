@@ -443,7 +443,7 @@ export default function Page() {
     if (streamedCharCount < (msg.text || "").length) {
       const timer = setTimeout(() => {
         setStreamedCharCount((c) => c + 1);
-      }, 30);
+      }, 50);
       return () => clearTimeout(timer);
     }
     // 완료
@@ -669,7 +669,7 @@ export default function Page() {
           ]);
         }
         setIsLoading(false);
-      }, 300);
+      }, 1200);
       return;
     }
 

@@ -643,11 +643,11 @@ export default function Page() {
       setStreamingMessageIndex(null);
       return;
     }
-    // 1단계: text 글자 타이프라이터 (30ms/글자)
+    // 1단계: text 글자 타이프라이터 (50ms/글자) — ChatGPT 같은 자연스러운 흐름
     if (streamedCharCount < (msg.text || "").length) {
       const timer = setTimeout(() => {
         setStreamedCharCount((c) => c + 1);
-      }, 30);
+      }, 50);
       return () => clearTimeout(timer);
     }
     // 2단계: sections 하나씩 등장 (300ms 간격)
@@ -842,12 +842,12 @@ export default function Page() {
           },
         ]);
         setIsLoading(false);
-      }, 300);
+      }, 1200);
       return;
     }
 
     if (!USE_AI) {
-      // STAGES 모드 — 트리거 매칭으로 즉시 응답
+      // STAGES 모드 — 트리거 매칭으로 즉시 응답 (1.2초 딜레이로 자연스러운 "생각 중" 느낌)
       setTimeout(() => {
         setMessages((prev) => [
           ...prev,
@@ -859,7 +859,7 @@ export default function Page() {
           },
         ]);
         setIsLoading(false);
-      }, 300);
+      }, 1200);
       return;
     }
 
