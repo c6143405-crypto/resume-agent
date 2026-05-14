@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, X, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, X, ChevronDown, ChevronUp, Info } from "lucide-react";
 import type {
   CurrentStep,
   PrototypeType,
@@ -147,16 +147,16 @@ const SENTENCE_KEYWORDS: Record<
   { goals: string[]; roleAndResults: string[] }
 > = {
   "draft-01": {
-    goals: ["결산 마감", "외부 감사"],
-    roleAndResults: ["전표 처리"],
+    goals: ["결산 마감", "외부 감사", "세무 신고", "대표 보고"],
+    roleAndResults: ["전표 처리", "감사 대응", "세무 협업"],
   },
   "draft-02": {
-    goals: ["세무 협업", "결산 마감"],
-    roleAndResults: ["전표 검증", "대표 보고"],
+    goals: ["세무 협업", "결산 마감", "감사 응대", "자료 일관성"],
+    roleAndResults: ["전표 검증", "대표 보고", "거래처 컨택", "검토 표준화"],
   },
   "draft-03": {
-    goals: ["결산 학습", "자료 관리"],
-    roleAndResults: ["회계 운영", "역할 확대"],
+    goals: ["결산 학습", "자료 관리", "시스템 전환", "신뢰 관리"],
+    roleAndResults: ["회계 운영", "역할 확대", "일정 관리", "외부 소통"],
   },
 };
 
@@ -169,6 +169,8 @@ function tooltipForKeyword(keyword: string, roleLabel: string): string {
       return `최근 선택하신 ${roleLabel} 직무에서 자주 활용되는 표현이에요.`;
     case "외부 감사":
     case "세무 협업":
+    case "감사 응대":
+    case "감사 대응":
       return "외부 협업·검증 경험을 강조하는 표현이에요.";
     case "전표 처리":
     case "전표 검증":
@@ -181,6 +183,22 @@ function tooltipForKeyword(keyword: string, roleLabel: string): string {
       return "장기 경력의 연속성을 자연스럽게 보여주는 표현이에요.";
     case "역할 확대":
       return "직무 성장 흐름을 자연스럽게 보여주는 표현이에요.";
+    case "세무 신고":
+      return "정확한 세무 신고 처리 경험을 보여주는 표현이에요.";
+    case "자료 일관성":
+      return "여러 부서 자료를 통합적으로 관리해온 경험을 보여주는 표현이에요.";
+    case "거래처 컨택":
+      return "거래처와의 자료 정합성을 직접 챙겨온 경험을 보여주는 표현이에요.";
+    case "검토 표준화":
+      return "내부 검증 절차를 정립한 경험을 보여주는 표현이에요.";
+    case "시스템 전환":
+      return "회계 시스템 변화에 대응한 경험을 보여주는 표현이에요.";
+    case "신뢰 관리":
+      return "외부 협업에서 자료 신뢰를 책임진 경험을 보여주는 표현이에요.";
+    case "일정 관리":
+      return "팀 운영의 우선순위·일정을 직접 챙긴 경험을 보여주는 표현이에요.";
+    case "외부 소통":
+      return "부서 밖과의 보고·소통 경험을 보여주는 표현이에요.";
     default:
       return `최근 선택하신 ${roleLabel} 직무에서 자주 활용되는 표현이에요.`;
   }
@@ -609,7 +627,8 @@ function BottomSheet({
                           }}
                           aria-expanded={tooltipFor === chipKey}
                         >
-                          {tag}
+                          <span>{tag}</span>
+                          <Info className="h-[12px] w-[12px]" strokeWidth={2} aria-hidden="true" />
                         </button>
                         {tooltipFor === chipKey && (
                           <div
@@ -680,7 +699,8 @@ function BottomSheet({
                           }}
                           aria-expanded={tooltipFor === chipKey}
                         >
-                          {tag}
+                          <span>{tag}</span>
+                          <Info className="h-[12px] w-[12px]" strokeWidth={2} aria-hidden="true" />
                         </button>
                         {tooltipFor === chipKey && (
                           <div

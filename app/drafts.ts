@@ -28,12 +28,13 @@ export const SAMPLE_DRAFTS: Draft[] = [
         "\"12년 연속 0건\"은 AI 추정 정확율이 50%로 일부 헤맸던 초기 2년의 기억과 차이가 있을 수 있어, 사용자가 직접 확인 가능한 범위(최근 10년)로 보수적으로 표현했습니다.",
     },
     body: {
-      company: "(주) A 의류 — 의류 유통 기업",
+      company: "(주) A 의류 — 의류 유통 기업 · 직원 30명 / 연매출 약 120억 원",
       period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
       projectTitle: "프로젝트 1 · 월·연 결산 마감 프로세스 운영",
       projectChip: { label: "월말 마감 칠 때 자료부터 미리 챙겨놨어요", variant: "gray" },
       overview:
-        "직원 30명 규모 의류 유통 기업의 월·연 결산 마감 프로세스를 12년간 전담 운영한 프로젝트",
+        "직원 30명·연매출 120억 원 규모 의류 유통 기업의 월·연 결산 마감 프로세스를 12년간 전담 운영한 프로젝트. " +
+        "결산 일정 수립·외부 회계 감사 대응·매입매출 전표 검증·세무 신고 자료 정리까지 회계 운영 전 영역을 직접 챙겨왔습니다.",
       goals: [
         {
           text: "매월 결산 마감 일정 안정화 및 정확성 확보",
@@ -49,6 +50,20 @@ export const SAMPLE_DRAFTS: Draft[] = [
             { label: "AI · 정확율 50%", variant: "purple" },
           ],
         },
+        {
+          text: "부가세·법인세 신고 자료 정확율 99% 유지",
+          chips: [
+            { label: "부가세·법인세도 직접 챙겼어요", variant: "gray" },
+            { label: "AI · 정확율 75%", variant: "blue" },
+          ],
+        },
+        {
+          text: "매월 결산 종료 후 5영업일 이내 대표 보고 자료 완료",
+          chips: [
+            { label: "대표님 보고 자료까지 마무리했어요", variant: "gray" },
+            { label: "AI · 정확율 80%", variant: "blue" },
+          ],
+        },
       ],
       roleAndResults: [
         {
@@ -56,6 +71,20 @@ export const SAMPLE_DRAFTS: Draft[] = [
           chips: [
             { label: "장부 매기고 세금계산서 끊는 일이요", variant: "gray" },
             { label: "AI · 정확율 80%", variant: "blue" },
+          ],
+        },
+        {
+          text: "매년 외부 회계 감사 대응 일정 수립 및 자료 사전 준비",
+          chips: [
+            { label: "감사 일정 잡고 자료 준비하는 거 매년 제가 했어요", variant: "gray" },
+            { label: "AI · 정확율 70%", variant: "blue" },
+          ],
+        },
+        {
+          text: "세무사 협업으로 분기별 세무 신고 자료 자체 검증 후 전달",
+          chips: [
+            { label: "세무사한테 보내기 전에 한 번 더 봤어요", variant: "gray" },
+            { label: "AI · 정확율 85%", variant: "blue" },
           ],
         },
       ],
@@ -85,7 +114,7 @@ export const SAMPLE_DRAFTS: Draft[] = [
         "\"정합성 확보\"는 다소 추상적으로 들릴 수 있어, 사용자가 실제로 했다고 말한 \"두 번 확인\" 행위로 구체화했습니다.",
     },
     body: {
-      company: "(주) A 의류 — 의류 유통 기업",
+      company: "(주) A 의류 — 의류 유통 기업 · 직원 30명 / 연매출 약 120억 원",
       period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
       projectTitle: "프로젝트 1 · 회계 데이터 검증 및 세무 협업 운영",
       projectChip: {
@@ -93,7 +122,8 @@ export const SAMPLE_DRAFTS: Draft[] = [
         variant: "gray",
       },
       overview:
-        "의류 유통 기업의 월 회계 운영에서 세무사·대표·외부 감사와의 협업 체계를 유지하고, 자료 정합성을 검증해 온 직무 경험",
+        "의류 유통 기업의 월 회계 운영에서 세무사·대표·외부 감사·거래처와의 협업 체계를 유지하고, " +
+        "자료 정합성 검증과 후배 검토 병행까지 책임져 온 직무 경험.",
       goals: [
         {
           text: "세무 협업을 통한 회계 자료 정합성 확보",
@@ -107,6 +137,20 @@ export const SAMPLE_DRAFTS: Draft[] = [
           chips: [
             { label: "월말 되기 전에 자료를 미리 모았어요", variant: "gray" },
             { label: "AI · 정확율 80%", variant: "blue" },
+          ],
+        },
+        {
+          text: "외부 회계 감사 대응 시 자료 사전 검토 및 질의 응답 담당",
+          chips: [
+            { label: "감사 때 질문 들어오면 제가 응대했어요", variant: "gray" },
+            { label: "AI · 정확율 75%", variant: "blue" },
+          ],
+        },
+        {
+          text: "법무·노무 자료까지 회계와 연계해 일관성 유지",
+          chips: [
+            { label: "법무·노무팀 자료도 같이 챙겼어요", variant: "gray" },
+            { label: "AI · 정확율 60%", variant: "purple" },
           ],
         },
       ],
@@ -123,6 +167,20 @@ export const SAMPLE_DRAFTS: Draft[] = [
           chips: [
             { label: "결산 끝나면 대표님께 정리해서 드렸어요", variant: "gray" },
             { label: "AI · 정확율 65%", variant: "purple" },
+          ],
+        },
+        {
+          text: "거래처 마감 자료 정합성 확인 및 차이 발생 시 직접 컨택",
+          chips: [
+            { label: "거래처에 자료 안 맞으면 직접 전화했어요", variant: "gray" },
+            { label: "AI · 정확율 80%", variant: "blue" },
+          ],
+        },
+        {
+          text: "후배 사원 자료 검토를 병행하며 검증 절차 표준화",
+          chips: [
+            { label: "후배 자료 봐주면서 절차도 정리했어요", variant: "gray" },
+            { label: "AI · 정확율 70%", variant: "blue" },
           ],
         },
       ],
@@ -152,7 +210,7 @@ export const SAMPLE_DRAFTS: Draft[] = [
         "\"단계적으로 다듬어옴\"은 다소 모호하게 들릴 수 있어, 사용자가 실제 매년 자료 정리 방식을 점검하고 보완해온 행동에 가깝게 풀어 썼습니다.",
     },
     body: {
-      company: "(주) A 의류 — 의류 유통 기업",
+      company: "(주) A 의류 — 의류 유통 기업 · 직원 30명 / 연매출 약 120억 원",
       period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
       projectTitle: "프로젝트 1 · 입사 후 회계 운영을 다듬어 온 12년의 흐름",
       projectChip: {
@@ -160,7 +218,8 @@ export const SAMPLE_DRAFTS: Draft[] = [
         variant: "gray",
       },
       overview:
-        "2012년 회계 담당으로 입사한 뒤 과장으로 성장하기까지, 결산 마감 운영을 익혀가며 회계 프로세스를 안정화시켜 온 과정",
+        "2012년 회계 담당으로 입사해 과장으로 성장하기까지의 12년. " +
+        "입사 초기의 헤맴, 중반의 회계 시스템 전환, 후반의 외부 협업 책임자까지, 결산 마감 운영을 익혀가며 회계 프로세스를 안정화시켜 온 과정.",
       goals: [
         {
           text: "입사 초기 결산 마감 흐름을 익히고 운영 방식을 학습",
@@ -174,6 +233,20 @@ export const SAMPLE_DRAFTS: Draft[] = [
           chips: [
             { label: "나만의 정리 방식이 점점 생겼어요", variant: "gray" },
             { label: "AI · 정확율 60%", variant: "purple" },
+          ],
+        },
+        {
+          text: "중반에는 회계 시스템 전환 시기에 자료 변환과 검증을 동시에 수행",
+          chips: [
+            { label: "시스템 바뀔 때 자료 다 옮기고 다시 봤어요", variant: "gray" },
+            { label: "AI · 정확율 55%", variant: "purple" },
+          ],
+        },
+        {
+          text: "후반부터는 외부 감사·세무사 협업 과정에서 자료 신뢰도를 직접 책임",
+          chips: [
+            { label: "감사·세무사 신뢰는 제 자료에서 시작됐어요", variant: "gray" },
+            { label: "AI · 정확율 70%", variant: "blue" },
           ],
         },
       ],
@@ -190,6 +263,20 @@ export const SAMPLE_DRAFTS: Draft[] = [
           chips: [
             { label: "후배 자료도 같이 봐주게 됐어요", variant: "gray" },
             { label: "AI · 정확율 65%", variant: "purple" },
+          ],
+        },
+        {
+          text: "매년 결산 시즌마다 우선순위와 일정 관리를 직접 정리해 팀 안정성 확보",
+          chips: [
+            { label: "결산 시즌엔 우선순위부터 챙겼어요", variant: "gray" },
+            { label: "AI · 정확율 70%", variant: "blue" },
+          ],
+        },
+        {
+          text: "부서 외부와의 보고·소통 채널을 이어가며 회계의 신뢰 기반을 유지",
+          chips: [
+            { label: "부서 밖에서도 회계 보고는 제가 정리했어요", variant: "gray" },
+            { label: "AI · 정확율 60%", variant: "purple" },
           ],
         },
       ],
