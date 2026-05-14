@@ -459,7 +459,7 @@ function getSectionVariant(label: string): "strikethrough" | "underline" | "plai
     "2차 수정안",
     "3차 수정안",
   ];
-  const isParallelOption = /^수정안 \d+안$/.test(label);
+  const isParallelOption = /^수정 \d+안$/.test(label);
   if (fixedUnderlineLabels.includes(label) || isParallelOption) {
     return "underline";
   }
@@ -1604,13 +1604,21 @@ export default function Page() {
                                     marginTop: 4,
                                     fontSize: 15,
                                     lineHeight: "22px",
-                                    color: "rgba(55,56,60,0.55)",
-                                    textDecoration: "line-through",
-                                    textDecorationColor: "rgba(55,56,60,0.4)",
+                                    color: "rgba(55,56,60,0.61)",
                                     whiteSpace: "pre-line",
                                   }}
                                 >
-                                  <TypewriterText text={section.content} />
+                                  <span
+                                    style={{
+                                      background: "rgba(55,56,60,0.12)",
+                                      padding: "1px 4px",
+                                      borderRadius: 2,
+                                      boxDecorationBreak: "clone",
+                                      WebkitBoxDecorationBreak: "clone",
+                                    }}
+                                  >
+                                    <TypewriterText text={section.content} />
+                                  </span>
                                 </p>
                               ) : variant === "underline" ? (
                                 <p
@@ -1624,8 +1632,11 @@ export default function Page() {
                                 >
                                   <span
                                     style={{
-                                      borderBottom: "1.5px solid #0066FF",
-                                      paddingBottom: "1px",
+                                      background: "rgba(0,102,255,0.16)",
+                                      padding: "1px 4px",
+                                      borderRadius: 2,
+                                      boxDecorationBreak: "clone",
+                                      WebkitBoxDecorationBreak: "clone",
                                     }}
                                   >
                                     <TypewriterText text={section.content} />
@@ -1811,12 +1822,20 @@ export default function Page() {
                                   marginTop: 4,
                                   fontSize: 14,
                                   lineHeight: "22px",
-                                  color: "rgba(55,56,60,0.55)",
-                                  textDecoration: "line-through",
-                                  textDecorationColor: "rgba(55,56,60,0.4)",
+                                  color: "rgba(55,56,60,0.61)",
                                 }}
                               >
-                                <TypewriterText text={rc.originalSentence} speed={SPEED} />
+                                <span
+                                  style={{
+                                    background: "rgba(55,56,60,0.12)",
+                                    padding: "1px 4px",
+                                    borderRadius: 2,
+                                    boxDecorationBreak: "clone",
+                                    WebkitBoxDecorationBreak: "clone",
+                                  }}
+                                >
+                                  <TypewriterText text={rc.originalSentence} speed={SPEED} />
+                                </span>
                               </p>
                             </div>
                           )}
@@ -1837,8 +1856,11 @@ export default function Page() {
                               >
                                 <span
                                   style={{
-                                    borderBottom: "1.5px solid #0066FF",
-                                    paddingBottom: "1px",
+                                    background: "rgba(0,102,255,0.16)",
+                                    padding: "1px 4px",
+                                    borderRadius: 2,
+                                    boxDecorationBreak: "clone",
+                                    WebkitBoxDecorationBreak: "clone",
                                   }}
                                 >
                                   <TypewriterText text={rc.revisedSentence} speed={SPEED} />
