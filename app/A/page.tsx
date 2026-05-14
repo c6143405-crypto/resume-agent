@@ -306,7 +306,7 @@ function BottomSheet({
         type="button"
       />
       <section
-        className={`absolute bottom-0 left-0 h-[720px] w-[375px] rounded-t-[40px] bg-white px-[20px] py-[20px] font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
+        className={`absolute bottom-0 left-0 h-[88dvh] w-[375px] rounded-t-[40px] bg-white px-[20px] py-[20px] font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >
