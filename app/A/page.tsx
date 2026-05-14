@@ -468,8 +468,8 @@ function getSectionVariant(label: string): "strikethrough" | "underline" | "plai
 }
 
 export default function Page() {
-  const MAX_REFINEMENT_TURNS = 3;
-  const MAX_AI_CALLS_PER_SESSION = 3;
+  const MAX_REFINEMENT_TURNS = 8;
+  const MAX_AI_CALLS_PER_SESSION = 8;
   const [view, setView] = useState<"home" | "chat">("home");
   const [messages, setMessages] = useState<
     {
@@ -1253,10 +1253,6 @@ export default function Page() {
       <section
         className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white"
       >
-        <div className="flex-shrink-0">
-          <StatusBar />
-        </div>
-
         <div className="flex h-[44px] flex-shrink-0 items-center justify-center px-[16px] py-[10px]">
           <div className="flex h-[24px] w-full items-center justify-center">
             <h1 className="text-center text-[17px] font-semibold leading-[24px] text-black">
