@@ -15,6 +15,7 @@ import { classifyUserIntent } from "../classify-intent";
 import { findDraftBySampleIndex, SAMPLE_DRAFTS } from "../drafts";
 import { A_TYPE_PROMPT } from "./style-prompt";
 import { OrbCanvas } from "../components/OrbCanvas";
+import { TypewriterText } from "../components/TypewriterText";
 
 const USE_AI = process.env.NEXT_PUBLIC_USE_AI === "true";
 
@@ -1234,10 +1235,10 @@ export default function Page() {
                     <OrbCanvas size={220} />
                   </div>
                   <p className="mt-[22px] whitespace-pre-line text-[18px] font-semibold leading-[26px] text-black">
-                    {"김효원님의 경험에 딱 맞는\n경력기술서를 정리해드릴게요"}
+                    <TypewriterText text={"김효원님의 경험에 딱 맞는\n경력기술서를 정리해드릴게요"} />
                   </p>
                   <p className="mt-[8px] text-[13px] font-normal leading-[18px] text-[rgba(55,56,60,0.61)]">
-                    앞에서 말씀해주신 경험들을 기반으로 초안을 만듭니다.
+                    <TypewriterText text="앞에서 말씀해주신 경험들을 기반으로 초안을 만듭니다." />
                   </p>
                 </div>
               </div>
@@ -1255,16 +1256,16 @@ export default function Page() {
                 <div className="mt-[12px] h-px w-full bg-[#70737C29]" />
 
                 <p className="mt-[13px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                  아래 {SAMPLE_DRAFTS.length}가지 방향의 경력기술서 초안을 준비했습니다.
+                  <TypewriterText text={`아래 ${SAMPLE_DRAFTS.length}가지 방향의 경력기술서 초안을 준비했습니다.`} />
                 </p>
                 <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                  각 초안은 같은 경험을 바탕으로 하지만, 강조하는 방향이 다릅니다.
+                  <TypewriterText text="각 초안은 같은 경험을 바탕으로 하지만, 강조하는 방향이 다릅니다." />
                 </p>
                 <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                  먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요.
+                  <TypewriterText text="먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요." />
                 </p>
                 <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                  선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다.
+                  <TypewriterText text="선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다." />
                 </p>
 
                 {/* [A 타입 CM1 리스트] 행은 라디오 + 제목 + chevron만. 근거는 바텀시트 상단에서 노출. */}
@@ -1489,7 +1490,7 @@ export default function Page() {
                                     whiteSpace: "pre-line",
                                   }}
                                 >
-                                  {section.content}
+                                  <TypewriterText text={section.content} />
                                 </p>
                               ) : variant === "underline" ? (
                                 <p
@@ -1507,7 +1508,7 @@ export default function Page() {
                                       paddingBottom: "1px",
                                     }}
                                   >
-                                    {section.content}
+                                    <TypewriterText text={section.content} />
                                   </span>
                                 </p>
                               ) : (
@@ -1521,7 +1522,7 @@ export default function Page() {
                                     whiteSpace: "pre-line",
                                   }}
                                 >
-                                  {section.content}
+                                  <TypewriterText text={section.content} />
                                 </p>
                               )}
                             </div>
@@ -1665,7 +1666,7 @@ export default function Page() {
                               선택한 초안
                             </div>
                             <div style={{ marginTop: 2, fontSize: 15, fontWeight: 600, lineHeight: "22px", color: "#171719" }}>
-                              {rc.draftTitle}
+                              <TypewriterText text={rc.draftTitle} />
                             </div>
                           </div>
 
@@ -1686,7 +1687,7 @@ export default function Page() {
                                 textDecorationColor: "rgba(55,56,60,0.4)",
                               }}
                             >
-                              {rc.originalSentence}
+                              <TypewriterText text={rc.originalSentence} />
                             </p>
                           </div>
 
@@ -1709,7 +1710,7 @@ export default function Page() {
                                   paddingBottom: "1px",
                                 }}
                               >
-                                {rc.revisedSentence}
+                                <TypewriterText text={rc.revisedSentence} />
                               </span>
                             </p>
                           </div>
@@ -1720,7 +1721,7 @@ export default function Page() {
                               변경 이유
                             </div>
                             <p style={{ marginTop: 4, fontSize: 14, lineHeight: "22px", color: "#171719" }}>
-                              {rc.changeReason}
+                              <TypewriterText text={rc.changeReason} />
                             </p>
                           </div>
 
@@ -1803,7 +1804,7 @@ export default function Page() {
                                 color: "#171719",
                               }}
                             >
-                              {chatMessage.resultCard.previous}
+                              <TypewriterText text={chatMessage.resultCard.previous} />
                             </div>
                           </div>
                           <div
@@ -1832,7 +1833,7 @@ export default function Page() {
                                 color: "#171719",
                               }}
                             >
-                              {chatMessage.resultCard.revised}
+                              <TypewriterText text={chatMessage.resultCard.revised} />
                             </div>
                           </div>
                         </div>
