@@ -545,6 +545,11 @@ export default function Page() {
   const [cm1Candidate, setCm1Candidate] = useState<Draft | null>(null);
   // [바텀시트 대상] 어느 초안의 상세를 시트에 띄울지.
   const [bottomSheetDraft, setBottomSheetDraft] = useState<Draft | null>(null);
+  // [CM1 안내 타이핑 완료 플래그] 4줄이 모두 타이핑된 후에 초안 리스트 + 하단 버튼 노출.
+  const [cm1IntroDone, setCm1IntroDone] = useState(false);
+  // [메시지별 스트리밍 완료 플래그] 챗 메시지의 모든 타이핑이 끝났을 때 true.
+  // 이 시점에 chips, refinementCard 버튼 등이 등장.
+  const [messageDone, setMessageDone] = useState<Record<number, boolean>>({});
   // [타이프라이터 스트리밍] AI 응답을 글자/섹션 단위로 점진적으로 그린다.
   const [streamingMessageIndex, setStreamingMessageIndex] = useState<number | null>(null);
   const [streamedCharCount, setStreamedCharCount] = useState(0);
@@ -630,6 +635,24 @@ export default function Page() {
     return () => clearTimeout(timer);
   }, [flowStep]);
 
+  // [CM1 안내 4줄 sequential] draftReady 진입 시 4줄 총 타이핑 시간을 계산해
+  // 그 후에 cm1IntroDone = true → 초안 리스트와 하단 버튼이 노출됨.
+  useEffect(() => {
+    if (flowStep !== "draftReady") return;
+    setCm1IntroDone(false);
+    const SPEED = 30;
+    const GAP = 200;
+    const lines = [
+      `아래 ${SAMPLE_DRAFTS.length}가지 방향의 경력기술서 초안을 준비했습니다.`,
+      "각 초안은 같은 경험을 바탕으로 하지만, 강조하는 방향이 다릅니다.",
+      "먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요.",
+      "선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다.",
+    ];
+    const total = lines.reduce((sum, line) => sum + line.length * SPEED, 0) + lines.length * GAP;
+    const id = setTimeout(() => setCm1IntroDone(true), total);
+    return () => clearTimeout(id);
+  }, [flowStep]);
+
   // [타이프라이터 스트리밍] 새 agent 메시지가 추가되면 처음부터 다시 그림.
   useEffect(() => {
     if (messages.length === 0) return;
@@ -639,6 +662,29 @@ export default function Page() {
     setStreamingMessageIndex(lastIdx);
     setStreamedCharCount(0);
     setStreamedSectionCount(0);
+
+    // [메시지 전체 done 타이머] text + sections + refinementCard 4 필드 누적 시간 계산.
+    // 이 시간이 지나야 chips/refinementCard 버튼이 노출됨.
+    const SPEED = 30;
+    const GAP = 200;
+    let totalMs = (lastMsg.text?.length ?? 0) * SPEED;
+    for (const s of lastMsg.sections ?? []) {
+      totalMs += GAP + (s.content?.length ?? 0) * SPEED;
+    }
+    if (lastMsg.refinementCard) {
+      const rc = lastMsg.refinementCard;
+      totalMs += GAP + (rc.draftTitle?.length ?? 0) * SPEED;
+      totalMs += GAP + (rc.originalSentence?.length ?? 0) * SPEED;
+      totalMs += GAP + (rc.revisedSentence?.length ?? 0) * SPEED;
+      totalMs += GAP + (rc.changeReason?.length ?? 0) * SPEED;
+    }
+    totalMs += 200; // 약간의 여유
+
+    setMessageDone((prev) => ({ ...prev, [lastIdx]: false }));
+    const doneTimer = setTimeout(() => {
+      setMessageDone((prev) => ({ ...prev, [lastIdx]: true }));
+    }, totalMs);
+    return () => clearTimeout(doneTimer);
   }, [messages.length]);
 
   // [타이프라이터 진행] text 한 글자씩 → sections 하나씩 → 완료.
@@ -649,22 +695,36 @@ export default function Page() {
       setStreamingMessageIndex(null);
       return;
     }
-    // 1단계: text 글자 타이프라이터 (50ms/글자) — ChatGPT 같은 자연스러운 흐름
+    // 1단계: text 글자 타이프라이터 (30ms/글자) — ChatGPT 같은 자연스러운 흐름
     if (streamedCharCount < (msg.text || "").length) {
       const timer = setTimeout(() => {
         setStreamedCharCount((c) => c + 1);
-      }, 50);
+      }, 30);
       return () => clearTimeout(timer);
     }
-    // 2단계: sections 하나씩 등장 (300ms 간격)
+    // 2단계: sections sequential — 이전 section 콘텐츠 타이핑 끝나야 다음 등장
+    const SPEED = 30;
+    const GAP = 200;
     const totalSections = msg.sections?.length ?? 0;
     if (streamedSectionCount < totalSections) {
+      const prevContentLen =
+        streamedSectionCount > 0
+          ? (msg.sections?.[streamedSectionCount - 1].content.length ?? 0)
+          : 0;
+      const waitTime = streamedSectionCount === 0 ? GAP : prevContentLen * SPEED + GAP;
       const timer = setTimeout(() => {
         setStreamedSectionCount((s) => s + 1);
-      }, 300);
+      }, waitTime);
       return () => clearTimeout(timer);
     }
-    // 완료
+    // 3단계: 마지막 section 콘텐츠 타이핑 끝날 때까지 대기
+    if (totalSections > 0 && streamedSectionCount === totalSections) {
+      const lastContent = msg.sections?.[totalSections - 1].content ?? "";
+      const lastWait = lastContent.length * SPEED + GAP;
+      const timer = setTimeout(() => setStreamingMessageIndex(null), lastWait);
+      return () => clearTimeout(timer);
+    }
+    // 완료 (sections 없는 메시지)
     setStreamingMessageIndex(null);
   }, [streamingMessageIndex, streamedCharCount, streamedSectionCount, messages]);
 
@@ -1235,10 +1295,10 @@ export default function Page() {
                     <OrbCanvas size={220} />
                   </div>
                   <p className="mt-[22px] whitespace-pre-line text-[18px] font-semibold leading-[26px] text-black">
-                    <TypewriterText text={"김효원님의 경험에 딱 맞는\n경력기술서를 정리해드릴게요"} />
+                    {"김효원님의 경험에 딱 맞는\n경력기술서를 정리해드릴게요"}
                   </p>
                   <p className="mt-[8px] text-[13px] font-normal leading-[18px] text-[rgba(55,56,60,0.61)]">
-                    <TypewriterText text="앞에서 말씀해주신 경험들을 기반으로 초안을 만듭니다." />
+                    앞에서 말씀해주신 경험들을 기반으로 초안을 만듭니다.
                   </p>
                 </div>
               </div>
@@ -1255,18 +1315,35 @@ export default function Page() {
                 </div>
                 <div className="mt-[12px] h-px w-full bg-[#70737C29]" />
 
-                <p className="mt-[13px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                  <TypewriterText text={`아래 ${SAMPLE_DRAFTS.length}가지 방향의 경력기술서 초안을 준비했습니다.`} />
-                </p>
-                <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                  <TypewriterText text="각 초안은 같은 경험을 바탕으로 하지만, 강조하는 방향이 다릅니다." />
-                </p>
-                <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                  <TypewriterText text="먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요." />
-                </p>
-                <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                  <TypewriterText text="선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다." />
-                </p>
+                {(() => {
+                  // [CM1 안내 4줄 누적 delay 계산]
+                  const SPEED = 30;
+                  const GAP = 200;
+                  const t1 = `아래 ${SAMPLE_DRAFTS.length}가지 방향의 경력기술서 초안을 준비했습니다.`;
+                  const t2 = "각 초안은 같은 경험을 바탕으로 하지만, 강조하는 방향이 다릅니다.";
+                  const t3 = "먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요.";
+                  const t4 = "선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다.";
+                  const d1 = 0;
+                  const d2 = d1 + t1.length * SPEED + GAP;
+                  const d3 = d2 + t2.length * SPEED + GAP;
+                  const d4 = d3 + t3.length * SPEED + GAP;
+                  return (
+                    <>
+                      <p className="mt-[13px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                        <TypewriterText text={t1} speed={SPEED} delay={d1} />
+                      </p>
+                      <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                        <TypewriterText text={t2} speed={SPEED} delay={d2} />
+                      </p>
+                      <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                        <TypewriterText text={t3} speed={SPEED} delay={d3} />
+                      </p>
+                      <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                        <TypewriterText text={t4} speed={SPEED} delay={d4} />
+                      </p>
+                    </>
+                  );
+                })()}
 
                 {/* [A 타입 CM1 리스트] 행은 라디오 + 제목 + chevron만. 근거는 바텀시트 상단에서 노출. */}
                 <section className="mt-[20px]">
@@ -1320,7 +1397,7 @@ export default function Page() {
                     );
                   })}
                 </section>
-
+                )}
               </div>
             ) : (
               <div className="flex min-h-full flex-col px-[20px] pt-[36px]">
@@ -1649,6 +1726,16 @@ export default function Page() {
                     {chatMessage.refinementCard && (() => {
                       const rc = chatMessage.refinementCard;
                       const decided = refinementCardOutcome !== null;
+                      // [refinementCard 필드 누적 delay] 메시지 text → draftTitle → originalSentence → revisedSentence → changeReason 순서.
+                      const SPEED = 30;
+                      const GAP = 200;
+                      const textLen = chatMessage.text?.length ?? 0;
+                      const titleDelay = textLen * SPEED + GAP;
+                      const originalDelay = titleDelay + (rc.draftTitle?.length ?? 0) * SPEED + GAP;
+                      const revisedDelay = originalDelay + (rc.originalSentence?.length ?? 0) * SPEED + GAP;
+                      const reasonDelay = revisedDelay + (rc.revisedSentence?.length ?? 0) * SPEED + GAP;
+                      // 모든 필드 타이핑이 끝났는지: messageDone[index] 기준으로 버튼 활성화.
+                      const isMessageDone = messageDone[index] === true;
                       const buttonBase: React.CSSProperties = {
                         height: 44,
                         borderRadius: 10,
@@ -1666,7 +1753,7 @@ export default function Page() {
                               선택한 초안
                             </div>
                             <div style={{ marginTop: 2, fontSize: 15, fontWeight: 600, lineHeight: "22px", color: "#171719" }}>
-                              <TypewriterText text={rc.draftTitle} />
+                              <TypewriterText text={rc.draftTitle} speed={SPEED} delay={titleDelay} />
                             </div>
                           </div>
 
@@ -1687,7 +1774,7 @@ export default function Page() {
                                 textDecorationColor: "rgba(55,56,60,0.4)",
                               }}
                             >
-                              <TypewriterText text={rc.originalSentence} />
+                              <TypewriterText text={rc.originalSentence} speed={SPEED} delay={originalDelay} />
                             </p>
                           </div>
 
@@ -1710,7 +1797,7 @@ export default function Page() {
                                   paddingBottom: "1px",
                                 }}
                               >
-                                <TypewriterText text={rc.revisedSentence} />
+                                <TypewriterText text={rc.revisedSentence} speed={SPEED} delay={revisedDelay} />
                               </span>
                             </p>
                           </div>
@@ -1721,7 +1808,7 @@ export default function Page() {
                               변경 이유
                             </div>
                             <p style={{ marginTop: 4, fontSize: 14, lineHeight: "22px", color: "#171719" }}>
-                              <TypewriterText text={rc.changeReason} />
+                              <TypewriterText text={rc.changeReason} speed={SPEED} delay={reasonDelay} />
                             </p>
                           </div>
 
@@ -1729,7 +1816,7 @@ export default function Page() {
                           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
                             <button
                               type="button"
-                              disabled={decided}
+                              disabled={decided || !isMessageDone}
                               onClick={handleRefinementApply}
                               style={{
                                 ...buttonBase,
@@ -1743,7 +1830,7 @@ export default function Page() {
                             </button>
                             <button
                               type="button"
-                              disabled={decided}
+                              disabled={decided || !isMessageDone}
                               onClick={handleRefinementKeep}
                               style={{
                                 ...buttonBase,
@@ -1757,7 +1844,7 @@ export default function Page() {
                             </button>
                             <button
                               type="button"
-                              disabled={decided}
+                              disabled={decided || !isMessageDone}
                               onClick={handleRefinementRetry}
                               style={{
                                 ...buttonBase,
@@ -1850,6 +1937,7 @@ export default function Page() {
                     )}
                     {index === messages.length - 1 &&
                       !isLoading &&
+                      messageDone[index] === true &&
                       (() => {
                         // AI가 보낸 chips 우선, 없으면 STAGES fallback
                         const chips = (chatMessage.chips && chatMessage.chips.length > 0)
@@ -1945,7 +2033,7 @@ export default function Page() {
         {/* [하단 영역]
             - CM1(초안 선택 화면)에서는 채팅창 숨기고 '이 초안 선택하기' 버튼만 노출
             - 그 외(CM2 챗, selectRole 등)에서는 기존 채팅 입력창을 그대로 유지 */}
-        {flowStep === "draftReady" && view === "home" ? (
+        {flowStep === "draftReady" && view === "home" && cm1IntroDone ? (
           <div className="flex flex-shrink-0 flex-col px-[20px] pb-[16px]">
             <button
               type="button"
