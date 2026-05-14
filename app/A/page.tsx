@@ -547,6 +547,11 @@ export default function Page() {
   const [bottomSheetDraft, setBottomSheetDraft] = useState<Draft | null>(null);
   // [CM1 안내 타이핑 완료 플래그] 4줄이 모두 타이핑된 후에 초안 리스트 + 하단 버튼 노출.
   const [cm1IntroDone, setCm1IntroDone] = useState(false);
+  // [CM1 안내 노출 단계] 1=첫 줄 / 2=두 번째 줄 ... / 4=네 번째 줄. 각 줄은 자기 step일 때 등장+타이핑.
+  const [cm1IntroStep, setCm1IntroStep] = useState(0);
+  // [refinementCard 필드 단계] 메시지 index → 현재까지 등장한 카드 필드 수 (0~4).
+  // 1: 선택한 초안 / 2: 기존 문장 / 3: AI 수정안 / 4: 변경 이유
+  const [refinementCardStep, setRefinementCardStep] = useState<Record<number, number>>({});
   // [메시지별 스트리밍 완료 플래그] 챗 메시지의 모든 타이핑이 끝났을 때 true.
   // 이 시점에 chips, refinementCard 버튼 등이 등장.
   const [messageDone, setMessageDone] = useState<Record<number, boolean>>({});
@@ -635,11 +640,12 @@ export default function Page() {
     return () => clearTimeout(timer);
   }, [flowStep]);
 
-  // [CM1 안내 4줄 sequential] draftReady 진입 시 4줄 총 타이핑 시간을 계산해
-  // 그 후에 cm1IntroDone = true → 초안 리스트와 하단 버튼이 노출됨.
+  // [CM1 안내 4줄 sequential] draftReady 진입 시 step 기반으로 한 줄씩 등장.
+  // 1줄 타이핑 끝나면 step 2로 → 2줄 등장, ... 4줄 끝나면 cm1IntroDone=true.
   useEffect(() => {
     if (flowStep !== "draftReady") return;
     setCm1IntroDone(false);
+    setCm1IntroStep(1);
     const SPEED = 30;
     const GAP = 200;
     const lines = [
@@ -648,9 +654,20 @@ export default function Page() {
       "먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요.",
       "선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다.",
     ];
-    const total = lines.reduce((sum, line) => sum + line.length * SPEED, 0) + lines.length * GAP;
-    const id = setTimeout(() => setCm1IntroDone(true), total);
-    return () => clearTimeout(id);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let cumulative = 0;
+    for (let i = 0; i < lines.length; i++) {
+      cumulative += lines[i].length * SPEED + GAP;
+      const targetStep = i + 2;
+      const isLast = i === lines.length - 1;
+      timers.push(
+        setTimeout(() => {
+          setCm1IntroStep(targetStep);
+          if (isLast) setCm1IntroDone(true);
+        }, cumulative)
+      );
+    }
+    return () => timers.forEach(clearTimeout);
   }, [flowStep]);
 
   // [타이프라이터 스트리밍] 새 agent 메시지가 추가되면 처음부터 다시 그림.
@@ -684,7 +701,39 @@ export default function Page() {
     const doneTimer = setTimeout(() => {
       setMessageDone((prev) => ({ ...prev, [lastIdx]: true }));
     }, totalMs);
-    return () => clearTimeout(doneTimer);
+
+    // [refinementCard 필드 reveal 스케줄] 각 필드(라벨+내용)가 자기 시점에 등장.
+    const cardTimers: ReturnType<typeof setTimeout>[] = [];
+    if (lastMsg.refinementCard) {
+      const rc = lastMsg.refinementCard;
+      setRefinementCardStep((prev) => ({ ...prev, [lastIdx]: 0 }));
+      const textLen = lastMsg.text?.length ?? 0;
+      let cum = textLen * SPEED + GAP;
+      // step 1: 선택한 초안 + draftTitle
+      cardTimers.push(setTimeout(() => {
+        setRefinementCardStep((prev) => ({ ...prev, [lastIdx]: 1 }));
+      }, cum));
+      cum += (rc.draftTitle?.length ?? 0) * SPEED + GAP;
+      // step 2: 기존 문장 + originalSentence
+      cardTimers.push(setTimeout(() => {
+        setRefinementCardStep((prev) => ({ ...prev, [lastIdx]: 2 }));
+      }, cum));
+      cum += (rc.originalSentence?.length ?? 0) * SPEED + GAP;
+      // step 3: AI 수정안 + revisedSentence
+      cardTimers.push(setTimeout(() => {
+        setRefinementCardStep((prev) => ({ ...prev, [lastIdx]: 3 }));
+      }, cum));
+      cum += (rc.revisedSentence?.length ?? 0) * SPEED + GAP;
+      // step 4: 변경 이유 + changeReason
+      cardTimers.push(setTimeout(() => {
+        setRefinementCardStep((prev) => ({ ...prev, [lastIdx]: 4 }));
+      }, cum));
+    }
+
+    return () => {
+      clearTimeout(doneTimer);
+      cardTimers.forEach(clearTimeout);
+    };
   }, [messages.length]);
 
   // [타이프라이터 진행] text 한 글자씩 → sections 하나씩 → 완료.
@@ -1315,35 +1364,27 @@ export default function Page() {
                 </div>
                 <div className="mt-[12px] h-px w-full bg-[#70737C29]" />
 
-                {(() => {
-                  // [CM1 안내 4줄 누적 delay 계산]
-                  const SPEED = 30;
-                  const GAP = 200;
-                  const t1 = `아래 ${SAMPLE_DRAFTS.length}가지 방향의 경력기술서 초안을 준비했습니다.`;
-                  const t2 = "각 초안은 같은 경험을 바탕으로 하지만, 강조하는 방향이 다릅니다.";
-                  const t3 = "먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요.";
-                  const t4 = "선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다.";
-                  const d1 = 0;
-                  const d2 = d1 + t1.length * SPEED + GAP;
-                  const d3 = d2 + t2.length * SPEED + GAP;
-                  const d4 = d3 + t3.length * SPEED + GAP;
-                  return (
-                    <>
-                      <p className="mt-[13px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                        <TypewriterText text={t1} speed={SPEED} delay={d1} />
-                      </p>
-                      <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                        <TypewriterText text={t2} speed={SPEED} delay={d2} />
-                      </p>
-                      <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                        <TypewriterText text={t3} speed={SPEED} delay={d3} />
-                      </p>
-                      <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                        <TypewriterText text={t4} speed={SPEED} delay={d4} />
-                      </p>
-                    </>
-                  );
-                })()}
+                {/* [CM1 안내 4줄 step-based] cm1IntroStep N일 때만 N번째 줄 등장 */}
+                {cm1IntroStep >= 1 && (
+                  <p className="mt-[13px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                    <TypewriterText text={`아래 ${SAMPLE_DRAFTS.length}가지 방향의 경력기술서 초안을 준비했습니다.`} />
+                  </p>
+                )}
+                {cm1IntroStep >= 2 && (
+                  <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                    <TypewriterText text="각 초안은 같은 경험을 바탕으로 하지만, 강조하는 방향이 다릅니다." />
+                  </p>
+                )}
+                {cm1IntroStep >= 3 && (
+                  <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                    <TypewriterText text="먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요." />
+                  </p>
+                )}
+                {cm1IntroStep >= 4 && (
+                  <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
+                    <TypewriterText text="선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다." />
+                  </p>
+                )}
 
                 {/* [A 타입 CM1 리스트] 행은 라디오 + 제목 + chevron만. 근거는 바텀시트 상단에서 노출.
                     안내 4줄 타이핑이 끝난 뒤(cm1IntroDone=true)에 노출. */}
@@ -1728,16 +1769,12 @@ export default function Page() {
                     {chatMessage.refinementCard && (() => {
                       const rc = chatMessage.refinementCard;
                       const decided = refinementCardOutcome !== null;
-                      // [refinementCard 필드 누적 delay] 메시지 text → draftTitle → originalSentence → revisedSentence → changeReason 순서.
+                      // [refinementCard 필드 step] 메시지 useEffect에서 refinementCardStep을 시간차로 1~4 증가시킴.
+                      // 각 필드(라벨+내용)는 자기 step일 때 등장 → TypewriterText 시작.
                       const SPEED = 30;
-                      const GAP = 200;
-                      const textLen = chatMessage.text?.length ?? 0;
-                      const titleDelay = textLen * SPEED + GAP;
-                      const originalDelay = titleDelay + (rc.draftTitle?.length ?? 0) * SPEED + GAP;
-                      const revisedDelay = originalDelay + (rc.originalSentence?.length ?? 0) * SPEED + GAP;
-                      const reasonDelay = revisedDelay + (rc.revisedSentence?.length ?? 0) * SPEED + GAP;
                       // 모든 필드 타이핑이 끝났는지: messageDone[index] 기준으로 버튼 활성화.
                       const isMessageDone = messageDone[index] === true;
+                      const cardStep = refinementCardStep[index] ?? 0;
                       const buttonBase: React.CSSProperties = {
                         height: 44,
                         borderRadius: 10,
@@ -1749,70 +1786,78 @@ export default function Page() {
                       };
                       return (
                         <div className="mt-3 w-full" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                          {/* 선택한 초안 */}
-                          <div>
-                            <div style={{ fontSize: 12, lineHeight: "18px", color: "rgba(55,56,60,0.61)" }}>
-                              선택한 초안
+                          {/* 선택한 초안 (cardStep >= 1) */}
+                          {cardStep >= 1 && (
+                            <div>
+                              <div style={{ fontSize: 12, lineHeight: "18px", color: "rgba(55,56,60,0.61)" }}>
+                                선택한 초안
+                              </div>
+                              <div style={{ marginTop: 2, fontSize: 15, fontWeight: 600, lineHeight: "22px", color: "#171719" }}>
+                                <TypewriterText text={rc.draftTitle} speed={SPEED} />
+                              </div>
                             </div>
-                            <div style={{ marginTop: 2, fontSize: 15, fontWeight: 600, lineHeight: "22px", color: "#171719" }}>
-                              <TypewriterText text={rc.draftTitle} speed={SPEED} delay={titleDelay} />
-                            </div>
-                          </div>
+                          )}
 
-                          <div style={{ height: 1, background: "#EAF2FE" }} />
+                          {cardStep >= 2 && <div style={{ height: 1, background: "#EAF2FE" }} />}
 
-                          {/* 기존 문장 (회색 취소선) */}
-                          <div>
-                            <div style={{ fontSize: 12, lineHeight: "18px", color: "rgba(55,56,60,0.61)" }}>
-                              기존 문장
-                            </div>
-                            <p
-                              style={{
-                                marginTop: 4,
-                                fontSize: 14,
-                                lineHeight: "22px",
-                                color: "rgba(55,56,60,0.55)",
-                                textDecoration: "line-through",
-                                textDecorationColor: "rgba(55,56,60,0.4)",
-                              }}
-                            >
-                              <TypewriterText text={rc.originalSentence} speed={SPEED} delay={originalDelay} />
-                            </p>
-                          </div>
-
-                          {/* AI 수정안 (파란 밑줄) */}
-                          <div>
-                            <div style={{ fontSize: 12, lineHeight: "18px", color: "#0066FF" }}>
-                              AI 수정안
-                            </div>
-                            <p
-                              style={{
-                                marginTop: 4,
-                                fontSize: 14,
-                                lineHeight: "22px",
-                                color: "#171719",
-                              }}
-                            >
-                              <span
+                          {/* 기존 문장 (cardStep >= 2) */}
+                          {cardStep >= 2 && (
+                            <div>
+                              <div style={{ fontSize: 12, lineHeight: "18px", color: "rgba(55,56,60,0.61)" }}>
+                                기존 문장
+                              </div>
+                              <p
                                 style={{
-                                  borderBottom: "1.5px solid #0066FF",
-                                  paddingBottom: "1px",
+                                  marginTop: 4,
+                                  fontSize: 14,
+                                  lineHeight: "22px",
+                                  color: "rgba(55,56,60,0.55)",
+                                  textDecoration: "line-through",
+                                  textDecorationColor: "rgba(55,56,60,0.4)",
                                 }}
                               >
-                                <TypewriterText text={rc.revisedSentence} speed={SPEED} delay={revisedDelay} />
-                              </span>
-                            </p>
-                          </div>
-
-                          {/* 변경 이유 */}
-                          <div>
-                            <div style={{ fontSize: 12, lineHeight: "18px", color: "rgba(55,56,60,0.61)" }}>
-                              변경 이유
+                                <TypewriterText text={rc.originalSentence} speed={SPEED} />
+                              </p>
                             </div>
-                            <p style={{ marginTop: 4, fontSize: 14, lineHeight: "22px", color: "#171719" }}>
-                              <TypewriterText text={rc.changeReason} speed={SPEED} delay={reasonDelay} />
-                            </p>
-                          </div>
+                          )}
+
+                          {/* AI 수정안 (cardStep >= 3) */}
+                          {cardStep >= 3 && (
+                            <div>
+                              <div style={{ fontSize: 12, lineHeight: "18px", color: "#0066FF" }}>
+                                AI 수정안
+                              </div>
+                              <p
+                                style={{
+                                  marginTop: 4,
+                                  fontSize: 14,
+                                  lineHeight: "22px",
+                                  color: "#171719",
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    borderBottom: "1.5px solid #0066FF",
+                                    paddingBottom: "1px",
+                                  }}
+                                >
+                                  <TypewriterText text={rc.revisedSentence} speed={SPEED} />
+                                </span>
+                              </p>
+                            </div>
+                          )}
+
+                          {/* 변경 이유 (cardStep >= 4) */}
+                          {cardStep >= 4 && (
+                            <div>
+                              <div style={{ fontSize: 12, lineHeight: "18px", color: "rgba(55,56,60,0.61)" }}>
+                                변경 이유
+                              </div>
+                              <p style={{ marginTop: 4, fontSize: 14, lineHeight: "22px", color: "#171719" }}>
+                                <TypewriterText text={rc.changeReason} speed={SPEED} />
+                              </p>
+                            </div>
+                          )}
 
                           {/* 버튼 3개 — 결정되면 모두 비활성, 선택된 것만 검정으로 표시 */}
                           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
