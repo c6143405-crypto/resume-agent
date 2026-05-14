@@ -1628,7 +1628,7 @@ export default function Page() {
                                 >
                                   <span
                                     style={{
-                                      background: "rgba(0,102,255,0.16)",
+                                      background: "rgba(0,102,255,0.10)",
                                       padding: "1px 4px",
                                       borderRadius: 2,
                                       boxDecorationBreak: "clone",
@@ -1852,7 +1852,7 @@ export default function Page() {
                               >
                                 <span
                                   style={{
-                                    background: "rgba(0,102,255,0.16)",
+                                    background: "rgba(0,102,255,0.10)",
                                     padding: "1px 4px",
                                     borderRadius: 2,
                                     boxDecorationBreak: "clone",
@@ -1877,7 +1877,8 @@ export default function Page() {
                             </div>
                           )}
 
-                          {/* 버튼 3개 — 결정되면 모두 비활성, 선택된 것만 검정으로 표시 */}
+                          {/* 버튼 3개 — 전체 카드 타이핑이 끝난 뒤에만 등장. 결정되면 비활성. */}
+                          {isMessageDone && (
                           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
                             <button
                               type="button"
@@ -1922,6 +1923,7 @@ export default function Page() {
                               다시 수정하기
                             </button>
                           </div>
+                          )}
                         </div>
                       );
                     })()}
