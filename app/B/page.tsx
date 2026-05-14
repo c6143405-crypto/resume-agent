@@ -118,22 +118,22 @@ const DRAFT_VISUAL_META: Record<
   }
 > = {
   "draft-01": {
-    emoji: "\ud83d\udcd8",
-    badgeLabel: "성과 강조형",
+    emoji: "\ud83d\udcca",
+    badgeLabel: "데이터",
     badgeColor: "#0066FF",
     badgeBg: "rgba(0,102,255,0.10)",
     tags: ["표현 설득력 \u2191", "직무 적합성 \u2191", "과장 위험 \u26a0"],
   },
   "draft-02": {
-    emoji: "\ud83e\udd1d",
-    badgeLabel: "직무 적합형",
+    emoji: "\ud83d\udcbc",
+    badgeLabel: "전문적",
     badgeColor: "#00875A",
     badgeBg: "rgba(0,135,90,0.10)",
     tags: ["직무 적합성 \u2191\u2191", "경험 반영도 \u2191", "표현 설득력 \u2191"],
   },
   "draft-03": {
-    emoji: "\ud83d\udcd6",
-    badgeLabel: "경험 서사형",
+    emoji: "\u2728",
+    badgeLabel: "스토리텔링",
     badgeColor: "#8E5BFF",
     badgeBg: "rgba(142,91,255,0.12)",
     tags: ["경험 반영도 \u2191\u2191", "선택 용이성 \u2191", "직무 적합성 \u25b3"],
