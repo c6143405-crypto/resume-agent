@@ -2313,7 +2313,7 @@ export default function Page() {
                 value={message}
               />
               <button
-                className="absolute bottom-[17px] right-[12px] flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#0066FF]"
+                className="absolute bottom-[17px] right-[12px] flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#EF4444]"
                 onClick={() => sendMessage()}
                 type="button"
               >
