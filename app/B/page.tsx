@@ -427,6 +427,33 @@ function BottomSheet({
                 <p className="mt-[2px] text-[13px] leading-[20px] text-black">
                   {draft?.caution ?? "—"}
                 </p>
+
+                {/* [B 타입] 키워드 평가 — DRAFT_VISUAL_META.tags 기반 */}
+                {(() => {
+                  const meta = draft?.draftId ? DRAFT_VISUAL_META[draft.draftId] : undefined;
+                  if (!meta || meta.tags.length === 0) return null;
+                  return (
+                    <>
+                      <div className="mt-[8px] text-[12px] font-medium leading-[18px] text-[rgba(55,56,60,0.61)]">
+                        키워드 평가
+                      </div>
+                      <div className="mt-[6px] flex flex-wrap gap-[6px]">
+                        {meta.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex rounded-[6px] px-[8px] py-[4px] text-[12px] font-medium leading-none"
+                            style={{
+                              background: meta.badgeBg,
+                              color: meta.badgeColor,
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -1627,13 +1654,12 @@ export default function Page() {
                   </p>
                 )}
 
-                {/* [B 타입 CM1 카드] 컬러 배지(이모지+방향) + 키워드 태그 + chevron 펼침.
-                    안내 4줄 타이핑이 끝난 뒤(cm1IntroDone=true)에 노출. */}
+                {/* [B 타입 CM1 리스트] A처럼 단순 행. 라디오 + 배지 + 제목 + chevron-right.
+                    추천 이유/유의/태그 같은 상세는 BottomSheet에서 노출. */}
                 {cm1IntroDone && (
-                <section className="mt-[20px] flex flex-col gap-[10px]">
+                <section className="mt-[20px]">
                   {SAMPLE_DRAFTS.map((draft) => {
                     const isPicked = cm1Candidate?.draftId === draft.draftId;
-                    const isExpanded = !!expandedDrafts[draft.draftId];
                     const meta = DRAFT_VISUAL_META[draft.draftId] ?? {
                       emoji: "\u2728",
                       badgeLabel: draft.draftTitle,
@@ -1642,108 +1668,50 @@ export default function Page() {
                       tags: [] as string[],
                     };
                     return (
-                      <article
+                      <div
                         key={draft.draftId}
-                        className="w-full rounded-[14px] border bg-white p-[14px] transition"
-                        style={{
-                          borderColor: isPicked ? "#171719" : "#EAEAEA",
-                          boxShadow: isPicked ? "0 6px 18px rgba(23,23,25,0.06)" : "none",
-                        }}
+                        className="flex h-[60px] w-full items-center gap-[10px] border-b border-[#70737C29]"
                       >
-                        {/* 헤더: 라디오 + 컬러 배지 + chevron(펼침) */}
-                        <div className="flex items-center justify-between gap-[10px]">
-                          <button
-                            type="button"
-                            aria-label="이 초안을 선택지로 두기"
-                            aria-pressed={isPicked}
-                            onClick={() => handlePickDraftCandidate(draft)}
-                            className="flex flex-1 items-center gap-[10px]"
+                        <button
+                          type="button"
+                          aria-label="이 초안을 선택지로 두기"
+                          aria-pressed={isPicked}
+                          onClick={() => handlePickDraftCandidate(draft)}
+                          className="flex h-[24px] w-[24px] flex-shrink-0 items-center justify-center"
+                        >
+                          <span
+                            className="flex h-[18px] w-[18px] items-center justify-center rounded-full border"
+                            style={{ borderColor: isPicked ? "#171719" : "#C4C6CA" }}
                           >
+                            {isPicked && (
+                              <span
+                                className="block rounded-full"
+                                style={{ width: 10, height: 10, background: "#171719" }}
+                              />
+                            )}
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => openBottomSheetWith(draft)}
+                          className="flex flex-1 items-center justify-between gap-[10px]"
+                        >
+                          <div className="flex items-center gap-[10px] min-w-0">
                             <span
-                              className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border"
-                              style={{ borderColor: isPicked ? "#171719" : "#C4C6CA" }}
-                            >
-                              {isPicked && (
-                                <span
-                                  className="block rounded-full"
-                                  style={{ width: 10, height: 10, background: "#171719" }}
-                                />
-                              )}
-                            </span>
-                            <span
-                              className="inline-flex items-center gap-[6px] rounded-[999px] px-[10px] py-[5px] text-[12px] font-semibold leading-[16px]"
-                              style={{
-                                background: meta.badgeBg,
-                                color: meta.badgeColor,
-                              }}
+                              className="inline-flex flex-shrink-0 items-center gap-[6px] rounded-[999px] px-[10px] py-[5px] text-[12px] font-semibold leading-[16px]"
+                              style={{ background: meta.badgeBg, color: meta.badgeColor }}
                             >
                               <span aria-hidden="true">{meta.emoji}</span>
                               <span>{meta.badgeLabel}</span>
                             </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            aria-label={isExpanded ? "초안 상세 접기" : "초안 상세 펼치기"}
-                            aria-expanded={isExpanded}
-                            onClick={() => toggleDraftExpanded(draft.draftId)}
-                            className="flex h-[28px] w-[28px] flex-shrink-0 items-center justify-center rounded-[8px] hover:bg-[#F4F4F5]"
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="h-[18px] w-[18px] text-[#70737C]" strokeWidth={1.8} aria-hidden="true" />
-                            ) : (
-                              <ChevronDown className="h-[18px] w-[18px] text-[#70737C]" strokeWidth={1.8} aria-hidden="true" />
-                            )}
-                          </button>
-                        </div>
-
-                        {/* 제목 */}
-                        <h3 className="mt-[10px] text-[15px] font-semibold leading-[22px] text-[#171719]">
-                          {draft.draftTitle}
-                        </h3>
-
-                        {/* 키워드 태그 */}
-                        {meta.tags.length > 0 && (
-                          <div className="mt-[8px] flex flex-wrap gap-[6px]">
-                            {meta.tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="inline-flex rounded-[6px] px-[8px] py-[4px] text-[12px] font-medium leading-none"
-                                style={{
-                                  background: "rgba(55,56,60,0.06)",
-                                  color: "rgba(55,56,60,0.78)",
-                                }}
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                            <span className="truncate text-[16px] font-medium leading-[24px] tracking-[0.57px] text-black">
+                              {draft.draftTitle}
+                            </span>
                           </div>
-                        )}
-
-                        {/* 상세 펼침 — whyRecommended / caution + 초안 전체 보기 링크 */}
-                        {isExpanded && (
-                          <div className="mt-[12px] flex flex-col gap-[8px] rounded-[10px] bg-[#F9FAFB] p-[12px] text-[13px] leading-[20px] text-[#171719]">
-                            <p>
-                              <span className="font-semibold" style={{ color: meta.badgeColor }}>
-                                추천 이유 ·{" "}
-                              </span>
-                              {draft.whyRecommended}
-                            </p>
-                            <p>
-                              <span className="font-semibold text-[#B45309]">유의 · </span>
-                              {draft.caution}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => openBottomSheetWith(draft)}
-                              className="mt-[2px] self-start text-[13px] font-semibold leading-[20px]"
-                              style={{ color: meta.badgeColor }}
-                            >
-                              초안 전체 보기 →
-                            </button>
-                          </div>
-                        )}
-                      </article>
+                          <ChevronRightIcon />
+                        </button>
+                      </div>
                     );
                   })}
                 </section>
