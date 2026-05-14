@@ -286,10 +286,16 @@ function BottomSheet({
   isOpen,
   onClose,
   draft,
+  appliedRevision,
 }: {
   isOpen: boolean;
   onClose: () => void;
   draft: Draft | null;
+  appliedRevision: {
+    originalSentence: string;
+    revisedSentence: string;
+    changeReason: string;
+  } | null;
 }) {
   // 근거 보기 아코디언은 시트 내부 로컬 상태로 관리.
   // 다른 초안 시트를 열면 이전 펼침은 유지되지만, 시트가 다시 열릴 때 명시적으로 접고 싶다면
@@ -420,20 +426,80 @@ function BottomSheet({
 
             <section className="flex flex-col gap-[8px]">
               <p className="font-semibold leading-[22px]">목표</p>
-              {(draft?.body.goals ?? []).map((bullet, idx) => (
-                <p key={`goal-${idx}`} className="font-normal leading-[22px]">
-                  - {bullet.text}
-                </p>
-              ))}
+              {(draft?.body.goals ?? []).map((bullet, idx) => {
+                const isRevised =
+                  appliedRevision && bullet.text === appliedRevision.originalSentence;
+                if (isRevised) {
+                  return (
+                    <div key={`goal-${idx}`} className="flex flex-col gap-[4px]">
+                      <p className="font-normal leading-[22px]">
+                        -{" "}
+                        <span
+                          style={{
+                            background: "rgba(255,220,80,0.55)",
+                            padding: "1px 4px",
+                            borderRadius: 2,
+                            boxDecorationBreak: "clone",
+                            WebkitBoxDecorationBreak: "clone",
+                          }}
+                        >
+                          {appliedRevision.revisedSentence}
+                        </span>
+                      </p>
+                      <p
+                        className="leading-[20px]"
+                        style={{ fontSize: 13, color: "#0066FF", paddingLeft: 14 }}
+                      >
+                        {appliedRevision.changeReason}
+                      </p>
+                    </div>
+                  );
+                }
+                return (
+                  <p key={`goal-${idx}`} className="font-normal leading-[22px]">
+                    - {bullet.text}
+                  </p>
+                );
+              })}
             </section>
 
             <section className="flex flex-col gap-[8px] pb-[20px]">
               <p className="font-semibold leading-[22px]">역할 및 성과</p>
-              {(draft?.body.roleAndResults ?? []).map((bullet, idx) => (
-                <p key={`role-${idx}`} className="font-normal leading-[22px]">
-                  - {bullet.text}
-                </p>
-              ))}
+              {(draft?.body.roleAndResults ?? []).map((bullet, idx) => {
+                const isRevised =
+                  appliedRevision && bullet.text === appliedRevision.originalSentence;
+                if (isRevised) {
+                  return (
+                    <div key={`role-${idx}`} className="flex flex-col gap-[4px]">
+                      <p className="font-normal leading-[22px]">
+                        -{" "}
+                        <span
+                          style={{
+                            background: "rgba(255,220,80,0.55)",
+                            padding: "1px 4px",
+                            borderRadius: 2,
+                            boxDecorationBreak: "clone",
+                            WebkitBoxDecorationBreak: "clone",
+                          }}
+                        >
+                          {appliedRevision.revisedSentence}
+                        </span>
+                      </p>
+                      <p
+                        className="leading-[20px]"
+                        style={{ fontSize: 13, color: "#0066FF", paddingLeft: 14 }}
+                      >
+                        {appliedRevision.changeReason}
+                      </p>
+                    </div>
+                  );
+                }
+                return (
+                  <p key={`role-${idx}`} className="font-normal leading-[22px]">
+                    - {bullet.text}
+                  </p>
+                );
+              })}
             </section>
           </div>
         </div>
@@ -563,6 +629,13 @@ export default function Page() {
   const [refinementCardOutcome, setRefinementCardOutcome] = useState<
     "apply" | "keep" | "retry" | null
   >(null);
+  // [적용된 수정안] 수정안 적용 시 어떤 문장이 어떻게 바뀌었고 왜 바뀌었는지 기억.
+  // BottomSheet가 이 정보를 보고 해당 문장에 노란 하이라이트 + 변경 이유 파란 글씨를 렌더한다.
+  const [appliedRevision, setAppliedRevision] = useState<{
+    originalSentence: string;
+    revisedSentence: string;
+    changeReason: string;
+  } | null>(null);
 
   // [API payload용 보조 상태값]
   // 아직 UI 흐름과 연결하지 않고 빈 문자열 기본값으로만 둔다. 다음 단계에서 채운다.
@@ -1145,9 +1218,50 @@ export default function Page() {
   // [CM2 수정 카드 버튼 핸들러들] — 각 버튼은 사용자 메시지로 환산되어 흐름에 들어간다.
   const handleRefinementApply = () => {
     if (refinementCardOutcome) return;
+
+    // 최신 refinementCard를 가진 메시지에서 수정안 데이터를 꺼낸다.
+    const latestRc = (() => {
+      for (let i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].refinementCard) return messages[i].refinementCard!;
+      }
+      return null;
+    })();
+    if (!latestRc) return;
+
     setRefinementCardOutcome("apply");
     setDecisionStatus("modified");
-    sendMessage("수정안 적용하기", { displayStyle: "bubble" });
+    setUserIntent("ACCEPT");
+    setAppliedRevision({
+      originalSentence: latestRc.originalSentence,
+      revisedSentence: latestRc.revisedSentence,
+      changeReason: latestRc.changeReason,
+    });
+
+    // 사용자 메시지를 즉시 push (sendMessage 흐름 우회).
+    setMessages((prev) => [
+      ...prev,
+      { type: "user" as const, text: "수정안 적용하기", displayStyle: "bubble" },
+    ]);
+
+    // 1.2초 뒤 결과 안내 메시지 + resultCard(자동으로 ResumeRow가 따라옴).
+    setIsLoading(true);
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: "agent" as const,
+          text:
+            "말씀해주신 수정안을 반영해 경력기술서를 수정했어요. " +
+            "아래에서 변경된 경력기술서를 확인해보세요.",
+          resultCard: {
+            previous: latestRc.originalSentence,
+            revised: latestRc.revisedSentence,
+            message: "수정 내용이 반영되었어요.",
+          },
+        },
+      ]);
+      setIsLoading(false);
+    }, 1200);
   };
 
   const handleRefinementKeep = () => {
@@ -2184,7 +2298,7 @@ export default function Page() {
         <div className="flex flex-shrink-0 justify-center pb-[8px]">
           <div className="h-[5px] w-[134px] rounded-full bg-black" />
         </div>
-        <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)} draft={bottomSheetDraft} />
+        <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)} draft={bottomSheetDraft} appliedRevision={appliedRevision} />
       </section>
     </main>
   );
