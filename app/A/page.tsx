@@ -358,7 +358,12 @@ function BottomSheet({
               </svg>
             </button>
             {isRationaleOpen && (
-              <div className="mt-[8px] rounded-[8px] bg-[rgba(55,56,60,0.04)] px-[12px] py-[10px]">
+              <div
+                className="mt-[8px] rounded-[16px] border border-[#EAF2FE] px-[12px] py-[10px]"
+                style={{
+                  background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%)",
+                }}
+              >
                 <div className="text-[12px] font-medium leading-[18px] text-[rgba(55,56,60,0.61)]">
                   이 초안의 방향
                 </div>
