@@ -1163,6 +1163,8 @@ export default function Page() {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // IME(한글 등) composition 중에는 Enter 무시 — 마지막 글자가 별도로 한 번 더 전송되는 버그 방지
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return;
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       sendMessage();
