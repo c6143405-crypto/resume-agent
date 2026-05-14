@@ -2130,72 +2130,8 @@ export default function Page() {
                         </div>
                       );
                     })()}
-                    {chatMessage.resultCard && (
-                      <div
-                        className="mt-3 w-full"
-                        style={{
-                          padding: 16,
-                          borderRadius: 16,
-                          border: "1px solid #EAF2FE",
-                          background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%)",
-                        }}
-                      >
-                        <div className="flex flex-col gap-3">
-                          <div>
-                            <div
-                              style={{
-                                fontSize: 12,
-                                fontWeight: 500,
-                                lineHeight: "16px",
-                                color: "rgba(55,56,60,0.61)",
-                              }}
-                            >
-                              기존 표현
-                            </div>
-                            <div
-                              style={{
-                                marginTop: 4,
-                                fontSize: 14,
-                                fontWeight: 500,
-                                lineHeight: "20px",
-                                color: "#171719",
-                              }}
-                            >
-                              <TypewriterText text={chatMessage.resultCard.previous} />
-                            </div>
-                          </div>
-                          <div
-                            style={{
-                              height: 1,
-                              background: "#EAF2FE",
-                            }}
-                          />
-                          <div>
-                            <div
-                              style={{
-                                fontSize: 12,
-                                fontWeight: 600,
-                                lineHeight: "16px",
-                                color: "#0066FF",
-                              }}
-                            >
-                              바뀐 표현
-                            </div>
-                            <div
-                              style={{
-                                marginTop: 4,
-                                fontSize: 14,
-                                fontWeight: 600,
-                                lineHeight: "20px",
-                                color: "#171719",
-                              }}
-                            >
-                              <TypewriterText text={chatMessage.resultCard.revised} />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {/* [A 타입 디자인 통일] resultCard 박스(기존 표현/바뀐 표현)는 제거.
+                        결과 비교는 BottomSheet에서 노란 하이라이트 + 파란 변경 이유로 일원화. */}
                     {chatMessage.resultCard && (
                       <div className="mt-4">
                         <ResumeRow
