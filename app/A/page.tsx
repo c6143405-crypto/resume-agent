@@ -1345,7 +1345,9 @@ export default function Page() {
                   );
                 })()}
 
-                {/* [A 타입 CM1 리스트] 행은 라디오 + 제목 + chevron만. 근거는 바텀시트 상단에서 노출. */}
+                {/* [A 타입 CM1 리스트] 행은 라디오 + 제목 + chevron만. 근거는 바텀시트 상단에서 노출.
+                    안내 4줄 타이핑이 끝난 뒤(cm1IntroDone=true)에 노출. */}
+                {cm1IntroDone && (
                 <section className="mt-[20px]">
                   {SAMPLE_DRAFTS.map((draft) => {
                     const isPicked = cm1Candidate?.draftId === draft.draftId;
