@@ -336,7 +336,7 @@ function BottomSheet({
               aria-expanded={isRationaleOpen}
             >
               <span className="text-[14px] font-medium leading-[20px] text-black">
-                근거 {isRationaleOpen ? "접기" : "보기"}
+                이 표현의 이유 보기
               </span>
               <svg
                 width="16"
