@@ -1164,11 +1164,11 @@ export default function Page() {
           {view === "home" ? (
             flowStep === "loadingDraft" ? (
               <div
-                className="relative flex min-h-full flex-col items-center justify-center overflow-hidden px-[20px] text-center"
+                className="relative flex min-h-full flex-col items-center justify-center overflow-hidden px-[20px] pb-[140px] text-center"
                 style={{
                   animation: "loadingDraftFadeIn 800ms ease-out both",
                   background:
-                    "radial-gradient(circle at 50% 52%, rgba(101,65,242,0.07) 0%, rgba(255,255,255,0) 42%), #FFFFFF",
+                    "radial-gradient(circle at 50% 42%, rgba(101,65,242,0.07) 0%, rgba(255,255,255,0) 42%), #FFFFFF",
                 }}
               >
                 <div
