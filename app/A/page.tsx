@@ -749,6 +749,10 @@ export default function Page() {
     const lastIdx = messages.length - 1;
     const lastMsg = messages[lastIdx];
     if (lastMsg.type !== "agent") return;
+    // 새 refinementCard가 도착하면 이전 카드 액션 가드(refinementCardOutcome)를 푼다.
+    if (lastMsg.refinementCard) {
+      setRefinementCardOutcome(null);
+    }
     setStreamingMessageIndex(lastIdx);
     setStreamedCharCount(0);
     setStreamedSectionCount(0);
@@ -1268,9 +1272,92 @@ export default function Page() {
 
   const handleRefinementKeep = () => {
     if (refinementCardOutcome) return;
+
+    // 가장 최근 refinementCard를 찾아 원본 문장을 그대로 결과 카드에 담는다.
+    const latestRc = (() => {
+      for (let i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].refinementCard) return messages[i].refinementCard!;
+      }
+      return null;
+    })();
+    if (!latestRc) return;
+
     setRefinementCardOutcome("keep");
-    // 기존 문장 유지 — 초안 자체는 selected 상태 유지(수정 안 함).
-    sendMessage("기존 문장 유지하기", { displayStyle: "bubble" });
+    setDecisionStatus("rejected");
+    setUserIntent("REJECT");
+    // 하이라이트 없이 원본 그대로 보여주기 위해 appliedRevision은 null로 유지.
+    setAppliedRevision(null);
+
+    setMessages((prev) => [
+      ...prev,
+      { type: "user" as const, text: "기존 문장 유지하기", displayStyle: "bubble" },
+    ]);
+
+    setIsLoading(true);
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: "agent" as const,
+          text:
+            "기존 문장을 그대로 유지했어요. " +
+            "아래에서 경력기술서를 다시 확인해보세요. 더 수정하실 부분이 있으실까요?",
+          resultCard: {
+            previous: latestRc.originalSentence,
+            revised: latestRc.originalSentence,
+            message: "기존 문장이 유지되었어요.",
+          },
+          chips: ["더 수정할 부분이 있어요", "최종 확정"],
+        },
+      ]);
+      setIsLoading(false);
+    }, 1200);
+  };
+
+  const handleFinalize = () => {
+    if (isFlowComplete) return;
+
+    setMessages((prev) => [
+      ...prev,
+      { type: "user" as const, text: "최종 확정", displayStyle: "bubble" },
+    ]);
+
+    setIsLoading(true);
+    setTimeout(() => {
+      setMessages((prev) => {
+        // 직전까지의 적용 상태(가장 최근 resultCard 또는 refinementCard)를 그대로 재사용.
+        const lastResultCard = (() => {
+          for (let i = prev.length - 1; i >= 0; i--) {
+            if (prev[i].resultCard) return prev[i].resultCard!;
+          }
+          return null;
+        })();
+        const latestRc = (() => {
+          for (let i = prev.length - 1; i >= 0; i--) {
+            if (prev[i].refinementCard) return prev[i].refinementCard!;
+          }
+          return null;
+        })();
+
+        return [
+          ...prev,
+          {
+            type: "agent" as const,
+            text:
+              "수고하셨어요. 1차 최종 초안이 완성되었어요. " +
+              "아래에서 최종 경력기술서를 확인해보세요.",
+            resultCard:
+              lastResultCard ?? {
+                previous: latestRc?.originalSentence ?? "",
+                revised: latestRc?.revisedSentence ?? latestRc?.originalSentence ?? "",
+                message: "1차 최종 초안이 완성되었어요.",
+              },
+          },
+        ];
+      });
+      setIsLoading(false);
+      setIsFlowComplete(true);
+    }, 1200);
   };
 
   const handleRefinementRetry = () => {
@@ -2133,7 +2220,12 @@ export default function Page() {
                               <button
                                 className="inline-flex cursor-pointer items-center hover:bg-[#F9F9F9]"
                                 key={chipIndex}
-                                onClick={() => sendMessage(chipLabel, { displayStyle: "bubble" })}
+                                onClick={() => {
+                                  if (chipLabel === "수정안 적용하기") return handleRefinementApply();
+                                  if (chipLabel === "기존 문장 유지하기") return handleRefinementKeep();
+                                  if (chipLabel === "최종 확정") return handleFinalize();
+                                  sendMessage(chipLabel, { displayStyle: "bubble" });
+                                }}
                                 style={{
                                   padding: "8px 10px",
                                   borderRadius: 10,
