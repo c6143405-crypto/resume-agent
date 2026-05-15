@@ -1,0 +1,377 @@
+/* =====================================================
+ * tokens.css — Figma Variables → Tailwind v4
+ * AUTO-GENERATED. 직접 편집하지 말 것.
+ * 출처: Figma Tokens Studio export (Atomic + Theme + Component + Frame)
+ * ===================================================== */
+
+:root {
+  /* ---- Raw color palettes (참조용, utility 자동 생성 X) ---- */
+  /* Common */
+  --color-palette-common-0: #000000;
+  --color-palette-common-100: #ffffff;
+
+  /* Neutral */
+  --color-palette-neutral-5: #0f0f0f;
+  --color-palette-neutral-10: #171717;
+  --color-palette-neutral-15: #1c1c1c;
+  --color-palette-neutral-20: #2a2a2a;
+  --color-palette-neutral-22: #303030;
+  --color-palette-neutral-30: #474747;
+  --color-palette-neutral-40: #5c5c5c;
+  --color-palette-neutral-50: #737373;
+  --color-palette-neutral-60: #8a8a8a;
+  --color-palette-neutral-70: #9b9b9b;
+  --color-palette-neutral-80: #b0b0b0;
+  --color-palette-neutral-90: #c4c4c4;
+  --color-palette-neutral-95: #dcdcdc;
+  --color-palette-neutral-99: #f7f7f7;
+  --color-palette-neutral-0: #000000;
+  --color-palette-neutral-100: #ffffff;
+
+  /* Cool Neutral */
+  --color-palette-cool-neutral-5: #0f0f10;
+  --color-palette-cool-neutral-7: #141415;
+  --color-palette-cool-neutral-10: #171719;
+  --color-palette-cool-neutral-15: #1b1c1e;
+  --color-palette-cool-neutral-17: #212225;
+  --color-palette-cool-neutral-20: #292a2d;
+  --color-palette-cool-neutral-22: #2e2f33;
+  --color-palette-cool-neutral-23: #333438;
+  --color-palette-cool-neutral-25: #37383c;
+  --color-palette-cool-neutral-30: #46474c;
+  --color-palette-cool-neutral-40: #5a5c63;
+  --color-palette-cool-neutral-50: #70737c;
+  --color-palette-cool-neutral-60: #878a93;
+  --color-palette-cool-neutral-70: #989ba2;
+  --color-palette-cool-neutral-80: #aeb0b6;
+  --color-palette-cool-neutral-90: #c2c4c8;
+  --color-palette-cool-neutral-95: #dbdcdf;
+  --color-palette-cool-neutral-96: #e1e2e4;
+  --color-palette-cool-neutral-97: #eaebec;
+  --color-palette-cool-neutral-98: #f4f4f5;
+  --color-palette-cool-neutral-99: #f7f7f8;
+  --color-palette-cool-neutral-0: #000000;
+  --color-palette-cool-neutral-100: #ffffff;
+
+  /* Blue */
+  --color-palette-blue-10: #001536;
+  --color-palette-blue-20: #002966;
+  --color-palette-blue-30: #003e9c;
+  --color-palette-blue-40: #0054d1;
+  --color-palette-blue-45: #005eeb;
+  --color-palette-blue-50: #0066ff;
+  --color-palette-blue-55: #1a75ff;
+  --color-palette-blue-60: #3385ff;
+  --color-palette-blue-65: #4f95ff;
+  --color-palette-blue-70: #69a5ff;
+  --color-palette-blue-80: #9ec5ff;
+  --color-palette-blue-90: #c9defe;
+  --color-palette-blue-95: #eaf2fe;
+  --color-palette-blue-99: #f7fbff;
+  --color-palette-blue-0: #000000;
+  --color-palette-blue-100: #ffffff;
+
+  /* Red */
+  --color-palette-red-10: #3b0101;
+  --color-palette-red-20: #730303;
+  --color-palette-red-30: #b00c0c;
+  --color-palette-red-40: #e52222;
+  --color-palette-red-50: #ff4242;
+  --color-palette-red-60: #ff6363;
+  --color-palette-red-70: #ff8c8c;
+  --color-palette-red-80: #ffb5b5;
+  --color-palette-red-90: #fed5d5;
+  --color-palette-red-95: #feecec;
+  --color-palette-red-99: #fffafa;
+  --color-palette-red-0: #000000;
+  --color-palette-red-100: #ffffff;
+
+  /* Green */
+  --color-palette-green-10: #00240c;
+  --color-palette-green-20: #004517;
+  --color-palette-green-30: #006e25;
+  --color-palette-green-40: #009632;
+  --color-palette-green-50: #00bf40;
+  --color-palette-green-60: #1ed45a;
+  --color-palette-green-70: #49e57d;
+  --color-palette-green-80: #7df5a5;
+  --color-palette-green-90: #acfcc7;
+  --color-palette-green-95: #d9ffe6;
+  --color-palette-green-99: #f2fff6;
+  --color-palette-green-0: #000000;
+  --color-palette-green-100: #ffffff;
+
+  /* Orange */
+  --color-palette-orange-10: #361e00;
+  --color-palette-orange-20: #663a00;
+  --color-palette-orange-30: #9c5800;
+  --color-palette-orange-39: #d17600;
+  --color-palette-orange-40: #d47800;
+  --color-palette-orange-50: #ff9200;
+  --color-palette-orange-60: #ffa938;
+  --color-palette-orange-70: #ffc06e;
+  --color-palette-orange-80: #ffd49c;
+  --color-palette-orange-90: #fee6c6;
+  --color-palette-orange-95: #fef4e6;
+  --color-palette-orange-99: #fffcf7;
+  --color-palette-orange-0: #000000;
+  --color-palette-orange-100: #ffffff;
+
+  /* Red Orange */
+  --color-palette-red-orange-10: #290f00;
+  --color-palette-red-orange-20: #592100;
+  --color-palette-red-orange-30: #913500;
+  --color-palette-red-orange-40: #c94a00;
+  --color-palette-red-orange-48: #f55a00;
+  --color-palette-red-orange-50: #ff5e00;
+  --color-palette-red-orange-60: #ff7b2e;
+  --color-palette-red-orange-70: #ff9b61;
+  --color-palette-red-orange-80: #ffbd96;
+  --color-palette-red-orange-90: #fed9c4;
+  --color-palette-red-orange-95: #feeee5;
+  --color-palette-red-orange-99: #fffaf7;
+  --color-palette-red-orange-0: #000000;
+  --color-palette-red-orange-100: #ffffff;
+
+  /* Lime */
+  --color-palette-lime-0: #000000;
+  --color-palette-lime-10: #112900;
+  --color-palette-lime-20: #225200;
+  --color-palette-lime-30: #347d00;
+  --color-palette-lime-37: #429e00;
+  --color-palette-lime-40: #48ad00;
+  --color-palette-lime-50: #58cf04;
+  --color-palette-lime-60: #6be016;
+  --color-palette-lime-70: #88f03e;
+  --color-palette-lime-80: #aef779;
+  --color-palette-lime-90: #ccfca9;
+  --color-palette-lime-95: #e6ffd4;
+  --color-palette-lime-99: #f8fff2;
+  --color-palette-lime-100: #ffffff;
+
+  /* Cyan */
+  --color-palette-cyan-0: #000000;
+  --color-palette-cyan-10: #00252b;
+  --color-palette-cyan-20: #004854;
+  --color-palette-cyan-30: #006f82;
+  --color-palette-cyan-40: #0098b2;
+  --color-palette-cyan-50: #00bdde;
+  --color-palette-cyan-60: #28d0ed;
+  --color-palette-cyan-70: #57dff7;
+  --color-palette-cyan-80: #8aedff;
+  --color-palette-cyan-90: #b5f4ff;
+  --color-palette-cyan-95: #defaff;
+  --color-palette-cyan-99: #f7feff;
+  --color-palette-cyan-100: #ffffff;
+
+  /* Light Blue */
+  --color-palette-light-blue-0: #000000;
+  --color-palette-light-blue-10: #002130;
+  --color-palette-light-blue-20: #004261;
+  --color-palette-light-blue-30: #006796;
+  --color-palette-light-blue-40: #008dcf;
+  --color-palette-light-blue-50: #00aeff;
+  --color-palette-light-blue-60: #3dc2ff;
+  --color-palette-light-blue-70: #70d2ff;
+  --color-palette-light-blue-80: #a1e1ff;
+  --color-palette-light-blue-90: #c4ecfe;
+  --color-palette-light-blue-95: #e5f6fe;
+  --color-palette-light-blue-99: #f7fdff;
+  --color-palette-light-blue-100: #ffffff;
+
+  /* Violet */
+  --color-palette-violet-0: #000000;
+  --color-palette-violet-10: #11024d;
+  --color-palette-violet-20: #23098f;
+  --color-palette-violet-30: #3a16c9;
+  --color-palette-violet-40: #4f29e5;
+  --color-palette-violet-45: #5b37ed;
+  --color-palette-violet-50: #6541f2;
+  --color-palette-violet-60: #7d5ef7;
+  --color-palette-violet-70: #9e86fc;
+  --color-palette-violet-80: #c0b0ff;
+  --color-palette-violet-90: #dbd3fe;
+  --color-palette-violet-95: #f0ecfe;
+  --color-palette-violet-99: #fbfaff;
+  --color-palette-violet-100: #ffffff;
+
+  /* Pink */
+  --color-palette-pink-0: #000000;
+  --color-palette-pink-10: #3d0133;
+  --color-palette-pink-20: #730560;
+  --color-palette-pink-30: #a81690;
+  --color-palette-pink-40: #d331b8;
+  --color-palette-pink-46: #e846cd;
+  --color-palette-pink-50: #f553da;
+  --color-palette-pink-60: #fa73e3;
+  --color-palette-pink-70: #ff94ed;
+  --color-palette-pink-80: #ffb8f3;
+  --color-palette-pink-90: #fed3f7;
+  --color-palette-pink-95: #feecfb;
+  --color-palette-pink-99: #fffafe;
+  --color-palette-pink-100: #ffffff;
+
+  /* Purple */
+  --color-palette-purple-0: #000000;
+  --color-palette-purple-10: #290247;
+  --color-palette-purple-20: #580a7d;
+  --color-palette-purple-30: #861cb8;
+  --color-palette-purple-40: #ad36e3;
+  --color-palette-purple-50: #cb59ff;
+  --color-palette-purple-60: #d478ff;
+  --color-palette-purple-70: #de96ff;
+  --color-palette-purple-80: #e9baff;
+  --color-palette-purple-90: #f2d6ff;
+  --color-palette-purple-95: #f9edff;
+  --color-palette-purple-99: #fefbff;
+  --color-palette-purple-100: #ffffff;
+
+  /* Opacity scale */
+  --opacity-0: 0;
+  --opacity-5: 5;
+  --opacity-8: 8;
+  --opacity-12: 12;
+  --opacity-16: 16;
+  --opacity-22: 22;
+  --opacity-28: 28;
+  --opacity-35: 35;
+  --opacity-43: 43;
+  --opacity-52: 52;
+  --opacity-61: 61;
+  --opacity-74: 74;
+  --opacity-88: 88;
+  --opacity-97: 97;
+  --opacity-100: 100;
+
+}
+
+@theme {
+  /* ---- Font family ---- */
+  --font-pretendard: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+
+  /* ---- Font weights ---- */
+  --font-weight-bold: 700;
+  --font-weight-medium: 500;
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+
+  /* ---- Semantic colors (Figma Theme 컬렉션) ---- */
+  --color-primary-normal: #0066ff;
+  --color-primary-strong: #005eeb;
+  --color-primary-heavy: #0054d1;
+  --color-label-normal: #171719;
+  --color-label-strong: #000000;
+  --color-label-neutral: #2e2f33e0;
+  --color-label-alternative: #37383c9c;
+  --color-label-assistive: #37383c47;
+  --color-label-disable: #37383c29;
+  --color-background-normal-normal: #ffffff;
+  --color-background-normal-alternative: #f7f7f8;
+  --color-interaction-inactive: #989ba2;
+  --color-interaction-disable: #f4f4f5;
+  --color-line-normal-normal: #70737c38;
+  --color-line-normal-neutral: #70737c29;
+  --color-line-normal-alternative: #70737c14;
+  --color-line-normal-strong: #70737c85;
+  --color-line-solid-normal: #e1e2e4;
+  --color-line-solid-neutral: #eaebec;
+  --color-line-solid-alternative: #f4f4f5;
+  --color-line-solid-strong: #aeb0b6;
+  --color-fill-normal: #70737c14;
+  --color-fill-strong: #70737c29;
+  --color-fill-alternative: #70737c0d;
+  --color-status-positive: #00bf40;
+  --color-status-cautionary: #ff9200;
+  --color-status-negative: #ff4242;
+  --color-static-white: #ffffff;
+  --color-static-black: #000000;
+  --color-accent-background-red-orange: #ff5e00;
+  --color-accent-background-lime: #58cf04;
+  --color-accent-background-cyan: #00bdde;
+  --color-accent-background-light-blue: #00aeff;
+  --color-accent-background-violet: #6541f2;
+  --color-accent-background-purple: #cb59ff;
+  --color-accent-background-pink: #f553da;
+  --color-accent-foreground-red: #e52222;
+  --color-accent-foreground-red-orange: #f55a00;
+  --color-accent-foreground-orange: #d17600;
+  --color-accent-foreground-lime: #429e00;
+  --color-accent-foreground-green: #009632;
+  --color-accent-foreground-cyan: #0098b2;
+  --color-accent-foreground-light-blue: #008dcf;
+  --color-accent-foreground-blue: #005eeb;
+  --color-accent-foreground-violet: #5b37ed;
+  --color-accent-foreground-purple: #ad36e3;
+  --color-accent-foreground-pink: #e846cd;
+  --color-material-dimmer: #17171985;
+  --color-inverse-primary: #3385ff;
+  --color-inverse-background: #1b1c1e;
+  --color-inverse-label: #f7f7f8;
+
+  /* ---- Text styles ---- */
+  /* fontWeight 차이(Bold/Medium/Regular)는 font-bold/medium/regular utility로 적용 */
+  --text-display-1: 56px;
+  --text-display-1--line-height: 128.6%;
+  --text-display-1--letter-spacing: -0.0319em;
+  --text-display-2: 40px;
+  --text-display-2--line-height: 130%;
+  --text-display-2--letter-spacing: -0.0282em;
+  --text-display-3: 36px;
+  --text-display-3--line-height: 133.4%;
+  --text-display-3--letter-spacing: -0.027em;
+  --text-title-1: 32px;
+  --text-title-1--line-height: 137.5%;
+  --text-title-1--letter-spacing: -0.0253em;
+  --text-title-2: 28px;
+  --text-title-2--line-height: 135.8%;
+  --text-title-2--letter-spacing: -0.0236em;
+  --text-title-3: 24px;
+  --text-title-3--line-height: 133.4%;
+  --text-title-3--letter-spacing: -0.023em;
+  --text-heading-1: 22px;
+  --text-heading-1--line-height: 136.4%;
+  --text-heading-1--letter-spacing: -0.0194em;
+  --text-heading-2: 20px;
+  --text-heading-2--line-height: 140%;
+  --text-heading-2--letter-spacing: -0.012em;
+  --text-headline-1: 18px;
+  --text-headline-1--line-height: 144.5%;
+  --text-headline-1--letter-spacing: -0.0002em;
+  --text-headline-2: 17px;
+  --text-headline-2--line-height: 141.2%;
+  --text-headline-2--letter-spacing: 0.0em;
+  --text-body-1-normal: 16px;
+  --text-body-1-normal--line-height: 150%;
+  --text-body-1-normal--letter-spacing: 0.0057em;
+  --text-body-1-reading: 16px;
+  --text-body-1-reading--line-height: 162.5%;
+  --text-body-1-reading--letter-spacing: 0.0057em;
+  --text-body-2-normal: 15px;
+  --text-body-2-normal--line-height: 146.7%;
+  --text-body-2-normal--letter-spacing: 0.0096em;
+  --text-body-2-reading: 15px;
+  --text-body-2-reading--line-height: 160%;
+  --text-body-2-reading--letter-spacing: 0.0096em;
+  --text-label-1-normal: 14px;
+  --text-label-1-normal--line-height: 142.9%;
+  --text-label-1-normal--letter-spacing: 0.0145em;
+  --text-label-1-reading: 14px;
+  --text-label-1-reading--line-height: 157.14%;
+  --text-label-1-reading--letter-spacing: 0.0145em;
+  --text-label-2: 13px;
+  --text-label-2--line-height: 138.5%;
+  --text-label-2--letter-spacing: 0.0194em;
+  --text-caption-1: 12px;
+  --text-caption-1--line-height: 133.4%;
+  --text-caption-1--letter-spacing: 0.0252em;
+
+  /* ---- Shadows (multi-layer drop shadow) ---- */
+  --shadow-normal-xsmall: 0px 1px 2px -1px #1717171a;
+  --shadow-normal-small: 0px 2px 4px -2px #1717170f, 0px 4px 6px -1px #1717170f;
+  --shadow-normal-medium: 0px 4px 6px -2px #17171712, 0px 10px 15px -3px #17171712;
+  --shadow-normal-large: 0px 6px 10px -4px #17171714, 0px 16px 24px -6px #17171714;
+  --shadow-normal-xlarge: 0px 10px 15px -5px #1717171a, 0px 24px 38px -10px #1717171f;
+  --shadow-spread-small: 0px 0px 60px 0px #1717171a;
+  --shadow-spread-medium: 0px 15px 75px 0px #17171729;
+
+}
