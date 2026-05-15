@@ -1177,7 +1177,7 @@ export default function Page() {
 
   // [A 타입 CM1 헬퍼들]
   // 라디오 선택 — 임시 후보만 갱신. 확정은 commitCm1Selection에서.
-  const handlePickDraftCandidate = (draft: Draft) => {
+const handlePickDraftCandidate = (draft: Draft) => {
   setCm1Candidate(cm1Candidate?.draftId === draft.draftId ? null : draft);
 };
 
