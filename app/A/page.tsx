@@ -1178,8 +1178,8 @@ export default function Page() {
   // [A 타입 CM1 헬퍼들]
   // 라디오 선택 — 임시 후보만 갱신. 확정은 commitCm1Selection에서.
   const handlePickDraftCandidate = (draft: Draft) => {
-    setCm1Candidate(draft);
-  };
+  setCm1Candidate(cm1Candidate?.draftId === draft.draftId ? null : draft);
+};
 
   // 행 또는 chevron 탭 — 기존 바텀시트를 그대로 띄우되, 어떤 초안인지 함께 전달.
   const openBottomSheetWith = (draft: Draft) => {
