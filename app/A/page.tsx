@@ -136,6 +136,10 @@ interface DraftData {
   description: string;
   tasks: string[];
   achievements: string[];
+  criteria: {
+    applied: string;
+    improve: string;
+  };
 }
 const DRAFT_DATA: Record<number, DraftData> = {
   1: {
@@ -157,6 +161,11 @@ const DRAFT_DATA: Record<number, DraftData> = {
       "신고 자료 정확도 99% 수준 유지",
       "결산 마감 일정을 평균 5영업일 이내로 관리",
     ],
+    criteria: {
+      applied:
+        "월·연 결산 운영 경험을 성과 중심으로 정리했어요. 전표 처리량, 감사 지적 0건, 신고 자료 정확도 99%를 주요 성과로 강조했어요.",
+      improve: "오류 개선 사례가 있으면 더 설득력 있어져요.",
+    },
   },
   // 2, 3번은 Phase 4에서 정식 데이터로 교체. 일단 1번 데이터 재사용 (title만 변경)
   2: {
@@ -178,6 +187,11 @@ const DRAFT_DATA: Record<number, DraftData> = {
       "신고 자료 정확도 99% 수준 유지",
       "결산 마감 일정을 평균 5영업일 이내로 관리",
     ],
+    criteria: {
+      applied:
+        "월·연 결산 운영 경험을 성과 중심으로 정리했어요. 전표 처리량, 감사 지적 0건, 신고 자료 정확도 99%를 주요 성과로 강조했어요.",
+      improve: "오류 개선 사례가 있으면 더 설득력 있어져요.",
+    },
   },
   3: {
     title: "경험 서사 중심 초안",
@@ -198,6 +212,11 @@ const DRAFT_DATA: Record<number, DraftData> = {
       "신고 자료 정확도 99% 수준 유지",
       "결산 마감 일정을 평균 5영업일 이내로 관리",
     ],
+    criteria: {
+      applied:
+        "월·연 결산 운영 경험을 성과 중심으로 정리했어요. 전표 처리량, 감사 지적 0건, 신고 자료 정확도 99%를 주요 성과로 강조했어요.",
+      improve: "오류 개선 사례가 있으면 더 설득력 있어져요.",
+    },
   },
 };
 
@@ -216,9 +235,9 @@ function CloseIcon() {
 }
 
 // ─── 펼치기(V) 아이콘 ──────────────────────────────────────────────────
-function ChevronDownIcon() {
+function ChevronDownIcon({ className }: { className?: string }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" className={className}>
       <path
         d="M5 7.5L10 12.5L15 7.5"
         stroke="currentColor"
@@ -230,26 +249,72 @@ function ChevronDownIcon() {
   );
 }
 
-// ─── 초안 작성 기준 카드 (모달 안, expand 토글은 3b-3에서) ─────────────
-function DraftCriteriaCard() {
+// ─── 초안 작성 기준 카드 (펼치기 토글) ────────────────────────────────
+function DraftCriteriaCard({
+  criteria,
+}: {
+  criteria: { applied: string; improve: string };
+}) {
+  const [isOpen, setIsOpen] = useState(false);
   return (
-    <button
-      type="button"
-      className="flex w-full items-center gap-3 rounded-xl border px-5 py-4 transition-colors"
+    <div
+      className="flex w-full flex-col rounded-xl border p-4 transition-colors"
       style={{
         borderColor: "#EAF2FE",
         background:
           "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%), #FFF",
       }}
     >
-      <AiOrb size={20} />
-      <span className="flex-1 text-left text-body-1 font-medium text-label-normal">
-        초안 작성 기준
-      </span>
-      <span className="text-label-neutral">
-        <ChevronDownIcon />
-      </span>
-    </button>
+      {/* 헤더 — 카드 전체 클릭으로 토글 */}
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        className="flex w-full items-center gap-3 text-left"
+        aria-expanded={isOpen}
+      >
+        <AiOrb size={20} />
+        <span className="flex-1 text-body-1 font-medium text-label-normal">
+          초안 작성 기준
+        </span>
+        <span className="text-label-neutral">
+          <ChevronDownIcon
+            className={`transition-transform duration-300 ease-out ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </span>
+      </button>
+
+      {/* 펼친 콘텐츠 — grid trick으로 부드럽게 열림/닫힘 */}
+      <div
+        className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out ${
+          isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+        aria-hidden={!isOpen}
+      >
+        <div className="min-h-0">
+          <div className="mt-4 h-px w-full bg-line-solid-normal" />
+          <div className="mt-4 flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <h5 className="text-label-1 font-medium text-label-neutral">
+                반영한 내용
+              </h5>
+              <p className="text-body-1-reading text-label-normal">
+                {criteria.applied}
+              </p>
+            </div>
+            <div className="flex flex-col gap-1">
+              <h5 className="text-label-1 font-medium text-label-neutral">
+                보완하면 좋은 점
+              </h5>
+              <p className="text-body-1-reading text-label-normal">
+                {criteria.improve}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -396,9 +461,10 @@ function DraftDetailModal({ draftIndex, onClose, onSelect }: DraftDetailModalPro
         {/* Scrollable content */}
         <div
           className="flex-1 overflow-y-auto px-5"
+          style={{ scrollbarGutter: "stable" }}
           onScroll={handleScroll}
         >
-          <DraftCriteriaCard />
+          <DraftCriteriaCard criteria={data.criteria} />
           <DraftDetailBody data={data} />
         </div>
 
