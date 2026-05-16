@@ -159,15 +159,29 @@ interface DraftData {
   };
 }
 
-// AI Chat에서 다듬을 항목
+// AI Chat에서 다듬을 항목 (단일 수정안 또는 다지선다)
 interface RefinementItem {
   step: number; // 1, 2 ...
   total: number; // 총 항목 수
   title: string;
   original: string;
-  revised: string;
-  reason: string;
+  revised?: string; // 단일 수정안일 때
+  options?: { label: string; text: string }[]; // 다지선다일 때
+  reason?: string;
 }
+
+// 두 번째 검토 항목 mock (다지선다 — 첫 번째 채택/유지 후 등장)
+const SECOND_REFINEMENT_ITEM: RefinementItem = {
+  step: 2,
+  total: 2,
+  title: "프로젝트 기간 표기",
+  original: "담당 업무: 2010.03 ~ 2012.02 (24개월)",
+  options: [
+    { label: "A", text: "정확한 기간 (24개월 운영)" },
+    { label: "B", text: "연도만 (2010~2012년)" },
+    { label: "C", text: "기간 생략하고 성과 중심" },
+  ],
+};
 
 // 사용자 ↔ AI 메시지 히스토리
 type ChatMessage =
@@ -670,19 +684,46 @@ function Cm02LoadingScreen({
   );
 }
 
-// ─── 채택/유지 버튼 그룹 ───────────────────────────────────────────
+// ─── 채택/유지 버튼 그룹 (single / multi-choice 분기) ────────────────
 function ChatActionButtons({
+  item,
   onAccept,
   onKeep,
 }: {
-  onAccept: () => void;
+  item: RefinementItem;
+  onAccept: (label?: string) => void;
   onKeep: () => void;
 }) {
+  // 다지선다 — A/B/C 채택 + 기존 유지
+  if (item.options) {
+    return (
+      <div className="flex flex-row flex-wrap items-center gap-2">
+        {item.options.map((opt) => (
+          <button
+            key={opt.label}
+            type="button"
+            onClick={() => onAccept(opt.label)}
+            className="rounded-[10px] bg-primary-normal px-4 py-2.5 text-body-2-reading font-bold text-static-white transition-colors hover:bg-primary-strong"
+          >
+            {opt.label} 채택
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={onKeep}
+          className="rounded-[10px] border border-primary-normal bg-transparent px-4 py-2.5 text-body-2-reading font-bold text-primary-normal transition-colors hover:bg-primary-normal/5"
+        >
+          기존 유지
+        </button>
+      </div>
+    );
+  }
+  // 단일 수정안 — 수정 문장 채택 / 기존 유지
   return (
     <div className="flex flex-row items-center gap-2">
       <button
         type="button"
-        onClick={onAccept}
+        onClick={() => onAccept()}
         className="rounded-[10px] bg-primary-normal px-4 py-2.5 text-body-2-reading font-bold text-static-white transition-colors hover:bg-primary-strong"
       >
         수정 문장 채택
@@ -794,14 +835,14 @@ function UserMessageBubble({ text }: { text: string }) {
   );
 }
 
-// ─── 수정 제안 항목 (기존/수정/이유 + 채택/유지) ──────────────────────
+// ─── 수정 제안 항목 (single / multi-choice) ────────────────────────
 function RefinementItemBlock({
   item,
   onAccept,
   onKeep,
 }: {
   item: RefinementItem;
-  onAccept: () => void;
+  onAccept: (label?: string) => void;
   onKeep: () => void;
 }) {
   const stepLabel =
@@ -823,31 +864,48 @@ function RefinementItemBlock({
         </p>
       </div>
 
-      {/* 수정 문장 */}
+      {/* 수정 문장 — single 또는 다지선다 */}
       <div className="flex w-full flex-col gap-1">
         <span className="text-label-2 font-medium text-primary-normal">
           수정 문장
         </span>
-        <p className="w-full text-body-1 font-bold text-primary-normal">
-          {item.revised}
-        </p>
+        {item.revised && (
+          <p className="w-full text-body-1 font-bold text-primary-normal">
+            {item.revised}
+          </p>
+        )}
+        {item.options && (
+          <div className="flex flex-col items-start gap-1 self-stretch">
+            {item.options.map((opt) => (
+              <p
+                key={opt.label}
+                className="font-pretendard text-body-1 font-bold text-primary-normal"
+                /* text-body-1, font-bold, text-primary-normal */
+              >
+                {`${opt.label}. ${opt.text}`}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* 수정 이유 */}
-      <div className="flex w-full flex-col gap-1">
-        <span className="text-label-2 font-medium text-label-neutral">
-          수정 이유
-        </span>
-        <p className="w-full text-body-1 font-normal text-label-neutral">
-          {item.reason}
-        </p>
-      </div>
+      {/* 수정 이유 (있을 때만) */}
+      {item.reason && (
+        <div className="flex w-full flex-col gap-1">
+          <span className="text-label-2 font-medium text-label-neutral">
+            수정 이유
+          </span>
+          <p className="w-full text-body-1 font-normal text-label-neutral">
+            {item.reason}
+          </p>
+        </div>
+      )}
 
-      {/* 가로 구분선 — 수정 이유 본문과 채택/유지 버튼 사이 */}
+      {/* 가로 구분선 */}
       <div className="h-px w-full bg-line-solid-normal" />
 
       {/* 채택/유지 버튼 */}
-      <ChatActionButtons onAccept={onAccept} onKeep={onKeep} />
+      <ChatActionButtons item={item} onAccept={onAccept} onKeep={onKeep} />
     </div>
   );
 }
@@ -887,6 +945,23 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
     setChatInput("");
   };
 
+  // 첫 번째 채택/유지 → "좋아요. 다음 항목을 볼게요." + 두 번째 항목 추가
+  // (한 번만 발동되도록 messages 안 SECOND_REFINEMENT_ITEM 이 이미 있는지 체크)
+  const handleFirstResolve = () => {
+    const alreadyHasSecond = messages.some(
+      (m) => m.kind === "ai" && m.item?.step === 2
+    );
+    if (alreadyHasSecond) return;
+    setMessages((prev) => [
+      ...prev,
+      {
+        kind: "ai",
+        text: "좋아요. 다음 항목을 볼게요.",
+        item: SECOND_REFINEMENT_ITEM,
+      },
+    ]);
+  };
+
   return (
     <>
       {/* Scrollable content */}
@@ -911,8 +986,8 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
             {/* 검토 항목 */}
             <RefinementItemBlock
               item={firstItem}
-              onAccept={() => console.log("accept item 1")}
-              onKeep={() => console.log("keep item 1")}
+              onAccept={() => handleFirstResolve()}
+              onKeep={() => handleFirstResolve()}
             />
 
             {/* 사용자 직접 입력 안내 (메시지 없을 때만) */}
@@ -943,8 +1018,8 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
                         <div className="h-px w-full bg-line-solid-normal" />
                         <RefinementItemBlock
                           item={msg.item}
-                          onAccept={() => console.log("accept", i)}
-                          onKeep={() => console.log("keep", i)}
+                          onAccept={() => handleFirstResolve()}
+                          onKeep={() => handleFirstResolve()}
                         />
                       </>
                     )}
