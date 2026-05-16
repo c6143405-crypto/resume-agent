@@ -186,7 +186,13 @@ const SECOND_REFINEMENT_ITEM: RefinementItem = {
 // 사용자 ↔ AI 메시지 히스토리
 type ChatMessage =
   | { kind: "user"; text: string }
-  | { kind: "ai"; text: string; item?: RefinementItem }
+  | {
+      kind: "ai";
+      text: string;
+      item?: RefinementItem;
+      sections?: { label: string; content: string }[];
+      chips?: string[];
+    }
   | { kind: "confirm"; text: string; draftTitle: string };
 
 // 사용자가 입력 후 표시되는 AI 응답 mock (Figma 디자인 기반)
@@ -1251,8 +1257,9 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [confirmPreviewOpen, setConfirmPreviewOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const firstItem: RefinementItem = {
+  const [firstItem, setFirstItem] = useState<RefinementItem>({
     step: 1,
     total: 2,
     title: "외부 감사 기간 표현",
@@ -1261,21 +1268,131 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
       "외부 회계 감사 대응 과정에서 주요 지적 사항 없이 결산 자료의 정확성을 유지했습니다.",
     reason:
       "기간을 명시하지 않고 성과 중심으로 표현하면 더 안전하고 신뢰성 있습니다.",
-  };
+  });
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     onScrollChange(e.currentTarget.scrollTop > 0);
   };
 
-  const handleSend = () => {
-    const text = chatInput.trim();
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+  }, [messages]);
+
+  const handleSend = async (overrideText?: string) => {
+    const text = (overrideText ?? chatInput).trim();
     if (!text) return;
-    setMessages((prev) => [
-      ...prev,
-      { kind: "user", text },
-      { kind: "ai", text: MOCK_AI_RESPONSE.text, item: MOCK_AI_RESPONSE.item },
-    ]);
+    if (text === "최종 확정" || text === "최종확정") {
+      onFinish();
+      return;
+    }
     setChatInput("");
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              type: "assistant",
+              text: [
+                "현재 사용자가 수정 중인 검토 항목입니다.",
+                `항목명: ${firstItem.title}`,
+                `기존 문장: ${firstItem.original}`,
+                `현재 수정 문장: ${firstItem.revised ?? ""}`,
+                "사용자가 '3건이야', '아니 3건', '12년은 아니야'처럼 짧게 정정하면 이 항목의 수치나 표현을 고치려는 뜻으로 해석하세요.",
+              ].join("\n"),
+            },
+            ...messages.map((msg) => ({
+              type: msg.kind === "user" ? "user" : "assistant",
+              text: msg.text,
+            })),
+            { type: "user", text },
+          ],
+          currentStep: "CM2",
+          prototypeType: "A",
+          userIntent: "MODIFY_CONTENT",
+          userMessage: [
+            text,
+            "",
+            "[현재 수정 대상]",
+            `항목명: ${firstItem.title}`,
+            `기존 문장: ${firstItem.original}`,
+            `현재 수정 문장: ${firstItem.revised ?? ""}`,
+          ].join("\n"),
+          currentAiDraft: firstItem.revised ?? firstItem.original,
+          selectedDraft: {
+            draftId: "1",
+            draftTitle: DRAFT_DATA[1].title,
+            draftContent: [
+              DRAFT_DATA[1].company,
+              DRAFT_DATA[1].period,
+              DRAFT_DATA[1].project,
+              DRAFT_DATA[1].description,
+              ...DRAFT_DATA[1].tasks,
+              ...DRAFT_DATA[1].achievements,
+            ].join("\n"),
+            draftDirection: DRAFT_DATA[1].title,
+            whyRecommended: DRAFT_DATA[1].criteria.applied,
+            caution: DRAFT_DATA[1].criteria.improve,
+          },
+          draftOptions: Object.entries(DRAFT_DATA).map(([draftId, draft]) => ({
+            draftId,
+            draftTitle: draft.title,
+            draftContent: [
+              draft.company,
+              draft.period,
+              draft.project,
+              draft.description,
+              ...draft.tasks,
+              ...draft.achievements,
+            ].join("\n"),
+            draftDirection: draft.title,
+            whyRecommended: draft.criteria.applied,
+            caution: draft.criteria.improve,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+      console.log("[/api/chat] response:", data);
+      const revisedSection = Array.isArray(data.sections)
+        ? data.sections.find(
+            (section: { label?: unknown; content?: unknown }) =>
+              typeof section.label === "string" &&
+              section.label.includes("수정") &&
+              typeof section.content === "string" &&
+              section.content.trim().length > 0
+          )
+        : null;
+      if (revisedSection) {
+        setFirstItem((prev) => ({
+          ...prev,
+          revised: String(revisedSection.content).trim(),
+        }));
+      }
+      setMessages((prev) => [
+        ...prev,
+        { kind: "user", text },
+        {
+          kind: "ai",
+          text: String(data.text || ""),
+          sections: Array.isArray(data.sections) ? data.sections : [],
+          chips: Array.isArray(data.chips) ? data.chips.map(String) : [],
+        },
+      ]);
+    } catch (error) {
+      console.error("[/api/chat] request failed:", error);
+    }
   };
 
   // 첫 번째 채택/유지 → "좋아요. 다음 항목을 볼게요." + 두 번째 항목 추가
@@ -1312,6 +1429,7 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
     <>
       {/* Scrollable content */}
       <div
+        ref={scrollContainerRef}
         className="flex-1 overflow-y-auto"
         style={{ scrollbarGutter: "stable" }}
         onScroll={handleScroll}
@@ -1357,7 +1475,20 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
                       key={i}
                       text={msg.text}
                       draftTitle={msg.draftTitle}
-                      onReview={() => console.log("추가 검토하기")}
+                      onReview={() =>
+                        setMessages((prev) => [
+                          ...prev,
+                          {
+                            kind: "ai",
+                            text: "좋아요. 추가로 검토하고 싶은 문장이나 방향을 입력해주세요.",
+                            chips: [
+                              "표현을 더 간결하게",
+                              "성과 중심으로 바꾸기",
+                              "과장된 표현 줄이기",
+                            ],
+                          },
+                        ])
+                      }
                       onFinish={onFinish}
                       onPreviewClick={() => setConfirmPreviewOpen(true)}
                     />
@@ -1374,6 +1505,37 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
                   >
                     <AiMessageBlock>
                       <p>{msg.text}</p>
+                      {msg.sections && msg.sections.length > 0 && (
+                        <div className="mt-5 flex flex-col gap-4">
+                          {msg.sections.map((section, sectionIndex) => (
+                            <div
+                              key={sectionIndex}
+                              className="flex flex-col gap-1"
+                            >
+                              <span className="text-label-2 font-medium text-primary-normal">
+                                {section.label}
+                              </span>
+                              <p className="whitespace-pre-line text-body-1-reading font-medium text-label-normal">
+                                {section.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {msg.chips && msg.chips.length > 0 && (
+                        <div className="mt-5 flex flex-row flex-wrap gap-2">
+                          {msg.chips.map((chip) => (
+                            <button
+                              key={chip}
+                              type="button"
+                              onClick={() => handleSend(chip)}
+                              className="rounded-[10px] border border-primary-normal bg-transparent px-4 py-2.5 text-body-2-reading font-bold text-primary-normal transition-colors hover:bg-primary-normal/5"
+                            >
+                              {chip}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </AiMessageBlock>
                     {msg.item && (
                       <>
