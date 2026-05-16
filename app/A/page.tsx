@@ -684,29 +684,47 @@ function ChatInput({ value, onChange, onSend }: {
   onChange: (v: string) => void;
   onSend: () => void;
 }) {
+  const isActive = value.trim().length > 0;
   return (
-    <div className="flex min-h-[60px] w-full items-center justify-between gap-2 rounded-[10px] border border-line-solid-normal bg-static-white p-4">
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && value.trim()) onSend();
-        }}
-        placeholder="어떻게 바꾸고 싶은지 입력해주세요."
-        className="flex-1 bg-transparent text-body-1-reading font-normal text-label-normal placeholder:text-interaction-inactive focus:outline-none"
-      />
-      <button
-        type="button"
-        onClick={onSend}
-        disabled={!value.trim()}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-normal text-static-white disabled:opacity-40"
-        aria-label="보내기"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M2 8L14 8M14 8L9 3M14 8L9 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
+    <div
+      className="flex w-full flex-col items-center justify-center gap-3 rounded-xl border border-line-solid-normal bg-background-normal-normal p-3"
+      /* border-line-solid-normal, bg-background-normal-normal */
+    >
+      <div className="flex min-h-[70px] w-full items-start justify-between gap-3">
+        {/* placeholder / 입력 영역 */}
+        <div className="flex flex-1 flex-col items-start gap-4 self-stretch px-1">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && isActive) onSend();
+            }}
+            placeholder="어떻게 바꾸고 싶은지 입력해주세요."
+            className="w-full bg-transparent font-pretendard text-body-1-reading font-normal text-label-normal placeholder:text-label-assistive focus:outline-none"
+            /* text-body-1-reading, font-normal, text-label-assistive */
+          />
+        </div>
+
+        {/* 전송 버튼 — 1개 아이콘 + 배경색 토글 */}
+        <button
+          type="button"
+          onClick={onSend}
+          disabled={!isActive}
+          className={`flex size-12 shrink-0 items-center justify-center rounded-full transition-colors ${
+            isActive ? "bg-primary-normal" : "bg-interaction-disable"
+          }`}
+          /* bg-primary-normal (활성) / bg-interaction-disable (비활성) */
+          aria-label="보내기"
+        >
+          <Image
+            src="/Textinput/Button/Icon/Icon.png"
+            alt=""
+            width={24}
+            height={24}
+          />
+        </button>
+      </div>
     </div>
   );
 }
@@ -841,7 +859,10 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
       </div>
 
       {/* 하단 입력창 — flex item (본문 flex-1로 늘어나 자동 하단) */}
-      <div className="bg-static-white p-5">
+      <div
+        className="flex w-full flex-col items-center gap-5 bg-background-normal-normal px-5 pb-[calc(20px+env(safe-area-inset-bottom))]"
+        /* bg-background-normal-normal */
+      >
         <ChatInput
           value={chatInput}
           onChange={setChatInput}
