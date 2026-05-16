@@ -1289,6 +1289,10 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
     const text = (overrideText ?? chatInput).trim();
     if (!text) return;
     if (text === "최종 확정" || text === "최종확정") {
+      handleFinalConfirm();
+      return;
+    }
+    if (text === "완료했어요") {
       onFinish();
       return;
     }
@@ -1365,6 +1369,9 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
 
       const data = await response.json();
       console.log("[/api/chat] response:", data);
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || "AI 응답 생성에 실패했습니다.");
+      }
       const revisedSection = Array.isArray(data.sections)
         ? data.sections.find(
             (section: { label?: unknown; content?: unknown }) =>
@@ -1392,7 +1399,36 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
       ]);
     } catch (error) {
       console.error("[/api/chat] request failed:", error);
+      setMessages((prev) => [
+        ...prev,
+        { kind: "user", text },
+        {
+          kind: "ai",
+          text: "지금 AI 응답을 가져오지 못했어요. 잠시 후 다시 시도해주세요.",
+        },
+      ]);
     }
+  };
+
+  const handleFinalConfirm = () => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        kind: "ai",
+        text: "최종 확정된 내용을 확인해주세요.",
+        sections: [
+          {
+            label: "최종 확정 문장",
+            content: firstItem.revised ?? firstItem.original,
+          },
+          {
+            label: "반영 기준",
+            content: firstItem.reason ?? "",
+          },
+        ],
+        chips: ["완료했어요"],
+      },
+    ]);
   };
 
   // 첫 번째 채택/유지 → "좋아요. 다음 항목을 볼게요." + 두 번째 항목 추가
@@ -1489,7 +1525,7 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
                           },
                         ])
                       }
-                      onFinish={onFinish}
+                      onFinish={handleFinalConfirm}
                       onPreviewClick={() => setConfirmPreviewOpen(true)}
                     />
                   );
