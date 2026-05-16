@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 
-const MODEL = 'gpt-4o-mini';
+const MODEL = 'gpt-4o';
 
 // [최소 시스템 프롬프트]
 // 이번 단계에서는 A/B/C/D 타입별 출력 규칙은 적용하지 않는다.
