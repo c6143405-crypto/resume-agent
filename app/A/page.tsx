@@ -57,13 +57,23 @@ function HomeBar() {
   );
 }
 
-// ─── TBD placeholder 카드 (Start 전용) ────────────────────────────────
-function TbdCard() {
+// ─── TBD placeholder 카드 (그래픽 미확정) ──────────────────────────────
+function TbdCard({ label }: { label?: string }) {
   return (
     <div className="relative w-full overflow-hidden rounded-3xl bg-[#E73E3E] px-6 py-20 text-center">
-      <p className="text-xs opacity-50 text-white mb-1">T2에서 확정한</p>
-      <p className="text-5xl font-bold text-white mb-1">TBD</p>
-      <p className="text-xs opacity-50 text-white">ID 카드 그래픽 디자인</p>
+      {label ? (
+        <>
+          <p className="mb-1 text-xs text-white opacity-50">{`'${label}'`}</p>
+          <p className="mb-1 text-5xl font-bold text-white">TBD</p>
+          <p className="text-xs text-white opacity-50">그래픽 디자인</p>
+        </>
+      ) : (
+        <>
+          <p className="mb-1 text-xs text-white opacity-50">T2에서 확정한</p>
+          <p className="mb-1 text-5xl font-bold text-white">TBD</p>
+          <p className="text-xs text-white opacity-50">ID 카드 그래픽 디자인</p>
+        </>
+      )}
     </div>
   );
 }
@@ -73,7 +83,7 @@ function BackgroundEllipses() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-hidden"
+      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
     >
       <div
         className="absolute rounded-full"
@@ -483,7 +493,7 @@ function DraftDetailModal({ draftIndex, onClose, onSelect }: DraftDetailModalPro
             <button
               type="button"
               onClick={onSelect}
-              className="h-14 w-full rounded-2xl bg-primary-normal text-base font-bold text-static-white transition-colors hover:bg-primary-strong active:bg-primary-heavy"
+              className="w-full self-stretch rounded-xl bg-primary-normal px-7 py-3.5 text-center text-headline-2 font-bold text-static-white transition-colors hover:bg-primary-strong active:bg-primary-heavy"
             >
               이 초안 선택하기
             </button>
@@ -503,13 +513,15 @@ function StartScreen({ onStart }: StartScreenProps) {
     <>
       <section className="flex flex-col items-center gap-5 px-5 py-12">
         <AiOrb size={40} />
-        <h2 className="text-heading-1 text-center font-bold text-label-strong">
-          선택한 직무를 바탕으로<br />
-          경력기술서 초안을 만들게요
-        </h2>
-        <p className="text-body-1-reading text-center text-label-neutral">
-          요즘 기업 표현과, 구체적 성과를 작성해요
-        </p>
+        <div className="flex flex-col items-center gap-2">
+          <h2 className="text-heading-1 text-center font-bold text-label-strong">
+            선택한 직무를 바탕으로<br />
+            경력기술서 초안을 만들게요
+          </h2>
+          <p className="text-body-1-reading text-center text-label-neutral">
+            요즘 기업 표현과, 구체적 성과를 작성해요
+          </p>
+        </div>
       </section>
       <div className="px-5">
         <TbdCard />
@@ -519,7 +531,7 @@ function StartScreen({ onStart }: StartScreenProps) {
         <button
           type="button"
           onClick={onStart}
-          className="h-14 w-full rounded-2xl bg-primary-normal text-base font-bold text-static-white transition-colors hover:bg-primary-strong active:bg-primary-heavy"
+          className="w-full self-stretch rounded-xl bg-primary-normal px-7 py-3.5 text-center text-headline-2 font-bold text-static-white transition-colors hover:bg-primary-strong active:bg-primary-heavy"
         >
           초안 만들기
         </button>
@@ -543,13 +555,15 @@ function Cm01Screen({ onDraftClick }: Cm01ScreenProps) {
     <>
       <section className="relative z-10 flex flex-col items-center gap-5 px-5 py-12">
         <AiOrb size={40} />
-        <h2 className="text-heading-1 text-center font-bold text-label-strong">
-          3가지 초안을 완성했어요
-        </h2>
-        <p className="text-body-1-reading text-center text-label-neutral">
-          내 경험에 더 가까운 초안을 선택해주세요<br />
-          부족한 부분은 AI와 함께 수정할 수 있어요
-        </p>
+        <div className="flex flex-col items-center gap-2">
+          <h2 className="text-heading-1 text-center font-bold text-label-strong">
+            3가지 초안을 완성했어요
+          </h2>
+          <p className="text-body-1-reading text-center text-label-neutral">
+            내 경험에 더 가까운 초안을 선택해주세요<br />
+            부족한 부분은 AI와 함께 수정할 수 있어요
+          </p>
+        </div>
       </section>
 
       <div className="relative z-10 flex flex-col gap-2 px-5">
@@ -568,8 +582,59 @@ function Cm01Screen({ onDraftClick }: Cm01ScreenProps) {
   );
 }
 
+// ─── CM 02 진입 화면 ("1번 초안을 선택했어요") ────────────────────────
+interface Cm02LoadingScreenProps {
+  draftIndex: number;
+  draftTitle: string;
+  onRefine: () => void;
+  onFinalize: () => void;
+}
+function Cm02LoadingScreen({
+  draftIndex,
+  draftTitle,
+  onRefine,
+  onFinalize,
+}: Cm02LoadingScreenProps) {
+  return (
+    <>
+      <section className="flex flex-col items-center gap-5 px-5 py-12">
+        <AiOrb size={40} />
+        <div className="flex flex-col items-center gap-2">
+          <h2 className="text-heading-1 text-center font-bold text-label-strong">
+            {draftIndex}번 초안을 선택했어요
+          </h2>
+          <p className="text-body-1-reading text-center text-label-neutral">
+            내용을 AI와 함께 더 다듬을 수 있어요
+          </p>
+        </div>
+      </section>
+      <div className="px-5">
+        <TbdCard label={draftTitle} />
+      </div>
+      <div className="flex-1" />
+      <footer className="flex w-full flex-col items-start gap-2 self-stretch px-5 pb-2">
+        <button
+          type="button"
+          onClick={onRefine}
+          className="w-full self-stretch rounded-xl bg-primary-normal px-7 py-3.5 text-center text-headline-2 font-bold text-static-white transition-colors hover:bg-primary-strong active:bg-primary-heavy"
+        >
+          초안 내용 다듬기
+        </button>
+        <button
+          type="button"
+          onClick={onFinalize}
+          className="w-full self-stretch rounded-xl border px-7 py-3.5 text-center text-headline-2 font-bold text-label-normal transition-colors hover:bg-fill-alternative"
+          style={{ borderColor: "rgba(112, 115, 124, 0.16)" }}
+        >
+          최종 마무리 단계로 넘어가기
+        </button>
+      </footer>
+    </>
+  );
+}
+
 // ─── Page export ───────────────────────────────────────────────────────
-type Screen = "start" | "cm1";
+type Screen = "start" | "cm1" | "cm2-loading";
 
 export default function APage() {
   const [screen, setScreen] = useState<Screen>("start");
@@ -581,14 +646,14 @@ export default function APage() {
           background:
             "linear-gradient(184deg, #FAFFFC 0.96%, #F3FBFF 49.34%, #E8F4FF 97.71%)",
         }
-      : { background: "#ffffff" };
+      : { background: "#ffffff" }; // cm1, cm2-loading 흰 배경 + Ellipse
 
   return (
     <div
-      className="relative mx-auto flex min-h-screen w-full max-w-[375px] flex-col overflow-hidden"
+      className="relative isolate mx-auto flex min-h-screen w-full max-w-[375px] flex-col overflow-hidden"
       style={containerStyle}
     >
-      {screen === "cm1" && <BackgroundEllipses />}
+      {(screen === "cm1" || screen === "cm2-loading") && <BackgroundEllipses />}
 
       <StatusBar />
       <PageTitleBar />
@@ -599,6 +664,14 @@ export default function APage() {
       {screen === "cm1" && (
         <Cm01Screen onDraftClick={(idx) => setSelectedDraft(idx)} />
       )}
+      {screen === "cm2-loading" && (
+        <Cm02LoadingScreen
+          draftIndex={1}
+          draftTitle={DRAFT_DATA[1].title}
+          onRefine={() => console.log("refine — Phase 3c-2")}
+          onFinalize={() => console.log("finalize — End 화면")}
+        />
+      )}
 
       <HomeBar />
 
@@ -608,8 +681,8 @@ export default function APage() {
           draftIndex={selectedDraft}
           onClose={() => setSelectedDraft(null)}
           onSelect={() => {
-            console.log("draft selected:", selectedDraft);
-            // CM 02 진입은 Phase 3c에서
+            setSelectedDraft(null);
+            setScreen("cm2-loading");
           }}
         />
       )}
