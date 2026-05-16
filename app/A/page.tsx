@@ -380,6 +380,264 @@ function DraftCriteriaCard({
   );
 }
 
+// ─── 수정된 문장 카드 (Confirm Preview 전용) ────────────────────────
+function ConfirmCriteriaCard() {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div
+      className="flex w-full flex-col rounded-xl border p-4 transition-colors"
+      style={{
+        borderColor: "#EAF2FE",
+        background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%), #FFF",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        className="flex w-full items-center gap-3 text-left"
+        aria-expanded={isOpen}
+      >
+        <AiOrb size={20} />
+        <span className="flex-1 text-body-1 font-medium text-label-normal">
+          수정된 문장
+        </span>
+        <span className="text-label-neutral">
+          <ChevronDownIcon
+            className={`transition-transform duration-300 ease-out ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </span>
+      </button>
+
+      <div
+        className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out ${
+          isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+        aria-hidden={!isOpen}
+      >
+        <div className="min-h-0">
+          <div className="mt-4 h-px w-full bg-line-solid-normal" />
+          <div className="mt-4 flex flex-col gap-4">
+            {/* 기존 초안 문장 */}
+            <div className="flex flex-col gap-1">
+              <h5 className="text-label-1 font-medium text-label-neutral">
+                기존 초안 문장
+              </h5>
+              <ul className="flex flex-col gap-1 pt-1">
+                <li className="text-body-1-reading text-label-normal flex gap-2 px-1">
+                  <span aria-hidden="true">•</span>
+                  <span className="flex-1">
+                    외부 감사 12년 연속 주요 지적 사항 0건 유지
+                  </span>
+                </li>
+                <li className="text-body-1-reading text-label-normal flex gap-2 px-1">
+                  <span aria-hidden="true">•</span>
+                  <span className="flex-1">
+                    2012.03 ~ 현재 (12년 2개월) · 회계팀 과장
+                  </span>
+                </li>
+              </ul>
+            </div>
+            {/* 수정된 초안 문장 */}
+            <div className="flex flex-col gap-1">
+              <h5 className="text-label-1 font-medium text-label-neutral">
+                수정된 초안 문장
+              </h5>
+              <ul className="flex flex-col gap-1 pt-1">
+                <li className="text-body-1-reading text-label-normal flex gap-2 px-1">
+                  <span aria-hidden="true">•</span>
+                  <span className="flex-1">
+                    외부 회계 감사 대응 과정에서 주요 지적 사항 없이 결산 자료의 정확성을 유지
+                  </span>
+                </li>
+                <li className="text-body-1-reading text-label-normal flex gap-2 px-1">
+                  <span aria-hidden="true">•</span>
+                  <span className="flex-1">
+                    2012.03 ~ 2024.05 · 회계팀 과장
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Confirm Preview 본문 (수정 부분 파란색, weight medium) ────────────
+function ConfirmPreviewBody() {
+  return (
+    <div className="flex flex-col gap-6 pb-12 pt-9">
+      {/* 회사명 + 기간 (기간만 파란색) */}
+      <div className="flex flex-col gap-1 px-1">
+        <h3 className="text-headline-1 font-bold text-label-normal">
+          (주) A 의류 유통 기업
+        </h3>
+        <p className="text-body-2-reading font-medium text-primary-normal">
+          2012.03 ~ 2024.05 · 회계팀 과장
+        </p>
+        <div className="mt-5 h-px w-full bg-line-solid-normal" />
+      </div>
+
+      {/* 프로젝트 */}
+      <div className="flex flex-col gap-3 px-1">
+        <h3 className="text-headline-1 font-bold text-label-normal">
+          [프로젝트 1] 월·연 결산 마감 프로세스 운영
+        </h3>
+        <p className="text-body-1-reading font-medium text-label-normal">
+          직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.
+        </p>
+      </div>
+
+      {/* 업무 상세 */}
+      <div className="flex flex-col gap-1 px-1">
+        <h4 className="text-headline-1 font-bold text-label-normal">업무 상세</h4>
+        <ul className="flex flex-col gap-1 pt-3">
+          {[
+            "매월 결산 마감 일정 관리",
+            "외부 회계 감사 대응",
+            "부가세·법인세 신고 자료 정리",
+            "결산 종료 후 대표 보고 자료 작성",
+          ].map((task, i) => (
+            <li
+              key={i}
+              className="text-body-1-reading font-medium text-label-normal flex gap-2 px-1"
+            >
+              <span aria-hidden="true">•</span>
+              <span className="flex-1">{task}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* 역할 및 성과 (두 번째 항목 파란색) */}
+      <div className="flex flex-col gap-1 px-1">
+        <h4 className="text-headline-1 font-bold text-label-normal">역할 및 성과</h4>
+        <ul className="flex flex-col gap-1 pt-3">
+          <li className="text-body-1-reading font-medium text-label-normal flex gap-2 px-1">
+            <span aria-hidden="true">•</span>
+            <span className="flex-1">
+              매입·매출 전표 월 평균 1,500여 건 처리 및 검증
+            </span>
+          </li>
+          <li className="text-body-1-reading font-medium flex gap-2 px-1 text-primary-normal">
+            <span aria-hidden="true">•</span>
+            <span className="flex-1">
+              외부 회계 감사 대응 과정에서 주요 지적 사항 없이 결산 자료의 정확성을 유지
+            </span>
+          </li>
+          <li className="text-body-1-reading font-medium text-label-normal flex gap-2 px-1">
+            <span aria-hidden="true">•</span>
+            <span className="flex-1">신고 자료 정확도 99% 수준 유지</span>
+          </li>
+          <li className="text-body-1-reading font-medium text-label-normal flex gap-2 px-1">
+            <span aria-hidden="true">•</span>
+            <span className="flex-1">
+              결산 마감 일정을 평균 5영업일 이내로 관리
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ─── Confirm Preview Modal (CTA 없음) ──────────────────────────────────
+interface ConfirmPreviewModalProps {
+  draftIndex: number;
+  draftTitle: string;
+  onClose: () => void;
+}
+function ConfirmPreviewModal({
+  draftIndex,
+  draftTitle,
+  onClose,
+}: ConfirmPreviewModalProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setIsVisible(true), 10);
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    if (scrollTop > 20 && !isExpanded) {
+      setIsExpanded(true);
+    }
+  };
+
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 280);
+  };
+
+  return (
+    <div className="absolute inset-0 z-50">
+      <button
+        type="button"
+        aria-label="닫기"
+        onClick={handleClose}
+        className={`absolute inset-0 transition-opacity duration-300 ${
+          isVisible ? "opacity-100" : "opacity-0"
+        }`}
+        style={{ background: "rgba(23, 23, 25, 0.52)" }}
+      />
+
+      <div
+        className={`absolute bottom-0 left-0 right-0 flex w-full flex-col overflow-hidden bg-static-white transition-all duration-300 ease-out ${
+          isVisible ? "translate-y-0" : "translate-y-full"
+        }`}
+        style={{
+          height: isExpanded ? "100%" : "85%",
+          borderTopLeftRadius: isExpanded ? 0 : 16,
+          borderTopRightRadius: isExpanded ? 0 : 16,
+          borderTop: "1px solid rgba(112, 115, 124, 0.22)",
+          borderLeft: "1px solid rgba(112, 115, 124, 0.22)",
+          borderRight: "1px solid rgba(112, 115, 124, 0.22)",
+        }}
+      >
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="h-1 w-10 rounded-full bg-line-solid-strong" />
+        </div>
+
+        <div className="flex items-center justify-between px-4 py-6">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-label-strong text-label-1 font-bold leading-none text-static-white">
+              {draftIndex}
+            </span>
+            <h2 className="text-heading-2 font-bold text-label-strong">
+              {draftTitle}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="text-label-strong"
+            aria-label="닫기"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+
+        <div
+          className="flex-1 overflow-y-auto px-5"
+          style={{ scrollbarGutter: "stable" }}
+          onScroll={handleScroll}
+        >
+          <ConfirmCriteriaCard />
+          <ConfirmPreviewBody />
+        </div>
+
+        {/* CTA 없음 — Confirm Preview는 정보 표시만 */}
+      </div>
+    </div>
+  );
+}
+
 // ─── 모달 본문 (상세 내용) ────────────────────────────────────────────
 function DraftDetailBody({ data }: { data: DraftData }) {
   return (
@@ -842,11 +1100,13 @@ function ConfirmMessageBlock({
   draftTitle,
   onReview,
   onFinish,
+  onPreviewClick,
 }: {
   text: string;
   draftTitle: string;
   onReview: () => void;
   onFinish: () => void;
+  onPreviewClick: () => void;
 }) {
   // text를 \n 기준으로 줄 분리 (빈 줄도 유지)
   const lines = text.split("\n");
@@ -867,8 +1127,12 @@ function ConfirmMessageBlock({
         <span className="text-label-2 font-medium text-primary-normal">
           초안 미리보기
         </span>
-        <div className="flex w-full items-center gap-2 self-stretch rounded-xl border border-[#E8EEF5] bg-static-white p-4">
-          <span className="flex-1 text-body-1 font-bold text-label-normal">
+        <button
+          type="button"
+          onClick={onPreviewClick}
+          className="flex w-full items-center gap-2 self-stretch rounded-xl border border-[#E8EEF5] bg-static-white p-4 transition-colors hover:bg-fill-alternative"
+        >
+          <span className="flex-1 text-left text-body-1 font-bold text-label-normal">
             {draftTitle}
           </span>
           <Image
@@ -878,7 +1142,7 @@ function ConfirmMessageBlock({
             height={20}
             className="opacity-50"
           />
-        </div>
+        </button>
       </div>
 
       {/* 두 버튼 */}
@@ -986,6 +1250,7 @@ interface AiChatScreenProps {
 function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProps) {
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [confirmPreviewOpen, setConfirmPreviewOpen] = useState(false);
 
   const firstItem: RefinementItem = {
     step: 1,
@@ -1094,6 +1359,7 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
                       draftTitle={msg.draftTitle}
                       onReview={() => console.log("추가 검토하기")}
                       onFinish={onFinish}
+                      onPreviewClick={() => setConfirmPreviewOpen(true)}
                     />
                   );
                 }
@@ -1138,6 +1404,15 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
           onSend={handleSend}
         />
       </div>
+
+      {/* Confirm 미리보기 모달 (CTA 없음) */}
+      {confirmPreviewOpen && (
+        <ConfirmPreviewModal
+          draftIndex={1}
+          draftTitle={draftTitle}
+          onClose={() => setConfirmPreviewOpen(false)}
+        />
+      )}
     </>
   );
 }
