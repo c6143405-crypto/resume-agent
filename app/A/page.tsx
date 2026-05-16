@@ -186,7 +186,8 @@ const SECOND_REFINEMENT_ITEM: RefinementItem = {
 // 사용자 ↔ AI 메시지 히스토리
 type ChatMessage =
   | { kind: "user"; text: string }
-  | { kind: "ai"; text: string; item?: RefinementItem };
+  | { kind: "ai"; text: string; item?: RefinementItem }
+  | { kind: "confirm"; text: string; draftTitle: string };
 
 // 사용자가 입력 후 표시되는 AI 응답 mock (Figma 디자인 기반)
 const MOCK_AI_RESPONSE: { text: string; item: RefinementItem } = {
@@ -835,6 +836,72 @@ function UserMessageBubble({ text }: { text: string }) {
   );
 }
 
+// ─── Confirm 메시지 블록 (모두 반영 + 초안 미리보기 + 두 버튼) ─────────
+function ConfirmMessageBlock({
+  text,
+  draftTitle,
+  onReview,
+  onFinish,
+}: {
+  text: string;
+  draftTitle: string;
+  onReview: () => void;
+  onFinish: () => void;
+}) {
+  // text를 \n 기준으로 줄 분리 (빈 줄도 유지)
+  const lines = text.split("\n");
+  return (
+    <div className="flex w-full flex-col items-start gap-5 self-stretch">
+      {/* AI 메시지 (줄바꿈 처리) */}
+      <AiMessageBlock>
+        {lines.map((line, i) => (
+          <p key={i}>{line || "\u00A0"}</p>
+        ))}
+      </AiMessageBlock>
+
+      {/* 가로 구분선 */}
+      <div className="h-px w-full bg-line-solid-normal" />
+
+      {/* 초안 미리보기 카드 */}
+      <div className="flex w-full flex-col items-start gap-2 self-stretch">
+        <span className="text-label-2 font-medium text-primary-normal">
+          초안 미리보기
+        </span>
+        <div className="flex w-full items-center gap-2 self-stretch rounded-xl border border-[#E8EEF5] bg-static-white p-4">
+          <span className="flex-1 text-body-1 font-bold text-label-normal">
+            {draftTitle}
+          </span>
+          <Image
+            src="/file.png"
+            alt=""
+            width={20}
+            height={20}
+            className="opacity-50"
+          />
+        </div>
+      </div>
+
+      {/* 두 버튼 */}
+      <div className="flex flex-row items-center gap-2">
+        <button
+          type="button"
+          onClick={onReview}
+          className="rounded-[10px] bg-primary-normal px-4 py-2.5 text-body-2-reading font-bold text-static-white transition-colors hover:bg-primary-strong"
+        >
+          추가 검토하기
+        </button>
+        <button
+          type="button"
+          onClick={onFinish}
+          className="rounded-[10px] border border-primary-normal bg-transparent px-4 py-2.5 text-body-2-reading font-bold text-primary-normal transition-colors hover:bg-primary-normal/5"
+        >
+          최종 단계로 넘어가기
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── 수정 제안 항목 (single / multi-choice) ────────────────────────
 function RefinementItemBlock({
   item,
@@ -946,7 +1013,6 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
   };
 
   // 첫 번째 채택/유지 → "좋아요. 다음 항목을 볼게요." + 두 번째 항목 추가
-  // (한 번만 발동되도록 messages 안 SECOND_REFINEMENT_ITEM 이 이미 있는지 체크)
   const handleFirstResolve = () => {
     const alreadyHasSecond = messages.some(
       (m) => m.kind === "ai" && m.item?.step === 2
@@ -958,6 +1024,20 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
         kind: "ai",
         text: "좋아요. 다음 항목을 볼게요.",
         item: SECOND_REFINEMENT_ITEM,
+      },
+    ]);
+  };
+
+  // 두 번째 채택/유지 → confirm 메시지 추가
+  const handleSecondResolve = () => {
+    const alreadyHasConfirm = messages.some((m) => m.kind === "confirm");
+    if (alreadyHasConfirm) return;
+    setMessages((prev) => [
+      ...prev,
+      {
+        kind: "confirm",
+        text: "2가지 수정 사항이 모두 반영되었어요.\n\n초안을 더 수정할까요?\n최종 마무리 단계로 넘어갈까요?",
+        draftTitle,
       },
     ]);
   };
@@ -1005,6 +1085,23 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
                 if (msg.kind === "user") {
                   return <UserMessageBubble key={i} text={msg.text} />;
                 }
+                if (msg.kind === "confirm") {
+                  return (
+                    <ConfirmMessageBlock
+                      key={i}
+                      text={msg.text}
+                      draftTitle={msg.draftTitle}
+                      onReview={() => console.log("추가 검토하기")}
+                      onFinish={() =>
+                        console.log("최종 단계로 넘어가기 (End 화면)")
+                      }
+                    />
+                  );
+                }
+                // ai
+                const step = msg.item?.step;
+                const resolve =
+                  step === 2 ? handleSecondResolve : handleFirstResolve;
                 return (
                   <div
                     key={i}
@@ -1018,8 +1115,8 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
                         <div className="h-px w-full bg-line-solid-normal" />
                         <RefinementItemBlock
                           item={msg.item}
-                          onAccept={() => handleFirstResolve()}
-                          onKeep={() => handleFirstResolve()}
+                          onAccept={() => resolve()}
+                          onKeep={() => resolve()}
                         />
                       </>
                     )}
