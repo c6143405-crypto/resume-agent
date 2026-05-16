@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { AiOrb } from "../components/AiOrb";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
  *
- * 완성: Start, CM 01 메인 (3개 초안 카드)
- * 미완성: CM 01 모달, CM 01 작성 기준 expand, CM 02, End
+ * 완성: Start, CM 01 메인, CM 01 모달
+ * 미완성: 초안 작성 기준 expand 토글, CM 02, End
  * 옛 디자인은 page.old.tsx에 백업
  */
 
@@ -68,7 +68,7 @@ function TbdCard() {
   );
 }
 
-// ─── 배경 그라데이션 원 (CM 01 등 분위기용) ───────────────────────────
+// ─── 배경 그라데이션 원 ───────────────────────────────────────────────
 function BackgroundEllipses() {
   return (
     <div
@@ -127,6 +127,307 @@ function DraftOptionCard({ index, title, onClick }: DraftOptionCardProps) {
   );
 }
 
+// ─── 초안 데이터 ──────────────────────────────────────────────────────
+interface DraftData {
+  title: string;
+  company: string;
+  period: string;
+  project: string;
+  description: string;
+  tasks: string[];
+  achievements: string[];
+}
+const DRAFT_DATA: Record<number, DraftData> = {
+  1: {
+    title: "성과 중심 초안",
+    company: "(주) A 의류 유통 기업",
+    period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
+    project: "[프로젝트 1] 월·연 결산 마감 프로세스 운영",
+    description:
+      "직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.",
+    tasks: [
+      "매월 결산 마감 일정 관리",
+      "외부 회계 감사 대응",
+      "부가세·법인세 신고 자료 정리",
+      "결산 종료 후 대표 보고 자료 작성",
+    ],
+    achievements: [
+      "매입·매출 전표 월 평균 1,500여 건 처리 및 검증",
+      "외부 감사 12년 연속 주요 지적 사항 0건 유지",
+      "신고 자료 정확도 99% 수준 유지",
+      "결산 마감 일정을 평균 5영업일 이내로 관리",
+    ],
+  },
+  // 2, 3번은 Phase 4에서 정식 데이터로 교체. 일단 1번 데이터 재사용 (title만 변경)
+  2: {
+    title: "직무 적합 중심 초안",
+    company: "(주) A 의류 유통 기업",
+    period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
+    project: "[프로젝트 1] 월·연 결산 마감 프로세스 운영",
+    description:
+      "직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.",
+    tasks: [
+      "매월 결산 마감 일정 관리",
+      "외부 회계 감사 대응",
+      "부가세·법인세 신고 자료 정리",
+      "결산 종료 후 대표 보고 자료 작성",
+    ],
+    achievements: [
+      "매입·매출 전표 월 평균 1,500여 건 처리 및 검증",
+      "외부 감사 12년 연속 주요 지적 사항 0건 유지",
+      "신고 자료 정확도 99% 수준 유지",
+      "결산 마감 일정을 평균 5영업일 이내로 관리",
+    ],
+  },
+  3: {
+    title: "경험 서사 중심 초안",
+    company: "(주) A 의류 유통 기업",
+    period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
+    project: "[프로젝트 1] 월·연 결산 마감 프로세스 운영",
+    description:
+      "직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.",
+    tasks: [
+      "매월 결산 마감 일정 관리",
+      "외부 회계 감사 대응",
+      "부가세·법인세 신고 자료 정리",
+      "결산 종료 후 대표 보고 자료 작성",
+    ],
+    achievements: [
+      "매입·매출 전표 월 평균 1,500여 건 처리 및 검증",
+      "외부 감사 12년 연속 주요 지적 사항 0건 유지",
+      "신고 자료 정확도 99% 수준 유지",
+      "결산 마감 일정을 평균 5영업일 이내로 관리",
+    ],
+  },
+};
+
+// ─── 닫기(X) 아이콘 ───────────────────────────────────────────────────
+function CloseIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M6 6L18 18M18 6L6 18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// ─── 펼치기(V) 아이콘 ──────────────────────────────────────────────────
+function ChevronDownIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M5 7.5L10 12.5L15 7.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// ─── 초안 작성 기준 카드 (모달 안, expand 토글은 3b-3에서) ─────────────
+function DraftCriteriaCard() {
+  return (
+    <button
+      type="button"
+      className="flex w-full items-center gap-3 rounded-xl border px-5 py-4 transition-colors"
+      style={{
+        borderColor: "#EAF2FE",
+        background:
+          "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%), #FFF",
+      }}
+    >
+      <AiOrb size={20} />
+      <span className="flex-1 text-left text-body-1 font-medium text-label-normal">
+        초안 작성 기준
+      </span>
+      <span className="text-label-neutral">
+        <ChevronDownIcon />
+      </span>
+    </button>
+  );
+}
+
+// ─── 모달 본문 (상세 내용) ────────────────────────────────────────────
+function DraftDetailBody({ data }: { data: DraftData }) {
+  return (
+    <div className="flex flex-col gap-6 pb-2 pt-9">
+      {/* 회사명 + 기간 */}
+      <div className="flex flex-col gap-1 px-1">
+        <h3 className="text-headline-1 font-bold text-label-normal">
+          {data.company}
+        </h3>
+        <p className="text-body-2-reading text-label-neutral">{data.period}</p>
+        <div className="mt-5 h-px w-full bg-line-solid-normal" />
+      </div>
+
+      {/* 프로젝트 */}
+      <div className="flex flex-col gap-3 px-1">
+        <h3 className="text-headline-1 font-bold text-label-normal">
+          {data.project}
+        </h3>
+        <p className="text-body-1-reading text-label-normal">
+          {data.description}
+        </p>
+      </div>
+
+      {/* 업무 상세 */}
+      <div className="flex flex-col gap-1 px-1">
+        <h4 className="text-headline-1 font-bold text-label-normal">업무 상세</h4>
+        <ul className="flex flex-col gap-1 pt-3">
+          {data.tasks.map((task, i) => (
+            <li
+              key={i}
+              className="text-body-1-reading text-label-normal flex gap-2 px-1"
+            >
+              <span aria-hidden="true">•</span>
+              <span className="flex-1">{task}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* 역할 및 성과 */}
+      <div className="flex flex-col gap-1 px-1">
+        <h4 className="text-headline-1 font-bold text-label-normal">역할 및 성과</h4>
+        <ul className="flex flex-col gap-1 pt-3">
+          {data.achievements.map((item, i) => (
+            <li
+              key={i}
+              className="text-body-1-reading text-label-normal flex gap-2 px-1"
+            >
+              <span aria-hidden="true">•</span>
+              <span className="flex-1">{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ─── 모달 (DraftDetail BottomSheet) ───────────────────────────────────
+interface DraftDetailModalProps {
+  draftIndex: number;
+  onClose: () => void;
+  onSelect: () => void;
+}
+function DraftDetailModal({ draftIndex, onClose, onSelect }: DraftDetailModalProps) {
+  const data = DRAFT_DATA[draftIndex];
+  const [isVisible, setIsVisible] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // 마운트 시 슬라이드 업 애니메이션
+  useEffect(() => {
+    const t = setTimeout(() => setIsVisible(true), 10);
+    return () => clearTimeout(t);
+  }, []);
+
+  // 스크롤 시 모달 전체 확장 (한 번 확장되면 그대로 유지 — 흔들림 방지)
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    if (scrollTop > 20 && !isExpanded) {
+      setIsExpanded(true);
+    }
+  };
+
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 280); // 슬라이드 다운 후 unmount
+  };
+
+  return (
+    <div className="fixed inset-0 z-50">
+      {/* Dim 배경 — viewport 전체 */}
+      <button
+        type="button"
+        aria-label="닫기"
+        onClick={handleClose}
+        className={`absolute inset-0 transition-opacity duration-300 ${
+          isVisible ? "opacity-100" : "opacity-0"
+        }`}
+        style={{ background: "rgba(23, 23, 25, 0.52)" }}
+      />
+
+      {/* 바텀시트 — 가운데 정렬, max-w-375 */}
+      <div
+        className={`absolute bottom-0 left-1/2 -translate-x-1/2 flex w-full max-w-[375px] flex-col overflow-hidden bg-static-white transition-[height,transform] duration-300 ease-out ${
+          isVisible ? "translate-y-0" : "translate-y-full"
+        }`}
+        style={{
+          height: isExpanded ? "100%" : "85%",
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+          borderTop: "1px solid rgba(112, 115, 124, 0.22)",
+          borderLeft: "1px solid rgba(112, 115, 124, 0.22)",
+          borderRight: "1px solid rgba(112, 115, 124, 0.22)",
+        }}
+      >
+        {/* Drag handle — 항상 표시 */}
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="h-1 w-10 rounded-full bg-line-solid-strong" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-6">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-label-strong text-label-1 font-bold leading-none text-static-white">
+              {draftIndex}
+            </span>
+            <h2 className="text-heading-2 font-bold text-label-strong">
+              {data.title}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="text-label-strong"
+            aria-label="닫기"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+
+        {/* Scrollable content */}
+        <div
+          className="flex-1 overflow-y-auto px-5"
+          onScroll={handleScroll}
+        >
+          <DraftCriteriaCard />
+          <DraftDetailBody data={data} />
+        </div>
+
+        {/* CTA + 흰색 fade */}
+        <div className="relative w-full">
+          {/* 흰색 fade 그라데이션 (위쪽으로) */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-10 left-0 right-0 h-10"
+            style={{
+              background:
+                "linear-gradient(0deg, #FFFFFF 0%, rgba(255, 255, 255, 0) 100%)",
+            }}
+          />
+          <div className="px-7 py-3.5">
+            <button
+              type="button"
+              onClick={onSelect}
+              className="h-14 w-full rounded-2xl bg-primary-normal text-base font-bold text-static-white transition-colors hover:bg-primary-strong active:bg-primary-heavy"
+            >
+              이 초안 선택하기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Start 화면 ────────────────────────────────────────────────────────
 interface StartScreenProps {
   onStart: () => void;
@@ -174,7 +475,6 @@ function Cm01Screen({ onDraftClick }: Cm01ScreenProps) {
 
   return (
     <>
-      {/* Contents — orb + 헤드라인 + 본문 */}
       <section className="relative z-10 flex flex-col items-center gap-5 px-5 py-12">
         <AiOrb size={40} />
         <h2 className="text-heading-1 text-center font-bold text-label-strong">
@@ -186,7 +486,6 @@ function Cm01Screen({ onDraftClick }: Cm01ScreenProps) {
         </p>
       </section>
 
-      {/* List */}
       <div className="relative z-10 flex flex-col gap-2 px-5">
         {drafts.map((d) => (
           <DraftOptionCard
@@ -208,6 +507,7 @@ type Screen = "start" | "cm1";
 
 export default function APage() {
   const [screen, setScreen] = useState<Screen>("start");
+  const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
 
   const containerStyle: React.CSSProperties =
     screen === "start"
@@ -222,7 +522,6 @@ export default function APage() {
       className="relative mx-auto flex min-h-screen w-full max-w-[375px] flex-col overflow-hidden"
       style={containerStyle}
     >
-      {/* CM 01에서만 보이는 원형 blur 배경 */}
       {screen === "cm1" && <BackgroundEllipses />}
 
       <StatusBar />
@@ -232,10 +531,22 @@ export default function APage() {
         <StartScreen onStart={() => setScreen("cm1")} />
       )}
       {screen === "cm1" && (
-        <Cm01Screen onDraftClick={(idx) => console.log("draft clicked:", idx)} />
+        <Cm01Screen onDraftClick={(idx) => setSelectedDraft(idx)} />
       )}
 
       <HomeBar />
+
+      {/* 초안 상세 모달 */}
+      {selectedDraft !== null && (
+        <DraftDetailModal
+          draftIndex={selectedDraft}
+          onClose={() => setSelectedDraft(null)}
+          onSelect={() => {
+            console.log("draft selected:", selectedDraft);
+            // CM 02 진입은 Phase 3c에서
+          }}
+        />
+      )}
     </div>
   );
 }
