@@ -981,8 +981,9 @@ function RefinementItemBlock({
 interface AiChatScreenProps {
   draftTitle: string;
   onScrollChange: (scrolled: boolean) => void;
+  onFinish: () => void;
 }
-function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
+function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProps) {
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
@@ -1092,9 +1093,7 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
                       text={msg.text}
                       draftTitle={msg.draftTitle}
                       onReview={() => console.log("추가 검토하기")}
-                      onFinish={() =>
-                        console.log("최종 단계로 넘어가기 (End 화면)")
-                      }
+                      onFinish={onFinish}
                     />
                   );
                 }
@@ -1143,8 +1142,31 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
   );
 }
 
+// ─── End 화면 (Task 3 완료) ────────────────────────────────────────────
+function EndScreen({ draftTitle }: { draftTitle: string }) {
+  return (
+    <>
+      <section className="flex flex-col items-center gap-5 px-5 py-12">
+        <AiOrb size={40} />
+        <div className="flex flex-col items-center gap-2">
+          <h2 className="text-heading-1 text-center font-bold text-label-strong">
+            경력기술서 초안 작성을 완료했어요
+          </h2>
+          <p className="text-body-1-reading text-center text-label-neutral">
+            다음 단계에서 경력기술서를 최종 마무리할게요
+          </p>
+        </div>
+      </section>
+      <div className="px-5">
+        <TbdCard label={`${draftTitle} (완성 ver.)`} />
+      </div>
+      <div className="flex-1" />
+    </>
+  );
+}
+
 // ─── Page export ───────────────────────────────────────────────────────
-type Screen = "start" | "cm1" | "cm2-loading" | "cm2-chat";
+type Screen = "start" | "cm1" | "cm2-loading" | "cm2-chat" | "end";
 
 export default function APage() {
   const [screen, setScreen] = useState<Screen>("start");
@@ -1152,7 +1174,7 @@ export default function APage() {
   const [isChatScrolled, setIsChatScrolled] = useState(false);
 
   const containerStyle: React.CSSProperties =
-    screen === "start"
+    screen === "start" || screen === "end"
       ? {
           background:
             "linear-gradient(184deg, #FAFFFC 0.96%, #F3FBFF 49.34%, #E8F4FF 97.71%)",
@@ -1187,8 +1209,10 @@ export default function APage() {
         <AiChatScreen
           draftTitle={DRAFT_DATA[1].title}
           onScrollChange={setIsChatScrolled}
+          onFinish={() => setScreen("end")}
         />
       )}
+      {screen === "end" && <EndScreen draftTitle={DRAFT_DATA[1].title} />}
 
       <HomeBar />
 
