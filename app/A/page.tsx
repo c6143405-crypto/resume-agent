@@ -744,12 +744,12 @@ function ChatInput({ value, onChange, onSend }: {
 function AiMessageBlock({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col items-start gap-4">
-      <div className="flex items-center gap-2">
-        <AiOrb size={24} />
-        <span className="text-body-1-reading font-bold text-label-normal">
-          AI 에이전트
-        </span>
-      </div>
+      <Image
+        src="/logo_text.png"
+        alt="AI 에이전트"
+        width={116}
+        height={20}
+      />
       <div className="w-full text-body-1-reading font-bold text-label-normal">
         {children}
       </div>
@@ -788,7 +788,7 @@ function RefinementItemBlock({
 
       {/* 수정 문장 */}
       <div className="flex w-full flex-col gap-1">
-        <span className="text-body-1-reading font-bold text-primary-normal">
+        <span className="text-label-2 font-medium text-primary-normal">
           수정 문장
         </span>
         <p className="w-full text-body-1 font-bold text-primary-normal">
@@ -846,7 +846,7 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
         style={{ scrollbarGutter: "stable" }}
         onScroll={handleScroll}
       >
-        <div className="box-border flex w-full flex-col items-start gap-4 px-5 py-12">
+        <div className="box-border flex w-full flex-col items-start gap-5 px-5 py-12">
           {/* AI 메시지 */}
           <AiMessageBlock>
             <p>
@@ -856,7 +856,7 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
           </AiMessageBlock>
 
           {/* 구분선 */}
-          <div className="mt-4 mb-5 h-px w-full bg-line-solid-normal" />
+          <div className="h-px w-full bg-line-solid-normal" />
 
           {/* 검토 항목 */}
           <RefinementItemBlock
@@ -866,7 +866,7 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
           />
 
           {/* 사용자 직접 입력 안내 */}
-          <p className="mt-5 text-body-1 font-bold text-label-normal">
+          <p className="text-body-1 font-bold text-label-normal">
             수정하고 싶은 내용을 직접 입력해주셔도 좋아요.
           </p>
         </div>
