@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AiOrb } from "../components/AiOrb";
 
@@ -678,53 +678,64 @@ function ChatActionButtons({
   );
 }
 
-// ─── AI 챗 입력창 ──────────────────────────────────────────────────────
+// ─── AI 챗 입력창 (column: textarea 위, 전송 버튼 아래 우측) ────────
 function ChatInput({ value, onChange, onSend }: {
   value: string;
   onChange: (v: string) => void;
   onSend: () => void;
 }) {
   const isActive = value.trim().length > 0;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // textarea auto-resize: 입력값 변할 때 height 자동 조정
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = ta.scrollHeight + "px";
+  }, [value]);
+
   return (
     <div
       className="flex w-full flex-col items-center justify-center gap-3 rounded-xl border border-line-solid-normal bg-background-normal-normal p-3"
       /* border-line-solid-normal, bg-background-normal-normal */
     >
-      <div className="flex min-h-[70px] w-full items-start justify-between gap-3">
-        {/* placeholder / 입력 영역 */}
-        <div className="flex flex-1 flex-col items-start gap-4 self-stretch px-1">
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && isActive) onSend();
-            }}
-            placeholder="어떻게 바꾸고 싶은지 입력해주세요."
-            className="w-full bg-transparent font-pretendard text-body-1-reading font-normal text-label-normal placeholder:text-label-assistive focus:outline-none"
-            /* text-body-1-reading, font-normal, text-label-assistive */
-          />
-        </div>
+      {/* textarea — auto-resize */}
+      <textarea
+        ref={textareaRef}
+        rows={1}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          // Enter → send / Shift+Enter → 줄바꿈
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (isActive) onSend();
+          }
+        }}
+        placeholder="어떻게 바꾸고 싶은지 입력해주세요."
+        className="w-full resize-none bg-transparent font-pretendard text-body-1-reading font-normal text-label-normal placeholder:text-label-assistive focus:outline-none"
+        /* text-body-1-reading, font-normal, text-label-assistive */
+      />
 
-        {/* 전송 버튼 — 1개 아이콘 + 배경색 토글 */}
-        <button
-          type="button"
-          onClick={onSend}
-          disabled={!isActive}
-          className={`flex size-12 shrink-0 items-center justify-center rounded-full transition-colors ${
-            isActive ? "bg-primary-normal" : "bg-interaction-disable"
-          }`}
-          /* bg-primary-normal (활성) / bg-interaction-disable (비활성) */
-          aria-label="보내기"
-        >
-          <Image
-            src="/Textinput/Button/Icon/Icon.png"
-            alt=""
-            width={24}
-            height={24}
-          />
-        </button>
-      </div>
+      {/* 전송 버튼 — 우측 정렬 (align-self-end) */}
+      <button
+        type="button"
+        onClick={onSend}
+        disabled={!isActive}
+        className={`flex size-9 shrink-0 items-center justify-center self-end rounded-full transition-colors ${
+          isActive ? "bg-primary-normal" : "bg-interaction-disable"
+        }`}
+        /* bg-primary-normal (활성) / bg-interaction-disable (비활성) */
+        aria-label="보내기"
+      >
+        <Image
+          src="/Textinput/Button/Icon/Icon.png"
+          alt=""
+          width={18}
+          height={18}
+        />
+      </button>
     </div>
   );
 }
@@ -790,10 +801,13 @@ function RefinementItemBlock({
         <span className="text-label-2 font-medium text-label-neutral">
           수정 이유
         </span>
-        <p className="w-full text-body-1-reading font-normal text-label-neutral">
+        <p className="w-full text-body-1 font-normal text-label-neutral">
           {item.reason}
         </p>
       </div>
+
+      {/* 가로 구분선 — 수정 이유 본문과 채택/유지 버튼 사이 */}
+      <div className="h-px w-full bg-line-solid-normal" />
 
       {/* 채택/유지 버튼 */}
       <ChatActionButtons onAccept={onAccept} onKeep={onKeep} />
