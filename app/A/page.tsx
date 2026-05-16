@@ -168,6 +168,26 @@ interface RefinementItem {
   revised: string;
   reason: string;
 }
+
+// 사용자 ↔ AI 메시지 히스토리
+type ChatMessage =
+  | { kind: "user"; text: string }
+  | { kind: "ai"; text: string; item?: RefinementItem };
+
+// 사용자가 입력 후 표시되는 AI 응답 mock (Figma 디자인 기반)
+const MOCK_AI_RESPONSE: { text: string; item: RefinementItem } = {
+  text: "요청하신 문장을 조금 더 자연스럽고 검증 가능한 표현으로 다듬어볼게요.",
+  item: {
+    step: 1,
+    total: 2,
+    title: "신고 자료 정확도 표현",
+    original: "신고 자료 정확도 99% 수준 유지",
+    revised:
+      "부가세·법인세 신고 자료를 반복 검토하며 높은 수준의 정확성을 유지했습니다.",
+    reason:
+      "'99%'는 산출 기준이 명확할 때 설득력이 있지만, 근거가 불분명하면 과장으로 보일 수 있습니다. 정확성을 유지했다는 의미는 살리되, 검증 부담이 적은 표현으로 조정했습니다.",
+  },
+};
 const DRAFT_DATA: Record<number, DraftData> = {
   1: {
     title: "성과 중심 초안",
@@ -708,7 +728,12 @@ function ChatInput({ value, onChange, onSend }: {
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
           // Enter → send / Shift+Enter → 줄바꿈
-          if (e.key === "Enter" && !e.shiftKey) {
+          // 한국어 IME 조합 중인 경우 무시 (한글 중복 입력 방지)
+          if (
+            e.key === "Enter" &&
+            !e.shiftKey &&
+            !e.nativeEvent.isComposing
+          ) {
             e.preventDefault();
             if (isActive) onSend();
           }
@@ -753,6 +778,18 @@ function AiMessageBlock({ children }: { children: React.ReactNode }) {
       <div className="w-full text-body-1-reading font-bold text-label-normal">
         {children}
       </div>
+    </div>
+  );
+}
+
+// ─── 사용자 메시지 풍선 ────────────────────────────────────────────────
+function UserMessageBubble({ text }: { text: string }) {
+  return (
+    <div
+      className="max-w-[300px] rounded-2xl border border-line-solid-neutral bg-background-normal-alternative px-4 py-3"
+      /* border-line-solid-neutral, bg-background-normal-alternative */
+    >
+      <p className="text-body-1-reading font-medium text-label-normal">{text}</p>
     </div>
   );
 }
@@ -822,6 +859,7 @@ interface AiChatScreenProps {
 }
 function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
   const [chatInput, setChatInput] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const firstItem: RefinementItem = {
     step: 1,
@@ -838,6 +876,17 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
     onScrollChange(e.currentTarget.scrollTop > 0);
   };
 
+  const handleSend = () => {
+    const text = chatInput.trim();
+    if (!text) return;
+    setMessages((prev) => [
+      ...prev,
+      { kind: "user", text },
+      { kind: "ai", text: MOCK_AI_RESPONSE.text, item: MOCK_AI_RESPONSE.item },
+    ]);
+    setChatInput("");
+  };
+
   return (
     <>
       {/* Scrollable content */}
@@ -846,29 +895,64 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
         style={{ scrollbarGutter: "stable" }}
         onScroll={handleScroll}
       >
-        <div className="box-border flex w-full flex-col items-start gap-5 px-5 py-12">
-          {/* AI 메시지 */}
-          <AiMessageBlock>
-            <p>
-              선택하신 &lsquo;{draftTitle}&rsquo;을 검토했어요.
-              <br />총 2개 항목에 대해 확인이 필요해요.
-            </p>
-          </AiMessageBlock>
+        <div className="box-border flex w-full flex-col gap-12 px-5 py-12">
+          {/* 초기 영역 — AI 메시지 + 라인 + 검토 항목 (gap-5) */}
+          <div className="flex w-full flex-col items-start gap-5 self-stretch">
+            <AiMessageBlock>
+              <p>
+                선택하신 &lsquo;{draftTitle}&rsquo;을 검토했어요.
+                <br />총 2개 항목에 대해 확인이 필요해요.
+              </p>
+            </AiMessageBlock>
 
-          {/* 구분선 */}
-          <div className="h-px w-full bg-line-solid-normal" />
+            {/* 구분선 */}
+            <div className="h-px w-full bg-line-solid-normal" />
 
-          {/* 검토 항목 */}
-          <RefinementItemBlock
-            item={firstItem}
-            onAccept={() => console.log("accept item 1")}
-            onKeep={() => console.log("keep item 1")}
-          />
+            {/* 검토 항목 */}
+            <RefinementItemBlock
+              item={firstItem}
+              onAccept={() => console.log("accept item 1")}
+              onKeep={() => console.log("keep item 1")}
+            />
 
-          {/* 사용자 직접 입력 안내 */}
-          <p className="text-body-1 font-bold text-label-normal">
-            수정하고 싶은 내용을 직접 입력해주셔도 좋아요.
-          </p>
+            {/* 사용자 직접 입력 안내 (메시지 없을 때만) */}
+            {messages.length === 0 && (
+              <p className="text-body-1 font-bold text-label-normal">
+                수정하고 싶은 내용을 직접 입력해주셔도 좋아요.
+              </p>
+            )}
+          </div>
+
+          {/* 사용자 메시지 영역 — 별도 컨테이너 gap-12, items-end */}
+          {messages.length > 0 && (
+            <div className="flex w-full flex-col items-end gap-12 self-stretch">
+              {messages.map((msg, i) => {
+                if (msg.kind === "user") {
+                  return <UserMessageBubble key={i} text={msg.text} />;
+                }
+                return (
+                  <div
+                    key={i}
+                    className="flex w-full flex-col items-start gap-5 self-stretch"
+                  >
+                    <AiMessageBlock>
+                      <p>{msg.text}</p>
+                    </AiMessageBlock>
+                    {msg.item && (
+                      <>
+                        <div className="h-px w-full bg-line-solid-normal" />
+                        <RefinementItemBlock
+                          item={msg.item}
+                          onAccept={() => console.log("accept", i)}
+                          onKeep={() => console.log("keep", i)}
+                        />
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -880,10 +964,7 @@ function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
         <ChatInput
           value={chatInput}
           onChange={setChatInput}
-          onSend={() => {
-            console.log("send:", chatInput);
-            setChatInput("");
-          }}
+          onSend={handleSend}
         />
       </div>
     </>
