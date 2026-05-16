@@ -37,10 +37,17 @@ function StatusBar() {
   );
 }
 
-// ─── 페이지 타이틀바 ──────────────────────────────────────────────────
-function PageTitleBar() {
+// ─── 페이지 타이틀바 (스크롤 시 하단 border) ───────────────────────────
+function PageTitleBar({ showBorderBottom = false }: { showBorderBottom?: boolean }) {
   return (
-    <div className="flex h-11 items-center justify-center px-5">
+    <div
+      className="relative z-10 flex h-11 items-center justify-center bg-static-white px-5 transition-[border-color] duration-150"
+      style={{
+        borderBottom: showBorderBottom
+          ? "0.5px solid rgba(112, 115, 124, 0.16)"
+          : "0.5px solid transparent",
+      }}
+    >
       <h1 className="text-heading-2 font-bold text-label-strong">
         경력기술서 에이전트
       </h1>
@@ -150,6 +157,16 @@ interface DraftData {
     applied: string;
     improve: string;
   };
+}
+
+// AI Chat에서 다듬을 항목
+interface RefinementItem {
+  step: number; // 1, 2 ...
+  total: number; // 총 항목 수
+  title: string;
+  original: string;
+  revised: string;
+  reason: string;
 }
 const DRAFT_DATA: Record<number, DraftData> = {
   1: {
@@ -633,12 +650,218 @@ function Cm02LoadingScreen({
   );
 }
 
+// ─── 채택/유지 버튼 그룹 ───────────────────────────────────────────
+function ChatActionButtons({
+  onAccept,
+  onKeep,
+}: {
+  onAccept: () => void;
+  onKeep: () => void;
+}) {
+  return (
+    <div className="flex flex-row items-center gap-2">
+      <button
+        type="button"
+        onClick={onAccept}
+        className="rounded-[10px] bg-primary-normal px-4 py-2.5 text-body-2-reading font-bold text-static-white transition-colors hover:bg-primary-strong"
+      >
+        수정 문장 채택
+      </button>
+      <button
+        type="button"
+        onClick={onKeep}
+        className="rounded-[10px] border border-primary-normal bg-transparent px-4 py-2.5 text-body-2-reading font-bold text-primary-normal transition-colors hover:bg-primary-normal/5"
+      >
+        기존 유지
+      </button>
+    </div>
+  );
+}
+
+// ─── AI 챗 입력창 ──────────────────────────────────────────────────────
+function ChatInput({ value, onChange, onSend }: {
+  value: string;
+  onChange: (v: string) => void;
+  onSend: () => void;
+}) {
+  return (
+    <div className="flex min-h-[60px] w-full items-center justify-between gap-2 rounded-[10px] border border-line-solid-normal bg-static-white p-4">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && value.trim()) onSend();
+        }}
+        placeholder="어떻게 바꾸고 싶은지 입력해주세요."
+        className="flex-1 bg-transparent text-body-1-reading font-normal text-label-normal placeholder:text-interaction-inactive focus:outline-none"
+      />
+      <button
+        type="button"
+        onClick={onSend}
+        disabled={!value.trim()}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-normal text-static-white disabled:opacity-40"
+        aria-label="보내기"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M2 8L14 8M14 8L9 3M14 8L9 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+// ─── AI 메시지 블록 ───────────────────────────────────────────────────
+function AiMessageBlock({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-start gap-4">
+      <div className="flex items-center gap-2">
+        <AiOrb size={24} />
+        <span className="text-body-1-reading font-bold text-label-normal">
+          AI 에이전트
+        </span>
+      </div>
+      <div className="w-full text-body-1-reading font-bold text-label-normal">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─── 수정 제안 항목 (기존/수정/이유 + 채택/유지) ──────────────────────
+function RefinementItemBlock({
+  item,
+  onAccept,
+  onKeep,
+}: {
+  item: RefinementItem;
+  onAccept: () => void;
+  onKeep: () => void;
+}) {
+  const stepLabel =
+    item.step === 1 ? "첫 번째" : item.step === 2 ? "두 번째" : `${item.step}번째`;
+  return (
+    <div className="flex w-full flex-col items-start gap-5">
+      {/* 제목 */}
+      <h3 className="text-body-1 font-bold text-label-normal">
+        {`${stepLabel}(${item.step}/${item.total}): ${item.title}`}
+      </h3>
+
+      {/* 기존 문장 */}
+      <div className="flex w-full flex-col gap-1">
+        <span className="text-label-2 font-medium text-label-neutral">
+          기존 문장
+        </span>
+        <p className="w-full text-body-1 font-bold text-label-neutral">
+          {item.original}
+        </p>
+      </div>
+
+      {/* 수정 문장 */}
+      <div className="flex w-full flex-col gap-1">
+        <span className="text-body-1-reading font-bold text-primary-normal">
+          수정 문장
+        </span>
+        <p className="w-full text-body-1 font-bold text-primary-normal">
+          {item.revised}
+        </p>
+      </div>
+
+      {/* 수정 이유 */}
+      <div className="flex w-full flex-col gap-1">
+        <span className="text-label-2 font-medium text-label-neutral">
+          수정 이유
+        </span>
+        <p className="w-full text-body-1-reading font-normal text-label-neutral">
+          {item.reason}
+        </p>
+      </div>
+
+      {/* 채택/유지 버튼 */}
+      <ChatActionButtons onAccept={onAccept} onKeep={onKeep} />
+    </div>
+  );
+}
+
+// ─── AI Chat 화면 (CM 02 후반) ────────────────────────────────────────
+interface AiChatScreenProps {
+  draftTitle: string;
+  onScrollChange: (scrolled: boolean) => void;
+}
+function AiChatScreen({ draftTitle, onScrollChange }: AiChatScreenProps) {
+  const [chatInput, setChatInput] = useState("");
+
+  const firstItem: RefinementItem = {
+    step: 1,
+    total: 2,
+    title: "외부 감사 기간 표현",
+    original: "외부 회계 감사 12년 연속 주요 지적 사항 0건 유지",
+    revised:
+      "외부 회계 감사 대응 과정에서 주요 지적 사항 없이 결산 자료의 정확성을 유지했습니다.",
+    reason:
+      "기간을 명시하지 않고 성과 중심으로 표현하면 더 안전하고 신뢰성 있습니다.",
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    onScrollChange(e.currentTarget.scrollTop > 0);
+  };
+
+  return (
+    <>
+      {/* Scrollable content */}
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ scrollbarGutter: "stable" }}
+        onScroll={handleScroll}
+      >
+        <div className="box-border flex w-full flex-col items-start gap-4 px-5 py-12">
+          {/* AI 메시지 */}
+          <AiMessageBlock>
+            <p>
+              선택하신 &lsquo;{draftTitle}&rsquo;을 검토했어요.
+              <br />총 2개 항목에 대해 확인이 필요해요.
+            </p>
+          </AiMessageBlock>
+
+          {/* 구분선 */}
+          <div className="mt-4 mb-5 h-px w-full bg-line-solid-normal" />
+
+          {/* 검토 항목 */}
+          <RefinementItemBlock
+            item={firstItem}
+            onAccept={() => console.log("accept item 1")}
+            onKeep={() => console.log("keep item 1")}
+          />
+
+          {/* 사용자 직접 입력 안내 */}
+          <p className="mt-5 text-body-1 font-bold text-label-normal">
+            수정하고 싶은 내용을 직접 입력해주셔도 좋아요.
+          </p>
+        </div>
+      </div>
+
+      {/* 하단 입력창 — flex item (본문 flex-1로 늘어나 자동 하단) */}
+      <div className="bg-static-white p-5">
+        <ChatInput
+          value={chatInput}
+          onChange={setChatInput}
+          onSend={() => {
+            console.log("send:", chatInput);
+            setChatInput("");
+          }}
+        />
+      </div>
+    </>
+  );
+}
+
 // ─── Page export ───────────────────────────────────────────────────────
-type Screen = "start" | "cm1" | "cm2-loading";
+type Screen = "start" | "cm1" | "cm2-loading" | "cm2-chat";
 
 export default function APage() {
   const [screen, setScreen] = useState<Screen>("start");
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
+  const [isChatScrolled, setIsChatScrolled] = useState(false);
 
   const containerStyle: React.CSSProperties =
     screen === "start"
@@ -650,13 +873,13 @@ export default function APage() {
 
   return (
     <div
-      className="relative isolate mx-auto flex min-h-screen w-full max-w-[375px] flex-col overflow-hidden"
+      className="relative isolate mx-auto flex h-screen max-h-[812px] w-full max-w-[375px] flex-col overflow-hidden"
       style={containerStyle}
     >
       {(screen === "cm1" || screen === "cm2-loading") && <BackgroundEllipses />}
 
       <StatusBar />
-      <PageTitleBar />
+      <PageTitleBar showBorderBottom={screen === "cm2-chat" && isChatScrolled} />
 
       {screen === "start" && (
         <StartScreen onStart={() => setScreen("cm1")} />
@@ -668,8 +891,14 @@ export default function APage() {
         <Cm02LoadingScreen
           draftIndex={1}
           draftTitle={DRAFT_DATA[1].title}
-          onRefine={() => console.log("refine — Phase 3c-2")}
-          onFinalize={() => console.log("finalize — End 화면")}
+          onRefine={() => setScreen("cm2-chat")}
+          onFinalize={() => console.log("finalize — End 화면 (Phase 3a 마무리)")}
+        />
+      )}
+      {screen === "cm2-chat" && (
+        <AiChatScreen
+          draftTitle={DRAFT_DATA[1].title}
+          onScrollChange={setIsChatScrolled}
         />
       )}
 
