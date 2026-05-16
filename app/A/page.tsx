@@ -434,8 +434,8 @@ function DraftDetailModal({ draftIndex, onClose, onSelect }: DraftDetailModalPro
   };
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Dim 배경 — viewport 전체 */}
+    <div className="absolute inset-0 z-50">
+      {/* Dim 배경 — 페이지 컨테이너 안 */}
       <button
         type="button"
         aria-label="닫기"
@@ -446,15 +446,15 @@ function DraftDetailModal({ draftIndex, onClose, onSelect }: DraftDetailModalPro
         style={{ background: "rgba(23, 23, 25, 0.52)" }}
       />
 
-      {/* 바텀시트 — 가운데 정렬, max-w-375 */}
+      {/* 바텀시트 — 페이지 컨테이너 폭 채움. 풀 확장 시 모서리 제거 */}
       <div
-        className={`absolute bottom-0 left-1/2 -translate-x-1/2 flex w-full max-w-[375px] flex-col overflow-hidden bg-static-white transition-[height,transform] duration-300 ease-out ${
+        className={`absolute bottom-0 left-0 right-0 flex w-full flex-col overflow-hidden bg-static-white transition-all duration-300 ease-out ${
           isVisible ? "translate-y-0" : "translate-y-full"
         }`}
         style={{
           height: isExpanded ? "100%" : "85%",
-          borderTopLeftRadius: 16,
-          borderTopRightRadius: 16,
+          borderTopLeftRadius: isExpanded ? 0 : 16,
+          borderTopRightRadius: isExpanded ? 0 : 16,
           borderTop: "1px solid rgba(112, 115, 124, 0.22)",
           borderLeft: "1px solid rgba(112, 115, 124, 0.22)",
           borderRight: "1px solid rgba(112, 115, 124, 0.22)",
@@ -873,7 +873,7 @@ export default function APage() {
 
   return (
     <div
-      className="relative isolate mx-auto flex h-screen max-h-[812px] w-full max-w-[375px] flex-col overflow-hidden"
+      className="relative isolate mx-auto flex h-screen max-h-[932px] w-full max-w-[480px] flex-col overflow-hidden"
       style={containerStyle}
     >
       {(screen === "cm1" || screen === "cm2-loading") && <BackgroundEllipses />}
