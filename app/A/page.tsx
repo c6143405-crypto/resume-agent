@@ -5,6 +5,7 @@ import Image from "next/image";
 import { AiOrb } from "../components/AiOrb";
 import { PageTitleBar } from "../components/PageTitleBar";
 import { StatusBar } from "../components/StatusBar";
+import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
@@ -1605,13 +1606,20 @@ export default function APage() {
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
   const [isChatScrolled, setIsChatScrolled] = useState(false);
 
-  const containerStyle: React.CSSProperties =
+  // 화면별 페이지 배경 — body / 상태바 영역과 동기화하기 위해 별도 변수로 추출
+  const screenBackground =
     screen === "start" || screen === "end"
-      ? {
-          background:
-            "linear-gradient(184deg, #FAFFFC 0.96%, #F3FBFF 49.34%, #E8F4FF 97.71%)",
-        }
-      : { background: "#ffffff" }; // cm1, cm2-loading 흰 배경 + Ellipse
+      ? "linear-gradient(184deg, #FAFFFC 0.96%, #F3FBFF 49.34%, #E8F4FF 97.71%)"
+      : "#ffffff"; // cm1, cm2-loading, cm2-chat 흰 배경 + Ellipse
+
+  // Safari 주소창 theme-color는 단색만 지원 → 화면별 대표 색 매핑
+  const screenThemeColor =
+    screen === "start" || screen === "end" ? "#FAFFFC" : "#ffffff";
+
+  // 모바일에서 시스템 상태바 영역까지 페이지 배경과 자연스럽게 이어지게 동기화
+  useSyncBodyBackground(screenBackground, screenThemeColor);
+
+  const containerStyle: React.CSSProperties = { background: screenBackground };
 
   return (
     <div
