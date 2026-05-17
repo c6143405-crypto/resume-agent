@@ -159,6 +159,18 @@ const FALLBACK_RESPONSE: ChatResponse = {
   sections: [],
 };
 
+const C_TYPE_SECTION_PROMPT = `
+[C 타입 — 카드형 섹션 응답 방식]
+C 타입은 AI 응답의 본문 정보를 화면에서 개별 카드로 보여주는 UI입니다.
+따라서 본격 내용은 반드시 sections 배열에 라벨드 섹션으로 담으세요.
+
+- text 필드는 짧은 안내 문장만 작성하세요.
+- 수정안, 변경 이유, 판단 근거, 다음 선택지 등 주요 내용은 sections 배열에 넣으세요.
+- sections 형식: [{ "label": "수정안", "content": "..." }, { "label": "변경 이유", "content": "..." }]
+- card 필드는 후보 비교가 꼭 필요할 때만 사용하고, 일반 라벨드 정보는 sections에 넣으세요.
+- content 안에서 단락 분리가 필요하면 "\\n\\n"을 사용하세요.
+`;
+
 function parseOpenAIResponse(content: string): ChatResponse {
   const jsonMatch = content.match(/\{[\s\S]*\}/);
   const jsonString = jsonMatch ? jsonMatch[0] : content;
@@ -196,6 +208,35 @@ function parseOpenAIResponse(content: string): ChatResponse {
     : [];
 
   return { text: raw.text, chips, card, sections };
+}
+
+function getFallbackSectionLabel(userIntent: string): string {
+  if (userIntent === 'ASK_REASON') return '판단 근거';
+  if (userIntent === 'ACCEPT') return '적용된 표현';
+  if (userIntent === 'REJECT') return '유지된 문장';
+  if (userIntent === 'UNCERTAIN' || userIntent === 'LOW_CONFIDENCE') return '쉽게 보면';
+  return '수정안';
+}
+
+function ensureSectionsForPrototype(
+  response: ChatResponse,
+  prototypeType: string,
+  userIntent: string
+): ChatResponse {
+  if (prototypeType !== 'C' || response.sections.length > 0 || !response.text.trim()) {
+    return response;
+  }
+
+  return {
+    ...response,
+    text: '요청하신 내용을 확인했어요.',
+    sections: [
+      {
+        label: getFallbackSectionLabel(userIntent),
+        content: response.text,
+      },
+    ],
+  };
 }
 
 type DraftPayload = {
@@ -293,8 +334,10 @@ CM2이면 selectedDraft 내부의 문장/표현 단위로 응답해야 합니다
     };
 
     // 타입별 스타일 가이드를 system 메시지로 끼워넣는다 (공통 → 타입 → 컨텍스트 → 대화 순).
-    const typeStyleSystemMessage = typeStylePrompt
-      ? { role: 'system' as const, content: String(typeStylePrompt) }
+    const resolvedTypeStylePrompt =
+      typeStylePrompt || (prototypeType === 'C' ? C_TYPE_SECTION_PROMPT : '');
+    const typeStyleSystemMessage = resolvedTypeStylePrompt
+      ? { role: 'system' as const, content: String(resolvedTypeStylePrompt) }
       : null;
 
     const openAIMessages = [
@@ -316,7 +359,7 @@ CM2이면 selectedDraft 내부의 문장/표현 단위로 응답해야 합니다
       targetJob,
       draftOptionsCount: Array.isArray(draftOptions) ? draftOptions.length : 0,
       selectedDraftId: (selectedDraft as DraftPayload | null)?.draftId ?? null,
-      typeStylePromptLen: String(typeStylePrompt || '').length,
+      typeStylePromptLen: String(resolvedTypeStylePrompt || '').length,
     });
 
     const completion = await openai.chat.completions.create({
@@ -330,10 +373,14 @@ CM2이면 selectedDraft 내부의 문장/표현 단위로 응답해야 합니다
     const content = completion.choices[0]?.message?.content ?? '';
 
     try {
-      return NextResponse.json(parseOpenAIResponse(content));
+      return NextResponse.json(
+        ensureSectionsForPrototype(parseOpenAIResponse(content), prototypeType, userIntent)
+      );
     } catch (parseError) {
       console.warn('OpenAI JSON 파싱 실패, fallback 반환:', parseError);
-      return NextResponse.json(FALLBACK_RESPONSE);
+      return NextResponse.json(
+        ensureSectionsForPrototype(FALLBACK_RESPONSE, prototypeType, userIntent)
+      );
     }
   } catch (error) {
     console.error('OpenAI API 호출 에러:', error);

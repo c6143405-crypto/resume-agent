@@ -32,15 +32,15 @@ export function Cm02LoadingScreen({
       <section className="flex flex-col items-center gap-5 px-5 pt-12 pb-0">
         <AiOrb size={40} />
         <div className="flex flex-col items-center gap-2">
-          <h2 className="text-heading-1 text-center font-bold text-label-strong">
+          <h2 className="text-center text-[22px] font-semibold leading-[30px] tracking-[-0.43px] text-label-strong">
             {draftIndex}번 초안을 선택했어요
           </h2>
-          <p className="text-body-1-reading text-center text-label-neutral">
+          <p className="text-center text-[16px] font-normal leading-[26px] tracking-[0.09px] text-label-neutral">
             내용을 AI와 함께 더 다듬을 수 있어요
           </p>
         </div>
       </section>
-      <div>
+      <div className="flex flex-1 items-center justify-center px-5 py-6">
         <Image
           src="/CM02_loading.png"
           alt=""
@@ -52,7 +52,6 @@ export function Cm02LoadingScreen({
           className="mx-auto h-auto w-full max-w-[375px]"
         />
       </div>
-      <div className="flex-1" />
       <footer className="flex w-full flex-col items-start gap-2 self-stretch px-5 pb-2">
         <button
           type="button"
@@ -64,7 +63,7 @@ export function Cm02LoadingScreen({
         <button
           type="button"
           onClick={onFinalize}
-          className="w-full self-stretch rounded-xl border px-7 py-3.5 text-center text-headline-2 font-bold text-label-normal transition-colors hover:bg-fill-alternative"
+          className="w-full self-stretch rounded-xl border px-7 py-3 text-center text-[16px] font-semibold leading-[24px] tracking-[0.09px] text-primary-normal transition-colors hover:bg-fill-alternative"
           style={{ borderColor: "rgba(112, 115, 124, 0.16)" }}
         >
           최종 마무리 단계로 넘어가기
