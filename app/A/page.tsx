@@ -5,6 +5,7 @@ import Image from "next/image";
 import { AiOrb } from "../components/AiOrb";
 import { PageTitleBar } from "../components/PageTitleBar";
 import { StatusBar } from "../components/StatusBar";
+import { HomeBar } from "../components/HomeBar";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
 
 /**
@@ -14,15 +15,6 @@ import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
  * 미완성: 초안 작성 기준 expand 토글, CM 02, End
  * 옛 디자인은 page.old.tsx에 백업
  */
-
-// ─── iOS 홈바 ─────────────────────────────────────────────────────────
-function HomeBar() {
-  return (
-    <div className="flex h-[34px] items-end justify-center pb-2">
-      <div className="h-[5px] w-[134px] rounded-full bg-label-strong" />
-    </div>
-  );
-}
 
 // ─── TBD placeholder 카드 (그래픽 미확정) ──────────────────────────────
 function TbdCard({ label }: { label?: string }) {
