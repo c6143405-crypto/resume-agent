@@ -7,6 +7,7 @@ import { PageTitleBar } from "../components/PageTitleBar";
 import { StatusBar } from "../components/StatusBar";
 import { HomeBar } from "../components/HomeBar";
 import { StartScreen } from "../components/StartScreen";
+import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
 
 /**
@@ -811,57 +812,6 @@ function Cm01Screen({ onDraftClick }: Cm01ScreenProps) {
       </div>
 
       <div className="flex-1" />
-    </>
-  );
-}
-
-// ─── CM 02 진입 화면 ("1번 초안을 선택했어요") ────────────────────────
-interface Cm02LoadingScreenProps {
-  draftIndex: number;
-  draftTitle: string;
-  onRefine: () => void;
-  onFinalize: () => void;
-}
-function Cm02LoadingScreen({
-  draftIndex,
-  draftTitle,
-  onRefine,
-  onFinalize,
-}: Cm02LoadingScreenProps) {
-  return (
-    <>
-      <section className="flex flex-col items-center gap-5 px-5 py-12">
-        <AiOrb size={40} />
-        <div className="flex flex-col items-center gap-2">
-          <h2 className="text-heading-1 text-center font-bold text-label-strong">
-            {draftIndex}번 초안을 선택했어요
-          </h2>
-          <p className="text-body-1-reading text-center text-label-neutral">
-            내용을 AI와 함께 더 다듬을 수 있어요
-          </p>
-        </div>
-      </section>
-      <div className="px-5">
-        <TbdCard label={draftTitle} />
-      </div>
-      <div className="flex-1" />
-      <footer className="flex w-full flex-col items-start gap-2 self-stretch px-5 pb-2">
-        <button
-          type="button"
-          onClick={onRefine}
-          className="w-full self-stretch rounded-xl bg-primary-normal px-7 py-3.5 text-center text-headline-2 font-bold text-static-white transition-colors hover:bg-primary-strong active:bg-primary-heavy"
-        >
-          초안 내용 다듬기
-        </button>
-        <button
-          type="button"
-          onClick={onFinalize}
-          className="w-full self-stretch rounded-xl border px-7 py-3.5 text-center text-headline-2 font-bold text-label-normal transition-colors hover:bg-fill-alternative"
-          style={{ borderColor: "rgba(112, 115, 124, 0.16)" }}
-        >
-          최종 마무리 단계로 넘어가기
-        </button>
-      </footer>
     </>
   );
 }
