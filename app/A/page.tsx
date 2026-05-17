@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AiOrb } from "../components/AiOrb";
+import { PageTitleBar } from "../components/PageTitleBar";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
@@ -33,24 +34,6 @@ function StatusBar() {
           <rect x="2" y="2.5" width="18" height="7" rx="1.5" fill="currentColor" />
         </svg>
       </div>
-    </div>
-  );
-}
-
-// ─── 페이지 타이틀바 (스크롤 시 하단 border) ───────────────────────────
-function PageTitleBar({ showBorderBottom = false }: { showBorderBottom?: boolean }) {
-  return (
-    <div
-      className="relative z-10 flex h-11 items-center justify-center bg-static-white px-5 transition-[border-color] duration-150"
-      style={{
-        borderBottom: showBorderBottom
-          ? "0.5px solid rgba(112, 115, 124, 0.16)"
-          : "0.5px solid transparent",
-      }}
-    >
-      <h1 className="text-heading-2 font-bold text-label-strong">
-        경력기술서 에이전트
-      </h1>
     </div>
   );
 }
