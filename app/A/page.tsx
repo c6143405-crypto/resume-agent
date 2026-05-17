@@ -1642,7 +1642,7 @@ export default function APage() {
       className="relative isolate mx-auto flex h-screen max-h-[932px] w-full max-w-[480px] flex-col overflow-hidden"
       style={containerStyle}
     >
-      {(screen === "cm1" || screen === "cm2-loading") && <BackgroundEllipses />}
+      {(screen === "cm1" || screen === "cm2-loading" || screen === "cm2-chat") && <BackgroundEllipses />}
 
       <StatusBar />
       <PageTitleBar showBorderBottom={screen === "cm2-chat" && isChatScrolled} />
