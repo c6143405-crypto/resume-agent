@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AiOrb } from "../components/AiOrb";
 import { PageTitleBar } from "../components/PageTitleBar";
+import { StatusBar } from "../components/StatusBar";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
@@ -12,31 +13,6 @@ import { PageTitleBar } from "../components/PageTitleBar";
  * 미완성: 초안 작성 기준 expand 토글, CM 02, End
  * 옛 디자인은 page.old.tsx에 백업
  */
-
-// ─── 9:41 가짜 상태바 ─────────────────────────────────────────────────
-function StatusBar() {
-  return (
-    <div className="flex h-11 items-center justify-between px-5 text-label-strong">
-      <span className="font-semibold tracking-tight">9:41</span>
-      <div className="flex items-center gap-1.5">
-        <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true">
-          <rect x="0" y="9" width="3" height="3" rx="0.5" />
-          <rect x="5" y="6" width="3" height="6" rx="0.5" />
-          <rect x="10" y="3" width="3" height="9" rx="0.5" />
-          <rect x="15" y="0" width="3" height="12" rx="0.5" />
-        </svg>
-        <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
-          <path d="M8 0C5 0 2.2 1 0 2.8l1.6 2C3.3 3.4 5.5 2.5 8 2.5s4.7 0.9 6.4 2.3l1.6-2C13.8 1 11 0 8 0zm0 4c-2 0-4 0.7-5.5 2l1.6 2C5 7.4 6.5 7 8 7s3 0.4 4 1l1.5-2C12 4.7 10 4 8 4zm0 4c-1.2 0-2.3 0.4-3 1l3 3 3-3c-0.7-0.6-1.8-1-3-1z" />
-        </svg>
-        <svg width="25" height="12" viewBox="0 0 25 12" aria-hidden="true">
-          <rect x="0.5" y="1" width="21" height="10" rx="2.5" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-          <rect x="23" y="4" width="1.5" height="4" rx="0.5" fill="currentColor" fillOpacity="0.4" />
-          <rect x="2" y="2.5" width="18" height="7" rx="1.5" fill="currentColor" />
-        </svg>
-      </div>
-    </div>
-  );
-}
 
 // ─── iOS 홈바 ─────────────────────────────────────────────────────────
 function HomeBar() {
