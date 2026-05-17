@@ -40,7 +40,7 @@ export function Cm02LoadingScreen({
           </p>
         </div>
       </section>
-      <div className="px-5">
+      <div>
         <Image
           src="/CM02_loading.png"
           alt=""
