@@ -18,6 +18,9 @@ import { OrbCanvas } from "../components/OrbCanvas";
 import { TypewriterText } from "../components/TypewriterText";
 import { StartScreen } from "../components/StartScreen";
 import { AiOrb } from "../components/AiOrb";
+import { StatusBar } from "../components/StatusBar";
+import { PageTitleBar } from "../components/PageTitleBar";
+import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
 
 const USE_AI = process.env.NEXT_PUBLIC_USE_AI === "true";
 
@@ -276,6 +279,18 @@ const CM02_REVIEW_META: Record<
   },
 };
 
+const CM02_SECOND_REVIEW_META = {
+  reviewTitle: "두 번째(2/2): 프로젝트 기간 표기",
+  issueBadge: "강한 표현",
+  original: "담당 업무 · 2010.03 ~ 2012.02 (24개월)",
+  revisedBadges: ["정확성", "안전/신뢰성"],
+  options: [
+    "A 정확한 기간 (24개월 운영)",
+    "B 연도만 (2010~2012년)",
+    "C 기간 생략하고 성과 중심",
+  ],
+};
+
 // [B 타입 — 문장별 실질 키워드]
 // 각 draft의 goals / roleAndResults 문장에서 뽑은 핵심 표현. 파란 chip으로 노출.
 const SENTENCE_KEYWORDS: Record<
@@ -367,34 +382,6 @@ function LoadingIcon() {
         strokeDasharray="32 12"
       />
     </svg>
-  );
-}
-
-function StatusBar() {
-  return (
-    <div className="relative h-[44px] w-full bg-white">
-      <div className="absolute left-[30px] top-[13px] text-center text-[15px] font-semibold leading-[18px] tracking-[-0.237px] text-black">
-        9:41
-      </div>
-      <div className="absolute right-[14px] top-[17px] flex items-center gap-[5px]">
-        <svg width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden="true">
-          <rect x="1" y="7" width="3" height="4" rx="1" fill="black" />
-          <rect x="5.5" y="5" width="3" height="6" rx="1" fill="black" />
-          <rect x="10" y="3" width="3" height="8" rx="1" fill="black" />
-          <rect x="14.5" y="1" width="3" height="10" rx="1" fill="black" />
-        </svg>
-        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
-          <path d="M1 4.4C4.9 1.2 11.1 1.2 15 4.4" stroke="black" strokeWidth="1.6" strokeLinecap="round" />
-          <path d="M4 7.2C6.2 5.5 9.8 5.5 12 7.2" stroke="black" strokeWidth="1.6" strokeLinecap="round" />
-          <path d="M7.15 10.1C7.65 9.75 8.35 9.75 8.85 10.1" stroke="black" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
-        <svg width="25" height="12" viewBox="0 0 25 12" fill="none" aria-hidden="true">
-          <rect x="0.75" y="1.25" width="21" height="9.5" rx="2.25" stroke="black" strokeWidth="1.5" />
-          <rect x="2.75" y="3.25" width="17" height="5.5" rx="1.25" fill="black" />
-          <path d="M23 4V8" stroke="black" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      </div>
-    </div>
   );
 }
 
@@ -510,14 +497,14 @@ function Cm02ReviewCard({
         <button
           type="button"
           onClick={onApply}
-          className="rounded-[10px] bg-[#0066FF] px-[20px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-white"
+          className="rounded-[10px] bg-[#0066FF] px-[20px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-white transition-all duration-150 ease-out hover:bg-[#005BE6] hover:shadow-[0_8px_18px_rgba(0,102,255,0.22)] active:scale-[0.98] active:bg-[#004FCC] active:shadow-[0_3px_8px_rgba(0,102,255,0.18)]"
         >
           수정 문장 채택
         </button>
         <button
           type="button"
           onClick={onKeep}
-          className="rounded-[10px] border border-[#0066FF] bg-white px-[20px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-[#0066FF]"
+          className="rounded-[10px] border border-[#0066FF] bg-white px-[20px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-[#0066FF] transition-all duration-150 ease-out hover:bg-[#F5F9FF] hover:shadow-[0_6px_14px_rgba(0,102,255,0.12)] active:scale-[0.98] active:bg-[#EAF2FE] active:shadow-[0_2px_6px_rgba(0,102,255,0.1)]"
         >
           기존 유지
         </button>
@@ -526,6 +513,137 @@ function Cm02ReviewCard({
       <p className="text-[16px] font-semibold leading-[26px] tracking-[0.57px] text-[#171719]">
         수정하고 싶은 내용을 직접 입력해주셔도 좋아요.
       </p>
+    </div>
+  );
+}
+
+function Cm02SecondReviewCard({ onComplete }: { onComplete: () => void }) {
+  return (
+    <div className="flex flex-col gap-[20px]">
+      <p className="text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#171719]">
+        {CM02_SECOND_REVIEW_META.reviewTitle}
+      </p>
+
+      <section className="flex flex-col gap-[8px]">
+        <p className="text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[#FF4242]">
+          기존 문장
+        </p>
+        <div className="flex flex-col gap-[8px]">
+          <span className="self-start rounded-[8px] bg-[#FEECEC] px-[8px] py-[5px] text-[13px] font-semibold leading-[18px] tracking-[0.194px] text-[#FF4242]">
+            {CM02_SECOND_REVIEW_META.issueBadge}
+          </span>
+          <p className="text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#FF4242]">
+            {CM02_SECOND_REVIEW_META.original}
+          </p>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-[8px]">
+        <p className="text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[#0066FF]">
+          수정 문장
+        </p>
+        <div className="flex flex-wrap gap-[4px]">
+          {CM02_SECOND_REVIEW_META.revisedBadges.map((badge) => (
+            <span
+              key={badge}
+              className="rounded-[8px] bg-[#EAF2FE] px-[8px] py-[5px] text-[13px] font-semibold leading-[18px] tracking-[0.194px] text-[#0066FF]"
+            >
+              {badge}
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-col gap-[8px]">
+          {CM02_SECOND_REVIEW_META.options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className="self-start text-left text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#0066FF]"
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <div className="h-px w-full bg-[#70737C29]" />
+
+      <div className="grid grid-cols-4 gap-[8px]">
+        {["A 채택", "B 채택", "C 채택", "기존 유지"].map((label) => (
+          <button
+            key={label}
+            type="button"
+            onClick={onComplete}
+            className={`rounded-[10px] px-[10px] py-[12px] text-[15px] font-semibold leading-[24px] tracking-[0.96px] transition-all duration-150 ease-out active:scale-[0.98] ${
+              label === "기존 유지"
+                ? "border border-[#0066FF] bg-white text-[#0066FF] hover:bg-[#F5F9FF] hover:shadow-[0_6px_14px_rgba(0,102,255,0.12)] active:bg-[#EAF2FE] active:shadow-[0_2px_6px_rgba(0,102,255,0.1)]"
+                : "bg-[#0066FF] text-white hover:bg-[#005BE6] hover:shadow-[0_8px_18px_rgba(0,102,255,0.22)] active:bg-[#004FCC] active:shadow-[0_3px_8px_rgba(0,102,255,0.18)]"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-[16px] font-semibold leading-[26px] tracking-[0.57px] text-[#171719]">
+        수정하고 싶은 내용을 직접 입력해주셔도 좋아요.
+      </p>
+    </div>
+  );
+}
+
+function Cm02ConfirmCard({
+  onReviewMore,
+  onFinalize,
+}: {
+  onReviewMore: () => void;
+  onFinalize: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-[20px]">
+      <div className="h-px w-full bg-[#70737C29]" />
+      <section className="flex flex-col gap-[8px]">
+        <p className="text-[13px] font-medium leading-[18px] tracking-[0.252px] text-[#0066FF]">
+          초안 미리보기
+        </p>
+        <button
+          type="button"
+          className="w-full overflow-hidden rounded-[12px] border border-[#EAF2FE] bg-white text-left shadow-[0_1px_2px_-1px_rgba(23,23,23,0.1)]"
+        >
+          <div className="flex gap-[8px] bg-[#EAF2FE] px-[20px] py-[10px]">
+            {["수치", "임팩트", "결과"].map((chip) => (
+              <span
+                key={chip}
+                className="rounded-[8px] bg-white px-[8px] py-[5px] text-[13px] font-semibold leading-[18px] tracking-[0.194px] text-[#0066FF]"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center justify-between px-[20px] py-[20px]">
+            <p className="text-[18px] font-semibold leading-[26px] tracking-[-0.02px] text-[#171719]">
+              성과 중심 초안
+            </p>
+            <FileText className="h-[22px] w-[22px] text-[rgba(55,56,60,0.24)]" strokeWidth={1.5} aria-hidden="true" />
+          </div>
+        </button>
+      </section>
+      <div className="h-px w-full bg-[#70737C29]" />
+      <div className="flex gap-[8px]">
+        <button
+          type="button"
+          onClick={onReviewMore}
+          className="rounded-[10px] bg-[#0066FF] px-[18px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-white transition-all duration-150 ease-out hover:bg-[#005BE6] hover:shadow-[0_8px_18px_rgba(0,102,255,0.22)] active:scale-[0.98] active:bg-[#004FCC] active:shadow-[0_3px_8px_rgba(0,102,255,0.18)]"
+        >
+          추가 검토하기
+        </button>
+        <button
+          type="button"
+          onClick={onFinalize}
+          className="rounded-[10px] border border-[#0066FF] bg-white px-[18px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#0066FF] transition-all duration-150 ease-out hover:bg-[#F5F9FF] hover:shadow-[0_6px_14px_rgba(0,102,255,0.12)] active:scale-[0.98] active:bg-[#EAF2FE] active:shadow-[0_2px_6px_rgba(0,102,255,0.1)]"
+        >
+          최종 단계로 넘어가기
+        </button>
+      </div>
     </div>
   );
 }
@@ -590,20 +708,22 @@ function BottomSheet({
         type="button"
       />
       <section
-        className={`absolute bottom-0 left-0 flex h-[89dvh] w-full flex-col rounded-t-[12px] bg-white font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
+        className={`absolute bottom-0 left-0 flex h-[calc(100dvh-44px)] max-h-[812px] w-full flex-col overflow-hidden rounded-t-[12px] border border-[rgba(112,115,124,0.22)] bg-white font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >
-        <div className="flex justify-center pb-[28px] pt-[8px]">
-          <div className="h-[5px] w-[40px] rounded-full bg-[#D9D9D9]" />
+        <div className="flex h-[12px] shrink-0 items-end justify-center">
+          <div className="h-[5px] w-[40px] rounded-[1000px] bg-[rgba(112,115,124,0.16)]" />
         </div>
-        <div className="relative flex h-[36px] items-center px-[20px]">
-          <h2 className="text-[20px] font-semibold leading-[28px] tracking-[-1.2px] text-black">
-            {draftMeta?.title ?? draft?.draftTitle ?? "샘플 경력기술서"}
-          </h2>
+        <div className="relative flex shrink-0 items-start justify-center px-[16px] py-[24px]">
+          <div className="flex min-w-0 flex-1 items-center px-[4px]">
+            <h2 className="overflow-hidden text-ellipsis whitespace-nowrap text-[20px] font-semibold leading-[28px] tracking-[-0.24px] text-black">
+              {draftMeta?.title ?? draft?.draftTitle ?? "샘플 경력기술서"}
+            </h2>
+          </div>
           <button
             aria-label="닫기"
-            className="absolute right-[20px] top-[4px] flex h-[24px] w-[24px] items-center justify-center"
+            className="flex h-[24px] w-[24px] shrink-0 items-center justify-center"
             onClick={onClose}
             type="button"
           >
@@ -611,46 +731,48 @@ function BottomSheet({
           </button>
         </div>
 
-        <div className="mt-[24px] flex-1 overflow-y-auto px-[20px] pb-[24px] [&::-webkit-scrollbar]:hidden">
-          {/* [근거 보기 아코디언] 초안의 방향·추천 이유·주의점을 시트 상단에서 보여줌 */}
-          <div>
+        <div className="flex-1 overflow-y-auto px-[20px] pb-[24px] [&::-webkit-scrollbar]:hidden">
+          <div
+            className="flex w-full flex-col gap-[16px] rounded-[12px] border border-[#EAF2FE] px-[20px] py-[16px]"
+            style={{
+              background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%), #FFFFFF",
+            }}
+          >
             <button
               type="button"
               onClick={() => setIsRationaleOpen((v) => !v)}
-              className="flex min-h-[56px] w-full items-center justify-between rounded-[12px] border border-[#EAF2FE] px-[20px] py-[16px] text-left"
+              className="flex w-full items-center justify-between text-left"
               aria-expanded={isRationaleOpen}
-              style={{
-                background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%)",
-              }}
             >
               <span className="flex items-center gap-[8px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#171719]">
                 <AiOrb size={20} />
                 초안 작성 기준
               </span>
-              <ChevronDown className={`h-[20px] w-[20px] text-[#171719] transition-transform ${isRationaleOpen ? "rotate-180" : ""}`} strokeWidth={2} aria-hidden="true" />
+              <ChevronUp className={`h-[20px] w-[20px] text-[#171719] transition-transform ${isRationaleOpen ? "" : "rotate-180"}`} strokeWidth={2} aria-hidden="true" />
             </button>
             {isRationaleOpen && (
-              <div
-                className="rounded-b-[12px] border-x border-b border-[#EAF2FE] px-[20px] pb-[16px] pt-[16px]"
-                style={{
-                  background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%)",
-                }}
-              >
-                <div className="text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
-                  반영한 내용
-                </div>
-                <p className="mt-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
-                  {draft?.draftDirection ?? "—"} {draft?.whyRecommended ?? ""}
-                </p>
+              <>
+                <div className="h-px w-full bg-[rgba(112,115,124,0.16)]" />
+                <div className="flex flex-col gap-[16px]">
+                  <div className="flex flex-col gap-[4px]">
+                    <div className="text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
+                      반영한 내용
+                    </div>
+                    <p className="text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
+                      {draft?.draftDirection ?? "—"} {draft?.whyRecommended ?? ""}
+                    </p>
+                  </div>
 
-                <div className="mt-[16px] text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
-                  보완하면 좋은 점
+                  <div className="flex flex-col gap-[4px]">
+                    <div className="text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
+                      보완하면 좋은 점
+                    </div>
+                    <p className="text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
+                      {draft?.caution ?? "—"}
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
-                  {draft?.caution ?? "—"}
-                </p>
-
-              </div>
+              </>
             )}
           </div>
 
@@ -864,7 +986,7 @@ function BottomSheet({
             onClick={() => {
               if (draft) onSelect(draft);
             }}
-            className="h-[52px] w-full rounded-[12px] bg-[#0066FF] text-[17px] font-semibold leading-[24px] text-white disabled:bg-[#C4C6CA]"
+            className="flex w-full items-center justify-center rounded-[12px] bg-[#0066FF] px-[28px] py-[14px] text-[17px] font-semibold leading-[24px] text-white transition-all duration-150 ease-out hover:bg-[#005BE6] hover:shadow-[0_8px_18px_rgba(0,102,255,0.22)] active:scale-[0.98] active:bg-[#004FCC] active:shadow-[0_3px_8px_rgba(0,102,255,0.18)] disabled:bg-[#C4C6CA] disabled:hover:bg-[#C4C6CA] disabled:hover:shadow-none disabled:active:scale-100"
           >
             이 초안 선택하기
           </button>
@@ -927,6 +1049,8 @@ export default function Page() {
         revisedSentence: string;
         changeReason: string;
       };
+      secondReviewCard?: boolean;
+      confirmCard?: boolean;
       // [A 타입 챗] 라벨드 섹션 배열 — 소타이틀 + 내용을 반복 렌더.
       sections?: { label: string; content: string }[];
     }[]
@@ -946,11 +1070,9 @@ export default function Page() {
   // 마크업/로직은 모두 보존되어 있고, 초기값만 "loadingDraft"로 바꿔 진입 시 selectRole만 건너뛴다.
   // 되살리려면 아래 초기값을 "selectRole"로 바꾸기만 하면 된다.
   const [flowStep, setFlowStep] = useState<"selectRole" | "loadingDraft" | "draftReady">("selectRole");
-  const [spacerHeight, setSpacerHeight] = useState(300);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastUserMessageRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const lastSpacerRef = useRef(300);
 
   // [판단보조형 Agent 상태값] T3 단계, CM1/CM2 흐름에서 추적
   // 현재는 선언만 해두고, AI 응답 로직과 묶는 작업은 다음 단계에서 진행한다.
@@ -1049,29 +1171,39 @@ export default function Page() {
   }, [messages]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (view !== "chat") return;
+    if (messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+    const shouldFollowAgent =
+      lastMessage?.type === "agent" &&
+      (streamingMessageIndex !== null ||
+        isLoading ||
+        messageDone[messages.length - 1] === false);
+
+    if (!shouldFollowAgent) return;
+
+    const frame = requestAnimationFrame(() => {
       const container = scrollContainerRef.current;
-      const lastUserEl = lastUserMessageRef.current;
+      if (!container) return;
 
-      if (!container || !lastUserEl) {
-        return;
-      }
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    });
 
-      const containerHeight = container.clientHeight;
-      const userMessageTop = lastUserEl.offsetTop;
-      const totalContentHeight = container.scrollHeight;
-      const actualContentHeight = totalContentHeight - lastSpacerRef.current;
-      const contentBelowUser = Math.max(0, actualContentHeight - userMessageTop);
-      const neededSpacer = Math.max(0, containerHeight - contentBelowUser - 20);
-
-      if (Math.abs(neededSpacer - lastSpacerRef.current) > 2) {
-        lastSpacerRef.current = neededSpacer;
-        setSpacerHeight(neededSpacer);
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [messages, isLoading]);
+    return () => cancelAnimationFrame(frame);
+  }, [
+    view,
+    messages.length,
+    streamingMessageIndex,
+    streamedCharCount,
+    streamedSectionCount,
+    refinementCardStep,
+    messageDone,
+    isLoading,
+  ]);
 
   useEffect(() => {
     if (flowStep !== "loadingDraft") {
@@ -1627,21 +1759,15 @@ export default function Page() {
       { type: "user" as const, text: "수정안 적용하기", displayStyle: "bubble" },
     ]);
 
-    // 1.2초 뒤 결과 안내 메시지 + resultCard(자동으로 ResumeRow가 따라옴).
+    // 1.2초 뒤 다음 검토 항목 안내.
     setIsLoading(true);
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
         {
           type: "agent" as const,
-          text:
-            "말씀해주신 수정안을 반영해 경력기술서를 수정했어요. " +
-            "아래에서 변경된 경력기술서를 확인해보세요.",
-          resultCard: {
-            previous: latestRc.originalSentence,
-            revised: latestRc.revisedSentence,
-            message: "수정 내용이 반영되었어요.",
-          },
+          text: "좋아요. 다음 항목을 볼게요.",
+          secondReviewCard: true,
         },
       ]);
       setIsLoading(false);
@@ -1677,15 +1803,8 @@ export default function Page() {
         ...prev,
         {
           type: "agent" as const,
-          text:
-            "기존 문장을 그대로 유지했어요. " +
-            "아래에서 경력기술서를 다시 확인해보세요. 더 수정하실 부분이 있으실까요?",
-          resultCard: {
-            previous: latestRc.originalSentence,
-            revised: latestRc.originalSentence,
-            message: "기존 문장이 유지되었어요.",
-          },
-          chips: ["더 수정할 부분이 있어요", "최종 확정"],
+          text: "좋아요. 다음 항목을 볼게요.",
+          secondReviewCard: true,
         },
       ]);
       setIsLoading(false);
@@ -1745,6 +1864,29 @@ export default function Page() {
     sendMessage("다시 수정해줘", { displayStyle: "bubble" });
   };
 
+  const handleSecondReviewComplete = () => {
+    setMessages((prev) => [
+      ...prev,
+      { type: "user" as const, text: "A 채택", displayStyle: "bubble" },
+    ]);
+
+    setIsLoading(true);
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: "agent" as const,
+          text:
+            "2가지 수정 사항이 모두 반영되었어요.\n" +
+            "초안을 더 수정할까요?\n" +
+            "최종 마무리 단계로 넘어갈까요?",
+          confirmCard: true,
+        },
+      ]);
+      setIsLoading(false);
+    }, 800);
+  };
+
   const handleRewriteOptionSelect = (optionIndex: number, optionTitle: string) => {
     if (selectedRewriteOption !== null) {
       return;
@@ -1794,21 +1936,27 @@ export default function Page() {
   // 인라인 "이 초안 선택하기" 버튼이 대체하므로 하단 quick 버튼은 노출하지 않는다.
   const showDraftQuickButtons = false;
   const resultSampleIndex = editingSampleIndex ?? 0;
+  const screenBackground =
+    view === "start" || view === "complete"
+      ? "linear-gradient(184deg, #FAFFFC 0.96%, #F3FBFF 49.34%, #E8F4FF 97.71%)"
+      : "#FFFFFF";
+  const screenThemeColor = view === "start" || view === "complete" ? "#FAFFFC" : "#FFFFFF";
+
+  useSyncBodyBackground(screenBackground, screenThemeColor);
 
   return (
-    <main className="min-h-screen bg-white font-['Pretendard',sans-serif]">
+    <main className="min-h-screen font-['Pretendard',sans-serif]" style={{ background: screenBackground }}>
       <section
-        className="relative mx-auto flex h-[100dvh] max-h-[932px] w-full max-w-[480px] flex-col overflow-hidden bg-white"
+        className="relative mx-auto flex h-[100dvh] max-h-[932px] w-full max-w-[480px] flex-col overflow-hidden"
+        style={{ background: screenBackground }}
       >
-        <div className="flex h-[44px] flex-shrink-0 items-center justify-center px-[16px] py-[10px]">
-          <div className="flex h-[24px] w-full items-center justify-center">
-            <h1 className="text-center text-[17px] font-semibold leading-[24px] text-black">
-              경력기술서 에이전트
-            </h1>
-          </div>
-        </div>
+        <StatusBar />
+        <PageTitleBar />
 
-        <div ref={scrollContainerRef} className="relative flex-1 overflow-y-auto">
+        <div
+          ref={scrollContainerRef}
+          className={`relative flex-1 ${view === "start" ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`}
+        >
           {view === "chat" && (
             <div
               aria-hidden="true"
@@ -1820,54 +1968,130 @@ export default function Page() {
             />
           )}
           {view === "start" ? (
-            <div className="flex min-h-full flex-col">
-              <StartScreen
-                onStart={() => {
-                  setFlowStep("draftReady");
-                  setView("home");
+            <StartScreen
+              onStart={() => {
+                setFlowStep("draftReady");
+                setView("home");
+              }}
+            />
+          ) : view === "complete" ? (
+            <div className="relative min-h-full overflow-hidden bg-[linear-gradient(188.833deg,#FAFFFC_0.958%,#F3FBFF_49.336%,#E8F4FF_97.714%)] text-center">
+              <div
+                aria-hidden="true"
+                className="absolute h-[474px] w-[590px]"
+                style={{
+                  left: -107,
+                  top: 56,
+                  background:
+                    "radial-gradient(circle at 40% 58%, rgba(0,102,255,0.18) 0%, rgba(58,230,194,0.14) 18%, rgba(255,255,255,0) 46%)",
+                  filter: "blur(34px)",
                 }}
               />
-            </div>
-          ) : view === "complete" ? (
-            <div className="flex min-h-full flex-col bg-[linear-gradient(184deg,#FAFFFC_0.96%,#F3FBFF_49.34%,#E8F4FF_97.71%)] pt-[104px] text-center">
-              <AiOrb size={48} />
-              <h2 className="mx-auto mt-[28px] whitespace-pre-line text-[26px] font-bold leading-[34px] tracking-[-0.4px] text-[#171719]">
-                {"경력기술서 초안 작성을 완료했어요"}
-              </h2>
-              <p className="mt-[12px] text-[17px] font-medium leading-[28px] tracking-[-0.2px] text-[rgba(55,56,60,0.72)]">
-                다음 단계에서 경력기술서를 최종 마무리할게요
-              </p>
-              <div className="mt-[68px] flex flex-1 items-center justify-center bg-[#FF313A]">
-                <div className="flex h-[310px] w-[250px] rotate-[-4deg] items-center justify-center rounded-[24px] bg-[#C80008] text-center text-[56px] font-bold leading-none text-white">
-                  TBD
+              <div className="absolute left-0 top-0 flex w-full flex-col items-center justify-center gap-[20px] px-[20px] py-[48px]">
+                <AiOrb size={40} />
+                <div className="flex w-full flex-col items-center gap-[8px]">
+                  <h2 className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[22px] font-semibold leading-[30px] tracking-[-0.427px] text-black">
+                    경력기술서 초안 작성을 완료했어요
+                  </h2>
+                  <p className="w-full text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
+                    다음 단계에서 경력기술서를 최종 마무리할게요
+                  </p>
                 </div>
+              </div>
+              <div className="absolute left-0 top-[220px] h-[470px] w-full overflow-hidden bg-[rgba(255,0,0,0.8)]">
+                <div className="absolute left-[54.4px] top-[30.24px] flex h-[364.036px] w-[267.664px] items-center justify-center">
+                  <div className="flex h-[351.454px] w-[249.612px] rotate-[-3deg] items-center justify-center overflow-hidden rounded-[19.969px] bg-black shadow-[0px_4.992px_29.953px_rgba(116,191,250,0.05)] backdrop-blur-[2px]">
+                    <div className="rotate-[3deg] text-center text-[19.969px] font-semibold leading-[28px] tracking-[-0.24px] text-white/20">
+                      <p>{`'성과 중심 초안'`}</p>
+                      <p>관련</p>
+                      <p>그래픽 디자인</p>
+                      <p>(완성 ver.)</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="absolute left-1/2 top-[183px] -translate-x-1/2 whitespace-nowrap text-center text-[56px] font-bold leading-[72px] tracking-[-1.786px] text-white">
+                  TBD
+                </p>
               </div>
             </div>
           ) : view === "selected" ? (
-            <div className="flex min-h-full flex-col bg-[linear-gradient(184deg,#FAFFFC_0.96%,#F3FBFF_49.34%,#E8F4FF_97.71%)] px-[20px] pb-[28px] pt-[88px] text-center">
-              <AiOrb size={48} />
-              <h2 className="mt-[28px] text-[26px] font-bold leading-[34px] tracking-[-0.4px] text-[#171719]">
-                {`${Math.max(1, SAMPLE_DRAFTS.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1)}번 초안을 선택했어요`}
-              </h2>
-              <p className="mt-[12px] text-[17px] font-medium leading-[28px] tracking-[-0.2px] text-[rgba(55,56,60,0.72)]">
-                내용을 AI와 함께 더 다듬을 수 있어요
-              </p>
-              <div className="mt-[64px] flex min-h-[320px] flex-1 items-center justify-center rounded-[24px] bg-[#F3C3CC]" />
-              <div className="mt-[24px] flex flex-col gap-[10px]">
-                <button
-                  type="button"
-                  onClick={commitCm1Selection}
-                  className="h-[56px] w-full rounded-[12px] bg-[#0066FF] text-[18px] font-bold leading-[26px] text-white"
-                >
-                  초안 내용 다듬기
-                </button>
-                <button
-                  type="button"
-                  onClick={handleFinalize}
-                  className="h-[56px] w-full rounded-[12px] border border-[rgba(0,102,255,0.18)] bg-white/45 text-[18px] font-bold leading-[26px] text-[#0066FF]"
-                >
-                  최종 마무리 단계로 넘어가기
-                </button>
+            <div className="relative min-h-full overflow-hidden bg-[linear-gradient(188.833deg,#FAFFFC_0.958%,#F3FBFF_49.336%,#E8F4FF_97.714%)]">
+              <div className="absolute left-0 top-[48px] flex w-full flex-col items-center justify-center gap-[20px] px-[20px] text-center">
+                <AiOrb size={40} />
+                <div className="flex w-full flex-col items-center gap-[8px]">
+                  <h2 className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[22px] font-semibold leading-[30px] tracking-[-0.427px] text-black">
+                    {`${Math.max(1, SAMPLE_DRAFTS.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1)}번 초안을 선택했어요`}
+                  </h2>
+                  <p className="w-full text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
+                    내용을 AI와 함께 더 다듬을 수 있어요
+                  </p>
+                </div>
+              </div>
+
+              <div
+                aria-hidden="true"
+                className="absolute h-[474px] w-[590px]"
+                style={{
+                  left: -107,
+                  top: 44,
+                  background:
+                    "radial-gradient(circle at 40% 58%, rgba(0,102,255,0.18) 0%, rgba(58,230,194,0.14) 18%, rgba(255,255,255,0) 46%)",
+                  filter: "blur(34px)",
+                }}
+              />
+
+              <div className="absolute left-0 top-[272px] flex h-[378px] w-full items-start justify-center">
+                <div className="h-[330px] w-[211px] overflow-hidden rounded-[16.5px] border-[3.3px] border-[#0066FF] bg-[rgba(175,207,255,0.12)] shadow-[0_12px_62px_rgba(23,23,23,0.16)] backdrop-blur-[41px]">
+                  <div className="relative flex h-[277px] flex-col justify-between overflow-hidden px-[23px] py-[40px]">
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-[-30px] opacity-80"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, rgba(255,255,255,0.82) 0%, rgba(232,246,255,0.78) 42%, rgba(211,239,255,0.72) 100%)",
+                      }}
+                    />
+                    <div className="relative z-10 flex flex-col gap-[13px]">
+                      <div className="flex h-[23px] w-[23px] items-center justify-center rounded-full bg-[#171719] text-[14px] font-semibold leading-[18px] tracking-[0.349px] text-white">
+                        1
+                      </div>
+                      <p className="whitespace-pre-line text-[20px] font-bold leading-[26px] tracking-[-0.455px] text-[#171719]">
+                        {"결과가 강조되는\n성과 중심 초안"}
+                      </p>
+                    </div>
+                    <div className="relative z-10 ml-auto mr-[2px] h-[74px] w-[92px]">
+                      <div className="absolute bottom-[2px] left-[2px] h-[34px] w-[70px] rounded-[50%] bg-[#0066FF] shadow-[0_12px_18px_rgba(0,102,255,0.32)]" />
+                      <div className="absolute bottom-[18px] left-[16px] h-[38px] w-[70px] rotate-[-8deg] rounded-[50%] bg-[linear-gradient(135deg,#F8FCFF_0%,#DCEEFF_100%)] shadow-[0_10px_18px_rgba(23,23,23,0.14)]" />
+                      <div className="absolute bottom-[31px] left-[39px] h-[10px] w-[24px] rotate-[16deg] rounded-full border-[3px] border-[#0066FF]" />
+                      <div className="absolute bottom-[31px] left-[27px] h-[10px] w-[24px] rotate-[-16deg] rounded-full border-[3px] border-[#0066FF]" />
+                    </div>
+                  </div>
+                  <div className="flex h-[53px] items-center justify-end bg-[linear-gradient(125.139deg,#0066FF_0%,#3AE6C2_103.29%)] px-[24px] py-[16.5px]">
+                    <span className="text-[13px] font-semibold leading-[22px] tracking-[0.075px] text-white">
+                      V.01
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute bottom-0 left-0 flex w-full flex-col">
+                <div className="flex w-full flex-col gap-[8px] px-[20px] py-[20px]">
+                  <button
+                    type="button"
+                    onClick={commitCm1Selection}
+                    className="flex w-full items-center justify-center rounded-[12px] bg-[#0066FF] px-[28px] py-[14px] text-[17px] font-semibold leading-[24px] text-white transition-all duration-150 ease-out hover:bg-[#005BE6] hover:shadow-[0_8px_18px_rgba(0,102,255,0.22)] active:scale-[0.98] active:bg-[#004FCC] active:shadow-[0_3px_8px_rgba(0,102,255,0.18)]"
+                  >
+                    초안 내용 다듬기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleFinalize}
+                    className="flex w-full items-center justify-center rounded-[12px] border border-[rgba(112,115,124,0.16)] bg-white px-[28px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#0066FF] transition-all duration-150 ease-out hover:bg-[#F5F9FF] hover:shadow-[0_6px_14px_rgba(0,102,255,0.12)] active:scale-[0.98] active:bg-[#EAF2FE] active:shadow-[0_2px_6px_rgba(0,102,255,0.1)]"
+                  >
+                    최종 마무리 단계로 넘어가기
+                  </button>
+                </div>
+                <div className="h-[34px] w-full" />
               </div>
             </div>
           ) : view === "home" ? (
@@ -1946,18 +2170,19 @@ export default function Page() {
                 </div>
               </div>
             ) : flowStep === "draftReady" ? (
-              <div className="min-h-full bg-[linear-gradient(184deg,#FAFFFC_0.96%,#F3FBFF_49.34%,#E8F4FF_97.71%)] px-[26px] pb-[28px] pt-[84px]">
-                <div className="flex flex-col items-center text-center">
-                  <AiOrb size={48} />
-                  <h2 className="mt-[28px] text-[26px] font-bold leading-[34px] tracking-[-0.4px] text-black">
-                    3가지 초안을 완성했어요
-                  </h2>
-                  <p className="mt-[12px] whitespace-pre-line text-[18px] font-medium leading-[29px] tracking-[-0.2px] text-[rgba(55,56,60,0.72)]">
-                    {"내 경험에 더 가까운 초안을 선택해주세요\n부족한 부분은 AI와 함께 수정할 수 있어요"}
-                  </p>
-                </div>
+              <div className="min-h-full bg-[linear-gradient(184deg,#FAFFFC_0.96%,#F3FBFF_49.34%,#E8F4FF_97.71%)]">
+                <div className="min-h-full w-full px-[20px] pb-[28px] pt-[48px]">
+                  <div className="flex flex-col items-center text-center">
+                    <AiOrb size={40} />
+                    <h2 className="mt-[20px] text-[22px] font-semibold leading-[30px] tracking-[-0.427px] text-black">
+                      3가지 초안을 완성했어요
+                    </h2>
+                    <p className="mt-[8px] whitespace-pre-line text-[16px] font-normal leading-[24px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
+                      {"내 경험에 더 가까운 초안을 선택해주세요\n부족한 부분은 AI와 함께 수정할 수 있어요"}
+                    </p>
+                  </div>
 
-                <section className="mt-[66px] flex flex-col gap-[12px]">
+                  <section className="mt-[54px] flex flex-col gap-[8px]">
                   {SAMPLE_DRAFTS.map((draft) => {
                     const draftCardMeta = DRAFT_CARD_META[draft.draftId] ?? {
                       title: draft.draftTitle,
@@ -1969,19 +2194,19 @@ export default function Page() {
                         key={draft.draftId}
                         type="button"
                         onClick={() => openBottomSheetWith(draft)}
-                        className="w-full rounded-[18px] border border-[#E8EEF5] bg-white px-[24px] py-[25px] text-left shadow-[0_1px_2px_rgba(23,23,23,0.03)] transition-colors hover:bg-[#FAFBFC]"
+                        className="w-full rounded-[16px] border border-[#E8EEF5] bg-white p-[20px] text-left transition-colors hover:bg-[#FAFBFC]"
                       >
-                        <h3 className="text-[20px] font-bold leading-[28px] tracking-[-0.2px] text-black">
+                        <h3 className="text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#171719]">
                           {draftCardMeta.title}
                         </h3>
-                        <p className="mt-[10px] text-[16px] font-medium leading-[24px] tracking-[-0.1px] text-[rgba(55,56,60,0.72)]">
+                        <p className="mt-[4px] text-[14px] font-normal leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
                           {draftCardMeta.description}
                         </p>
-                        <div className="mt-[18px] flex flex-wrap gap-[8px]">
+                        <div className="mt-[12px] flex flex-wrap gap-[4px]">
                           {draftCardMeta.chips.map((tag) => (
                             <span
                               key={tag}
-                              className="rounded-[8px] bg-[rgba(0,102,255,0.08)] px-[9px] py-[6px] text-[14px] font-bold leading-[18px] text-[#0066FF]"
+                              className="rounded-[6px] bg-[rgba(0,94,235,0.08)] px-[6px] py-[4px] text-[12px] font-medium leading-[16px] tracking-[0.302px] text-[#005EEB]"
                             >
                               {tag}
                             </span>
@@ -1991,6 +2216,7 @@ export default function Page() {
                     );
                   })}
                 </section>
+              </div>
               </div>
             ) : (
               <div className="flex min-h-full flex-col px-[20px] pt-[36px]">
@@ -2217,6 +2443,19 @@ export default function Page() {
                           draftId={selectedDraft?.draftId}
                           onApply={handleRefinementApply}
                           onKeep={handleRefinementKeep}
+                        />
+                      </div>
+                    )}
+                    {chatMessage.secondReviewCard && (
+                      <div className="mt-[20px]">
+                        <Cm02SecondReviewCard onComplete={handleSecondReviewComplete} />
+                      </div>
+                    )}
+                    {chatMessage.confirmCard && (
+                      <div className="mt-[20px]">
+                        <Cm02ConfirmCard
+                          onReviewMore={() => sendMessage("추가 검토하기", { displayStyle: "bubble" })}
+                          onFinalize={handleFinalize}
                         />
                       </div>
                     )}
@@ -2476,6 +2715,7 @@ export default function Page() {
                                         type="button"
                                         disabled={decided}
                                         onClick={handleRefinementApply}
+                                        className="transition-all duration-150 ease-out hover:-translate-y-[1px] hover:bg-[#F9FAFB] hover:shadow-[0_6px_14px_rgba(23,23,23,0.08)] active:translate-y-0 active:scale-[0.98] active:bg-[#F4F4F5] active:shadow-[0_2px_6px_rgba(23,23,23,0.08)] disabled:hover:translate-y-0 disabled:hover:bg-white disabled:hover:shadow-none disabled:active:scale-100"
                                         style={{
                                           ...buttonBase,
                                           background: refinementCardOutcome === "apply" ? "#171719" : "#FFFFFF",
@@ -2497,6 +2737,7 @@ export default function Page() {
                                         type="button"
                                         disabled={decided}
                                         onClick={handleRefinementKeep}
+                                        className="transition-all duration-150 ease-out hover:-translate-y-[1px] hover:bg-[#F9FAFB] hover:shadow-[0_6px_14px_rgba(23,23,23,0.08)] active:translate-y-0 active:scale-[0.98] active:bg-[#F4F4F5] active:shadow-[0_2px_6px_rgba(23,23,23,0.08)] disabled:hover:translate-y-0 disabled:hover:bg-white disabled:hover:shadow-none disabled:active:scale-100"
                                         style={{
                                           ...buttonBase,
                                           background: refinementCardOutcome === "keep" ? "#171719" : "#FFFFFF",
@@ -2518,6 +2759,7 @@ export default function Page() {
                                         type="button"
                                         disabled={decided}
                                         onClick={handleRefinementRetry}
+                                        className="transition-all duration-150 ease-out hover:-translate-y-[1px] hover:bg-[#F9FAFB] hover:shadow-[0_6px_14px_rgba(23,23,23,0.08)] active:translate-y-0 active:scale-[0.98] active:bg-[#F4F4F5] active:shadow-[0_2px_6px_rgba(23,23,23,0.08)] disabled:hover:translate-y-0 disabled:hover:bg-white disabled:hover:shadow-none disabled:active:scale-100"
                                         style={{
                                           ...buttonBase,
                                           background: refinementCardOutcome === "retry" ? "#171719" : "#FFFFFF",
@@ -2572,7 +2814,7 @@ export default function Page() {
                           <div className="mt-5 flex flex-col items-start gap-2">
                             {chips.map((chipLabel, chipIndex) => (
                               <button
-                                className="inline-flex cursor-pointer items-center hover:bg-[#F9F9F9]"
+                                className="inline-flex cursor-pointer items-center transition-all duration-150 ease-out hover:-translate-y-[1px] hover:bg-[#F9F9F9] hover:shadow-[0_5px_12px_rgba(23,23,23,0.07)] active:translate-y-0 active:scale-[0.97] active:bg-[#F4F4F5] active:shadow-[0_2px_5px_rgba(23,23,23,0.06)]"
                                 key={chipIndex}
                                 onClick={() => {
                                   if (chipLabel === "수정안 적용하기") return handleRefinementApply();
@@ -2648,13 +2890,7 @@ export default function Page() {
                   </div>
                 </div>
               )}
-              <div
-                aria-hidden="true"
-                style={{
-                  minHeight: "60vh",
-                  flexShrink: 0,
-                }}
-              />
+              <div aria-hidden="true" className="h-[12px] shrink-0" />
             </div>
           )}
         </div>
@@ -2678,7 +2914,7 @@ export default function Page() {
               이 초안 선택하기
             </button>
           </div>
-        ) : view !== "start" && view !== "home" && flowStep !== "loadingDraft" && (
+        ) : view !== "start" && view !== "home" && view !== "selected" && flowStep !== "loadingDraft" && (
           <div className="flex flex-shrink-0 flex-col px-[20px] pb-[12px]">
             {showDraftQuickButtons && (
               <div className="mb-[12px] flex flex-col items-end gap-[8px]">
@@ -2727,11 +2963,12 @@ export default function Page() {
                   lineHeight: "24px",
                   color: "#171719",
                   fontFamily: "Pretendard",
+                  paddingRight: 44,
                 }}
                 value={message}
               />
               <button
-                className="absolute bottom-[17px] right-[12px] flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#0066FF]"
+                className="absolute right-[12px] top-1/2 flex h-[32px] w-[32px] -translate-y-1/2 items-center justify-center rounded-full bg-[#0066FF] shadow-[0_6px_14px_rgba(0,102,255,0.24)] transition-all duration-150 ease-out hover:bg-[#005BE6] active:scale-90 active:bg-[#004FCC] active:shadow-[0_2px_6px_rgba(0,102,255,0.2)]"
                 onClick={() => sendMessage()}
                 type="button"
               >
@@ -2743,9 +2980,7 @@ export default function Page() {
           </div>
         )}
 
-        <div className="flex flex-shrink-0 justify-center pb-[8px]">
-          <div className="h-[5px] w-[134px] rounded-full bg-black" />
-        </div>
+        <div className="h-[34px] shrink-0" />
         <BottomSheet
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
