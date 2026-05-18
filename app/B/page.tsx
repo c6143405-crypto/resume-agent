@@ -1,8 +1,5 @@
 "use client";
 
-// Next.js: useSearchParams는 Suspense 또는 dynamic 렌더링 필요
-export const dynamic = "force-dynamic";
-
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FileText, X, ChevronDown, ChevronUp, Info, Send } from "lucide-react";
 import type {
