@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, X, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { FileText, X, ChevronDown, ChevronUp, Info, Send } from "lucide-react";
 import type {
   CurrentStep,
   PrototypeType,
@@ -16,6 +16,8 @@ import { findDraftBySampleIndex, SAMPLE_DRAFTS } from "../drafts";
 import { B_TYPE_PROMPT } from "./style-prompt";
 import { OrbCanvas } from "../components/OrbCanvas";
 import { TypewriterText } from "../components/TypewriterText";
+import { StartScreen } from "../components/StartScreen";
+import { AiOrb } from "../components/AiOrb";
 
 const USE_AI = process.env.NEXT_PUBLIC_USE_AI === "true";
 
@@ -140,6 +142,140 @@ const DRAFT_VISUAL_META: Record<
   },
 };
 
+const DRAFT_CARD_META: Record<string, { title: string; description: string; chips: string[] }> = {
+  "draft-01": {
+    title: "성과 중심 초안",
+    description: "월·연 결산 운영 경험을 성과 중심으로 정리했어요",
+    chips: ["수치", "임팩트", "결과"],
+  },
+  "draft-02": {
+    title: "직무 적합 중심 초안",
+    description: "회계 실무 경험을 지원 직무와 연결해 정리했어요",
+    chips: ["역량", "직무", "기술"],
+  },
+  "draft-03": {
+    title: "경험 서사 초안",
+    description: "일해온 과정과 성장 흐름이 드러나도록 정리했어요",
+    chips: ["과정", "성장", "초안"],
+  },
+};
+
+const DRAFT_DETAIL_CHIPS: Record<string, string[]> = {
+  "draft-01": ["전표 1,500건", "자료 정확도 99%", "회계관리"],
+  "draft-02": ["결산 마감", "감사 대응", "세무 협업"],
+  "draft-03": ["12년 경험", "성장 과정", "협업 경험"],
+};
+
+const DRAFT_DETAIL_BODY: Record<
+  string,
+  {
+    projectTitle: string;
+    overview: string;
+    goals: string[];
+    roleAndResults: string[];
+  }
+> = {
+  "draft-01": {
+    projectTitle: "[프로젝트 1] 월·연 결산 마감 프로세스 운영",
+    overview:
+      "직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.",
+    goals: [
+      "📊 매월 결산 마감 일정 관리",
+      "📌 외부 회계 감사 대응",
+      "💳 부가세·법인세 신고 자료 정리",
+      "📝 결산 종료 후 대표 보고 자료 작성",
+    ],
+    roleAndResults: [
+      "📆 1,500건 전표 월평균 처리 → 정확도 99.8%",
+      "📈 외부 감사 12년 연속 주요 지적 사항 0건 유지",
+      "🚨 신고 자료 정확도 99% 수준 유지",
+      "🧾 결산 마감 일정을 평균 5영업일 이내로 관리",
+    ],
+  },
+  "draft-02": {
+    projectTitle: "[프로젝트 1] 회계 데이터 검증 및 세무 협업 운영",
+    overview:
+      "의류 유통 기업의 월 회계 운영에서 세무사·대표·외부 감사·거래처와의 협업 체계를 유지하고, 자료 정합성 검증과 후배 검토까지 책임졌습니다.",
+    goals: [
+      "🤝 세무사 협업 전 회계 자료 사전 검토",
+      "📅 결산 마감 일정에 맞춘 자료 정리 및 공유",
+      "📌 외부 회계 감사 질의 응답 대응",
+      "🗂️ 법무·노무 자료와 회계 자료의 일관성 확인",
+    ],
+    roleAndResults: [
+      "🧾 매입·매출 전표 검증 및 세무 자료 정리 담당",
+      "📊 대표 보고용 결산 자료 작성 및 공유",
+      "☎️ 거래처 마감 자료 차이 발생 시 직접 컨택",
+      "✅ 후배 사원 자료 검토를 병행하며 검증 절차 표준화",
+    ],
+  },
+  "draft-03": {
+    projectTitle: "[프로젝트 1] 입사 후 회계 운영을 다듬어 온 12년의 흐름",
+    overview:
+      "2012년 회계 담당으로 입사해 과장으로 성장하기까지, 결산 마감 운영을 익히고 자료 정리 방식과 외부 협업 방식을 꾸준히 안정화해 왔습니다.",
+    goals: [
+      "🌱 입사 초기 결산 마감 흐름 학습",
+      "🗃️ 경력이 쌓이며 자료 관리 방식 정립",
+      "🔄 회계 시스템 전환 시기 자료 변환 및 검증 수행",
+      "🤝 외부 감사·세무사 협업 과정에서 자료 신뢰도 책임",
+    ],
+    roleAndResults: [
+      "📈 12년간 회계 운영에서 매년 자료 정리 방식을 점검하고 보완",
+      "👥 담당자에서 과장으로 역할 확대, 후배 자료 검토 병행",
+      "🗓️ 결산 시즌마다 우선순위와 일정 관리를 직접 정리",
+      "💬 부서 외부와의 보고·소통 채널을 이어가며 회계 신뢰 기반 유지",
+    ],
+  },
+};
+
+const CM02_REVIEW_META: Record<
+  string,
+  {
+    introTitle: string;
+    reviewTitle: string;
+    issueBadges: string[];
+    original: string;
+    revisedBadge: string;
+    revised: string;
+    guideBadge: string;
+    guide: string;
+  }
+> = {
+  "draft-01": {
+    introTitle: "성과 중심 초안",
+    reviewTitle: "첫 번째(1/2): 외부 감사 기간 표현",
+    issueBadges: ["표현이 강해요", "0건이 부정적으로 보여요"],
+    original: "외부 회계 감사 12년 연속 주요 지적 사항 0건 유지",
+    revisedBadge: "정확성을 통해 안전/신뢰성을 높였어요",
+    revised: "외부 회계 감사 대응 과정에서 주요 지적 사항 없이 결산 자료의 정확성을 유지",
+    guideBadge: "확실한 수치 유지가 중요해요",
+    guide:
+      "기간을 명시하지 않고 성과 중심으로 표현하면 더 안전하고 신뢰성 있습니다. 만약 확실한 수치라면 유지해도 좋아요.",
+  },
+  "draft-02": {
+    introTitle: "직무 적합 중심 초안",
+    reviewTitle: "첫 번째(1/2): 세무 협업 표현",
+    issueBadges: ["표현이 추상적이에요", "수행 방식이 덜 보여요"],
+    original: "세무 협업을 통한 회계 자료 정합성 확보",
+    revisedBadge: "실제 수행 행동이 더 구체적으로 보여요",
+    revised: "매월 세무사에게 자료를 전달하기 전 두 차례 검토해 자료 정합성을 확인",
+    guideBadge: "직무 역량은 행동으로 보여주는 게 좋아요",
+    guide:
+      "지원 직무와 연결할 때는 추상적인 역량 표현보다 실제로 어떤 방식으로 검토하고 협업했는지를 드러내면 더 설득력 있어요.",
+  },
+  "draft-03": {
+    introTitle: "경험 서사 중심 초안",
+    reviewTitle: "첫 번째(1/2): 성장 과정 표현",
+    issueBadges: ["표현이 모호해요", "구체 행동이 부족해요"],
+    original: "12년에 걸쳐 회계 운영 방식을 단계적으로 다듬어옴",
+    revisedBadge: "성장 흐름과 실제 행동이 함께 보여요",
+    revised: "12년간 회계 운영에서 매년 자료 정리 방식을 점검하고 보완해 옴",
+    guideBadge: "서사는 구체적인 반복 행동과 연결하면 좋아요",
+    guide:
+      "경험의 흐름을 보여줄 때도 막연한 성장 표현보다 매년 반복해 온 점검·보완 행동을 함께 쓰면 더 신뢰감 있게 읽혀요.",
+  },
+};
+
 // [B 타입 — 문장별 실질 키워드]
 // 각 draft의 goals / roleAndResults 문장에서 뽑은 핵심 표현. 파란 chip으로 노출.
 const SENTENCE_KEYWORDS: Record<
@@ -234,78 +370,6 @@ function LoadingIcon() {
   );
 }
 
-function AiOrbLogo({ size, animated = false }: { size: number; animated?: boolean }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={`ai-orb relative flex-shrink-0 overflow-hidden rounded-full ${animated ? "ai-orb-animated" : ""}`}
-      style={{
-        width: size,
-        height: size,
-        background:
-          "radial-gradient(circle at 36% 26%, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.5) 24%, rgba(234,242,254,0.3) 48%, rgba(255,255,255,0.12) 100%)",
-        boxShadow: "0 10px 34px rgba(0,102,255,0.14), 0 4px 22px rgba(101,65,242,0.12)",
-      }}
-    >
-      <div
-        className={`ai-orb-layer ai-orb-layer-blue absolute rounded-full ${animated ? "ai-orb-layer-drift-a" : "blur-[10px]"}`}
-        style={{
-          width: size * 0.88,
-          height: size * 0.72,
-          left: -size * 0.08,
-          top: size * 0.2,
-          background: "radial-gradient(circle, rgba(0,102,255,0.58) 0%, rgba(0,173,255,0.3) 42%, rgba(0,102,255,0) 72%)",
-        }}
-      />
-      <div
-        className={`ai-orb-layer ai-orb-layer-purple absolute rounded-full ${animated ? "ai-orb-layer-drift-b" : "blur-[10px]"}`}
-        style={{
-          width: size * 0.76,
-          height: size * 0.76,
-          right: -size * 0.14,
-          top: size * 0.02,
-          background: "radial-gradient(circle, rgba(101,65,242,0.46) 0%, rgba(181,128,255,0.24) 44%, rgba(101,65,242,0) 72%)",
-        }}
-      />
-      <div
-        className="ai-orb-layer absolute rounded-full blur-[14px]"
-        style={{
-          width: size * 0.72,
-          height: size * 0.64,
-          right: size * 0.02,
-          bottom: -size * 0.14,
-          background: "radial-gradient(circle, rgba(255,116,188,0.34) 0%, rgba(255,178,188,0.22) 48%, rgba(255,116,188,0) 74%)",
-        }}
-      />
-      <div
-        className={`ai-orb-band absolute ${animated ? "ai-orb-band-flow" : ""}`}
-        style={{
-          left: -size * 0.08,
-          bottom: size * 0.22,
-          width: size * 1.18,
-          height: size * 0.34,
-          borderRadius: "999px",
-          background:
-            "linear-gradient(100deg, rgba(0,102,255,0) 0%, rgba(0,102,255,0.46) 32%, rgba(0,173,255,0.38) 58%, rgba(255,116,188,0.12) 100%)",
-          filter: "blur(8px)",
-          transform: "rotate(-14deg)",
-        }}
-      />
-      <div
-        className="absolute rounded-full bg-white/45"
-        style={{
-          width: size * 0.34,
-          height: size * 0.18,
-          left: size * 0.2,
-          top: size * 0.16,
-          filter: "blur(7px)",
-          transform: "rotate(-18deg)",
-        }}
-      />
-    </div>
-  );
-}
-
 function StatusBar() {
   return (
     <div className="relative h-[44px] w-full bg-white">
@@ -382,15 +446,101 @@ function Chip({
   );
 }
 
+function Cm02ReviewCard({
+  draftId,
+  onApply,
+  onKeep,
+}: {
+  draftId?: string;
+  onApply: () => void;
+  onKeep: () => void;
+}) {
+  const reviewMeta = CM02_REVIEW_META[draftId ?? "draft-01"] ?? CM02_REVIEW_META["draft-01"];
+
+  return (
+    <div className="flex flex-col gap-[28px]">
+      <section className="flex flex-col gap-[12px]">
+        <p className="text-[16px] font-medium leading-[26px] tracking-[0.091px] text-[#171719]">
+          {reviewMeta.reviewTitle}
+        </p>
+        <div className="h-px w-full bg-[#70737C29]" />
+      </section>
+
+      <section className="flex flex-col gap-[12px]">
+        <div className="flex flex-wrap gap-[8px]">
+          {reviewMeta.issueBadges.map((badge) => (
+            <span
+              key={badge}
+              className="rounded-[8px] bg-[#FEECEC] px-[8px] py-[5px] text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[#FF4242]"
+            >
+              {badge}
+            </span>
+          ))}
+        </div>
+        <p className="text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
+          {reviewMeta.original}
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-[12px]">
+        <div>
+          <span className="rounded-[8px] bg-[rgba(0,102,255,0.08)] px-[8px] py-[5px] text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[#005EEB]">
+            {reviewMeta.revisedBadge}
+          </span>
+        </div>
+        <p className="text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
+          {reviewMeta.revised}
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-[12px]">
+        <div>
+          <span className="rounded-[8px] bg-[#F7F7F8] px-[8px] py-[5px] text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[rgba(55,56,60,0.61)]">
+            {reviewMeta.guideBadge}
+          </span>
+        </div>
+        <p className="text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
+          {reviewMeta.guide}
+        </p>
+      </section>
+
+      <div className="h-px w-full bg-[#70737C29]" />
+
+      <div className="flex gap-[8px]">
+        <button
+          type="button"
+          onClick={onApply}
+          className="rounded-[10px] bg-[#0066FF] px-[20px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-white"
+        >
+          수정 문장 채택
+        </button>
+        <button
+          type="button"
+          onClick={onKeep}
+          className="rounded-[10px] border border-[#0066FF] bg-white px-[20px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-[#0066FF]"
+        >
+          기존 유지
+        </button>
+      </div>
+
+      <p className="text-[16px] font-semibold leading-[26px] tracking-[0.57px] text-[#171719]">
+        수정하고 싶은 내용을 직접 입력해주셔도 좋아요.
+      </p>
+    </div>
+  );
+}
+
 function BottomSheet({
   isOpen,
   onClose,
+  onSelect,
   draft,
   appliedRevision,
   selectedRoleTitle,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onSelect: (draft: Draft) => void;
   draft: Draft | null;
   appliedRevision: {
     originalSentence: string;
@@ -425,6 +575,8 @@ function BottomSheet({
   // 다른 초안 시트를 열면 이전 펼침은 유지되지만, 시트가 다시 열릴 때 명시적으로 접고 싶다면
   // useEffect로 isOpen/draft 변할 때 false로 리셋하면 된다.
   const [isRationaleOpen, setIsRationaleOpen] = useState(false);
+  const draftMeta = draft?.draftId ? DRAFT_CARD_META[draft.draftId] : undefined;
+  const detailBody = draft?.draftId ? DRAFT_DETAIL_BODY[draft.draftId] : undefined;
   return (
     <div
       className={`absolute inset-0 z-50 flex justify-center transition-opacity duration-300 ${
@@ -438,17 +590,20 @@ function BottomSheet({
         type="button"
       />
       <section
-        className={`absolute bottom-0 left-0 h-[88dvh] w-full rounded-t-[40px] bg-white px-[20px] py-[20px] font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
+        className={`absolute bottom-0 left-0 flex h-[89dvh] w-full flex-col rounded-t-[12px] bg-white font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >
-        <div className="mb-[16px] flex h-[44px] w-[335px] items-center justify-center">
-          <h2 className="text-center text-[17px] font-semibold leading-[24px] text-black">
-            {draft?.draftTitle ?? "샘플 경력기술서"}
+        <div className="flex justify-center pb-[28px] pt-[8px]">
+          <div className="h-[5px] w-[40px] rounded-full bg-[#D9D9D9]" />
+        </div>
+        <div className="relative flex h-[36px] items-center px-[20px]">
+          <h2 className="text-[20px] font-semibold leading-[28px] tracking-[-1.2px] text-black">
+            {draftMeta?.title ?? draft?.draftTitle ?? "샘플 경력기술서"}
           </h2>
           <button
             aria-label="닫기"
-            className="absolute right-[20px] top-[30px] flex h-[24px] w-[24px] items-center justify-center"
+            className="absolute right-[20px] top-[4px] flex h-[24px] w-[24px] items-center justify-center"
             onClick={onClose}
             type="button"
           >
@@ -456,127 +611,97 @@ function BottomSheet({
           </button>
         </div>
 
-        <div className="max-h-[620px] overflow-y-scroll pr-[10px] [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#7D7D7D] [&::-webkit-scrollbar-track]:bg-transparent">
+        <div className="mt-[24px] flex-1 overflow-y-auto px-[20px] pb-[24px] [&::-webkit-scrollbar]:hidden">
           {/* [근거 보기 아코디언] 초안의 방향·추천 이유·주의점을 시트 상단에서 보여줌 */}
           <div>
             <button
               type="button"
               onClick={() => setIsRationaleOpen((v) => !v)}
-              className="flex w-full items-center justify-between py-[4px] text-left"
+              className="flex min-h-[56px] w-full items-center justify-between rounded-[12px] border border-[#EAF2FE] px-[20px] py-[16px] text-left"
               aria-expanded={isRationaleOpen}
+              style={{
+                background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%)",
+              }}
             >
-              <span className="text-[14px] font-medium leading-[20px] text-black">
-                이 표현의 이유 보기
+              <span className="flex items-center gap-[8px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#171719]">
+                <AiOrb size={20} />
+                초안 작성 기준
               </span>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
-                style={{
-                  transform: isRationaleOpen ? "rotate(180deg)" : "none",
-                  transition: "transform 120ms ease",
-                }}
-              >
-                <path
-                  d="M4 6L8 10L12 6"
-                  stroke="#999"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <ChevronDown className={`h-[20px] w-[20px] text-[#171719] transition-transform ${isRationaleOpen ? "rotate-180" : ""}`} strokeWidth={2} aria-hidden="true" />
             </button>
             {isRationaleOpen && (
               <div
-                className="mt-[8px] rounded-[16px] border border-[#EAF2FE] px-[12px] py-[10px]"
+                className="rounded-b-[12px] border-x border-b border-[#EAF2FE] px-[20px] pb-[16px] pt-[16px]"
                 style={{
                   background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%)",
                 }}
               >
-                <div className="text-[12px] font-medium leading-[18px] text-[rgba(55,56,60,0.61)]">
-                  이 초안의 방향
+                <div className="text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
+                  반영한 내용
                 </div>
-                <p className="mt-[2px] text-[13px] leading-[20px] text-black">
-                  {draft?.draftDirection ?? "—"}
+                <p className="mt-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
+                  {draft?.draftDirection ?? "—"} {draft?.whyRecommended ?? ""}
                 </p>
 
-                <div className="mt-[8px] text-[12px] font-medium leading-[18px] text-[rgba(55,56,60,0.61)]">
-                  추천 이유
+                <div className="mt-[16px] text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
+                  보완하면 좋은 점
                 </div>
-                <p className="mt-[2px] text-[13px] leading-[20px] text-black">
-                  {draft?.whyRecommended ?? "—"}
-                </p>
-
-                <div className="mt-[8px] text-[12px] font-medium leading-[18px] text-[rgba(55,56,60,0.61)]">
-                  주의할 점
-                </div>
-                <p className="mt-[2px] text-[13px] leading-[20px] text-black">
+                <p className="mt-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
                   {draft?.caution ?? "—"}
                 </p>
 
-                {/* [B 타입] 키워드 평가 — DRAFT_VISUAL_META.tags 기반 */}
-                {(() => {
-                  const meta = draft?.draftId ? DRAFT_VISUAL_META[draft.draftId] : undefined;
-                  if (!meta || meta.tags.length === 0) return null;
-                  return (
-                    <>
-                      <div className="mt-[8px] text-[12px] font-medium leading-[18px] text-[rgba(55,56,60,0.61)]">
-                        키워드 평가
-                      </div>
-                      <div className="mt-[6px] flex flex-wrap gap-[6px]">
-                        {meta.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="inline-flex rounded-[6px] px-[8px] py-[4px] text-[12px] font-medium leading-none"
-                            style={{
-                              background: meta.badgeBg,
-                              color: meta.badgeColor,
-                            }}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </>
-                  );
-                })()}
               </div>
             )}
           </div>
 
-          <div className="my-[12px] h-px w-full bg-[#E5E5E5]" />
+          <div className="mt-[36px] flex flex-col gap-[8px]">
+            <h3 className="text-[20px] font-semibold leading-[28px] tracking-[-1.2px] text-black">
+              {draft?.body.company.split("—")[0].trim() ?? "(주) A 의류 유통 기업"}
+            </h3>
+            <p className="text-[15px] font-normal leading-[24px] tracking-[0.96px] text-[rgba(46,47,51,0.88)]">
+              {draft?.body.period ?? "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장"}
+            </p>
+            <div className="mt-[8px] flex flex-wrap gap-[8px]">
+              {((draft?.draftId ? DRAFT_DETAIL_CHIPS[draft.draftId] : undefined) ?? ["전표 1,500건", "자료 정확도 99%", "회계관리"]).map((chip) => (
+                <span
+                  key={chip}
+                  className="rounded-[8px] bg-[rgba(0,102,255,0.08)] px-[10px] py-[7px] text-[14px] font-semibold leading-[18px] tracking-[0.203px] text-[#0066FF]"
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="my-[24px] h-px w-full bg-[#E5E5E5]" />
 
           {/* [동적 본문]
               - 회사/프로젝트/개요/목표/역할 및 성과 — draft.body 기준
               - A 타입: AI 정확율 칩(blue/purple)은 렌더 안 함.
                 gray 칩(사용자 실제 발화)만 본문 아래에 회색 언더라인 텍스트로 표시. */}
-          <div className="flex flex-col gap-[24px] text-[14px] tracking-[0.203px] text-black">
-            <section className="flex flex-col gap-[8px]">
-              <p className="font-semibold leading-[22px]">
-                {draft?.body.company ?? "—"}
-              </p>
-              <p className="font-normal leading-[22px]">
-                {draft?.body.period ?? "—"}
-              </p>
-            </section>
-
+          <div className="flex flex-col gap-[24px] text-[15px] tracking-[0.96px] text-[#171719]">
             <section className="flex flex-col gap-[6px]">
-              <p className="font-semibold leading-[22px]">
-                {draft?.body.projectTitle ?? "—"}
+              <p className="text-[18px] font-semibold leading-[26px] tracking-[-0.02px] text-[#171719]">
+                {detailBody?.projectTitle ?? draft?.body.projectTitle.replace("프로젝트 1 ·", "[프로젝트 1]") ?? "—"}
               </p>
             </section>
 
             <section className="flex flex-col gap-[8px]">
-              <p className="font-semibold leading-[22px]">개요</p>
-              <p className="font-normal leading-[22px]">
-                {draft?.body.overview ?? "—"}
+              <p className="text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
+                {detailBody?.overview ?? draft?.body.overview ?? "—"}
               </p>
             </section>
 
             <section className="flex flex-col gap-[10px]">
-              <p className="font-semibold leading-[22px]">목표</p>
+              <p className="text-[18px] font-semibold leading-[26px] tracking-[-0.02px] text-[#171719]">업무 상세</p>
+              {detailBody ? (
+                <div className="flex flex-col gap-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
+                  {detailBody.goals.map((goal) => (
+                    <p key={goal}>{goal}</p>
+                  ))}
+                </div>
+              ) : (
+                <>
               {(draft?.body.goals ?? []).map((bullet, idx) => {
                 const isRevised =
                   appliedRevision && bullet.text === appliedRevision.originalSentence;
@@ -645,10 +770,20 @@ function BottomSheet({
                   </div>
                 );
               })}
+                </>
+              )}
             </section>
 
-            <section className="flex flex-col gap-[10px] pb-[20px]">
-              <p className="font-semibold leading-[22px]">역할 및 성과</p>
+            <section className="flex flex-col gap-[10px] border-t border-[#E5E5E5] pt-[24px]">
+              <p className="text-[18px] font-semibold leading-[26px] tracking-[-0.02px] text-[#171719]">역할 및 성과</p>
+              {detailBody ? (
+                <div className="flex flex-col gap-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
+                  {detailBody.roleAndResults.map((result) => (
+                    <p key={result}>{result}</p>
+                  ))}
+                </div>
+              ) : (
+                <>
               {(draft?.body.roleAndResults ?? []).map((bullet, idx) => {
                 const isRevised =
                   appliedRevision && bullet.text === appliedRevision.originalSentence;
@@ -717,8 +852,22 @@ function BottomSheet({
                   </div>
                 );
               })}
+                </>
+              )}
             </section>
           </div>
+        </div>
+        <div className="shrink-0 px-[20px] pb-[34px] pt-[20px]">
+          <button
+            type="button"
+            disabled={!draft}
+            onClick={() => {
+              if (draft) onSelect(draft);
+            }}
+            className="h-[52px] w-full rounded-[12px] bg-[#0066FF] text-[17px] font-semibold leading-[24px] text-white disabled:bg-[#C4C6CA]"
+          >
+            이 초안 선택하기
+          </button>
         </div>
       </section>
     </div>
@@ -753,7 +902,7 @@ function getSectionVariant(label: string): "strikethrough" | "underline" | "plai
 export default function Page() {
   const MAX_REFINEMENT_TURNS = 8;
   const MAX_AI_CALLS_PER_SESSION = 8;
-  const [view, setView] = useState<"home" | "chat">("home");
+  const [view, setView] = useState<"start" | "home" | "selected" | "chat" | "complete">("start");
   const [messages, setMessages] = useState<
     {
       type: "user" | "agent";
@@ -796,7 +945,7 @@ export default function Page() {
   // [임시 숨김] 직무 선택(selectRole) 화면만 숨김. 로딩(loadingDraft) → 초안(draftReady) 흐름은 유지.
   // 마크업/로직은 모두 보존되어 있고, 초기값만 "loadingDraft"로 바꿔 진입 시 selectRole만 건너뛴다.
   // 되살리려면 아래 초기값을 "selectRole"로 바꾸기만 하면 된다.
-  const [flowStep, setFlowStep] = useState<"selectRole" | "loadingDraft" | "draftReady">("loadingDraft");
+  const [flowStep, setFlowStep] = useState<"selectRole" | "loadingDraft" | "draftReady">("selectRole");
   const [spacerHeight, setSpacerHeight] = useState(300);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastUserMessageRef = useRef<HTMLDivElement | null>(null);
@@ -1410,6 +1559,13 @@ export default function Page() {
     setIsOpen(true);
   };
 
+  const handleDraftSelectFromSheet = (draft: Draft) => {
+    setCm1Candidate(draft);
+    setBottomSheetDraft(draft);
+    setIsOpen(false);
+    setView("selected");
+  };
+
   // 확정 버튼 — 라디오로 골라둔 후보를 CM2 selectedDraft로 커밋.
   // sendMessage 흐름(STAGES/AI) 대신, CM2 진입에 맞는 안내 + 수정 카드를 직접 push한다.
   const commitCm1Selection = () => {
@@ -1431,8 +1587,7 @@ export default function Page() {
       {
         type: "agent",
         text:
-          "선택한 초안을 바탕으로 문장을 다듬는 단계입니다. " +
-          "표현이 과하거나 실제 경험과 맞지 않는 부분이 있으면 수정할 수 있어요.",
+          `선택하신 ${CM02_REVIEW_META[cm1Candidate.draftId]?.introTitle ?? DRAFT_CARD_META[cm1Candidate.draftId]?.title ?? cm1Candidate.draftTitle}을 검토했어요.\n총 2개 항목에 대해 확인이 필요해요.`,
         refinementCard: {
           draftTitle: cm1Candidate.draftTitle,
           originalSentence: cm1Candidate.refinementTarget.originalSentence,
@@ -1580,6 +1735,7 @@ export default function Page() {
       });
       setIsLoading(false);
       setIsFlowComplete(true);
+      setView("complete");
     }, 1200);
   };
 
@@ -1641,43 +1797,8 @@ export default function Page() {
 
   return (
     <main className="min-h-screen bg-white font-['Pretendard',sans-serif]">
-      {/* dev: 판단보조형 Agent 상태값 확인 패널 — 로컬 개발에서만 표시, 배포(production)에선 자동 숨김 */}
-      {process.env.NODE_ENV === "development" && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed left-4 top-4 z-50 select-none rounded-lg bg-black/85 px-3 py-2 font-mono text-[11px] leading-[18px] text-white shadow-lg"
-        >
-          <div className="mb-1 text-[10px] uppercase tracking-wider text-white/60">
-            Agent State (dev)
-          </div>
-          <div>
-            currentStep: <span className="text-cyan-300">{currentStep}</span>
-          </div>
-          <div>
-            prototypeType: <span className="text-cyan-300">{prototypeType}</span>
-          </div>
-          <div>
-            userIntent: <span className="text-cyan-300">{userIntent ?? "null"}</span>
-          </div>
-          <div>
-            decisionStatus: <span className="text-cyan-300">{decisionStatus}</span>
-          </div>
-          <div>
-            draftOptions:{" "}
-            <span className="text-cyan-300">
-              [{draftOptions.map((d) => d.draftId).join(", ")}]
-            </span>
-          </div>
-          <div>
-            selectedDraft:{" "}
-            <span className="text-cyan-300">
-              {selectedDraft ? selectedDraft.draftId : "null"}
-            </span>
-          </div>
-        </div>
-      )}
       <section
-        className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white"
+        className="relative mx-auto flex h-[100dvh] max-h-[932px] w-full max-w-[480px] flex-col overflow-hidden bg-white"
       >
         <div className="flex h-[44px] flex-shrink-0 items-center justify-center px-[16px] py-[10px]">
           <div className="flex h-[24px] w-full items-center justify-center">
@@ -1698,7 +1819,58 @@ export default function Page() {
               }}
             />
           )}
-          {view === "home" ? (
+          {view === "start" ? (
+            <div className="flex min-h-full flex-col">
+              <StartScreen
+                onStart={() => {
+                  setFlowStep("draftReady");
+                  setView("home");
+                }}
+              />
+            </div>
+          ) : view === "complete" ? (
+            <div className="flex min-h-full flex-col bg-[linear-gradient(184deg,#FAFFFC_0.96%,#F3FBFF_49.34%,#E8F4FF_97.71%)] pt-[104px] text-center">
+              <AiOrb size={48} />
+              <h2 className="mx-auto mt-[28px] whitespace-pre-line text-[26px] font-bold leading-[34px] tracking-[-0.4px] text-[#171719]">
+                {"경력기술서 초안 작성을 완료했어요"}
+              </h2>
+              <p className="mt-[12px] text-[17px] font-medium leading-[28px] tracking-[-0.2px] text-[rgba(55,56,60,0.72)]">
+                다음 단계에서 경력기술서를 최종 마무리할게요
+              </p>
+              <div className="mt-[68px] flex flex-1 items-center justify-center bg-[#FF313A]">
+                <div className="flex h-[310px] w-[250px] rotate-[-4deg] items-center justify-center rounded-[24px] bg-[#C80008] text-center text-[56px] font-bold leading-none text-white">
+                  TBD
+                </div>
+              </div>
+            </div>
+          ) : view === "selected" ? (
+            <div className="flex min-h-full flex-col bg-[linear-gradient(184deg,#FAFFFC_0.96%,#F3FBFF_49.34%,#E8F4FF_97.71%)] px-[20px] pb-[28px] pt-[88px] text-center">
+              <AiOrb size={48} />
+              <h2 className="mt-[28px] text-[26px] font-bold leading-[34px] tracking-[-0.4px] text-[#171719]">
+                {`${Math.max(1, SAMPLE_DRAFTS.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1)}번 초안을 선택했어요`}
+              </h2>
+              <p className="mt-[12px] text-[17px] font-medium leading-[28px] tracking-[-0.2px] text-[rgba(55,56,60,0.72)]">
+                내용을 AI와 함께 더 다듬을 수 있어요
+              </p>
+              <div className="mt-[64px] flex min-h-[320px] flex-1 items-center justify-center rounded-[24px] bg-[#F3C3CC]" />
+              <div className="mt-[24px] flex flex-col gap-[10px]">
+                <button
+                  type="button"
+                  onClick={commitCm1Selection}
+                  className="h-[56px] w-full rounded-[12px] bg-[#0066FF] text-[18px] font-bold leading-[26px] text-white"
+                >
+                  초안 내용 다듬기
+                </button>
+                <button
+                  type="button"
+                  onClick={handleFinalize}
+                  className="h-[56px] w-full rounded-[12px] border border-[rgba(0,102,255,0.18)] bg-white/45 text-[18px] font-bold leading-[26px] text-[#0066FF]"
+                >
+                  최종 마무리 단계로 넘어가기
+                </button>
+              </div>
+            </div>
+          ) : view === "home" ? (
             flowStep === "loadingDraft" ? (
               <div
                 className="relative flex min-h-full flex-col items-center justify-center overflow-hidden px-[20px] pb-[140px] text-center"
@@ -1774,108 +1946,57 @@ export default function Page() {
                 </div>
               </div>
             ) : flowStep === "draftReady" ? (
-              // [A 타입 CM1] 미니멀 텍스트형. 위→아래 순차 읽기.
-              // 시각 라벨/카드/애니메이션 없이 텍스트와 단순 버튼으로만 구성.
-              <div className="flex min-h-full flex-col px-[20px] pb-[24px] pt-[28px]">
-                {/* 에이전트 답변 헤더 — A/B/C/D 어떤 타입이든 공통으로 유지하는 양식 */}
-                <div className="flex items-center gap-[8px]">
-                  <AiOrbLogo size={20} />
-                  <h2 className="text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-black">
-                    에이전트 답변
+              <div className="min-h-full bg-[linear-gradient(184deg,#FAFFFC_0.96%,#F3FBFF_49.34%,#E8F4FF_97.71%)] px-[26px] pb-[28px] pt-[84px]">
+                <div className="flex flex-col items-center text-center">
+                  <AiOrb size={48} />
+                  <h2 className="mt-[28px] text-[26px] font-bold leading-[34px] tracking-[-0.4px] text-black">
+                    3가지 초안을 완성했어요
                   </h2>
+                  <p className="mt-[12px] whitespace-pre-line text-[18px] font-medium leading-[29px] tracking-[-0.2px] text-[rgba(55,56,60,0.72)]">
+                    {"내 경험에 더 가까운 초안을 선택해주세요\n부족한 부분은 AI와 함께 수정할 수 있어요"}
+                  </p>
                 </div>
-                <div className="mt-[12px] h-px w-full bg-[#70737C29]" />
 
-                {/* [CM1 안내 4줄 step-based] cm1IntroStep N일 때만 N번째 줄 등장 */}
-                {cm1IntroStep >= 1 && (
-                  <p className="mt-[13px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                    <TypewriterText text={`아래 ${SAMPLE_DRAFTS.length}가지 방향의 경력기술서 초안을 준비했습니다.`} />
-                  </p>
-                )}
-                {cm1IntroStep >= 2 && (
-                  <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                    <TypewriterText text="각 초안은 같은 경험을 바탕으로 하지만, 강조하는 방향이 다릅니다." />
-                  </p>
-                )}
-                {cm1IntroStep >= 3 && (
-                  <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                    <TypewriterText text="먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요." />
-                  </p>
-                )}
-                {cm1IntroStep >= 4 && (
-                  <p className="mt-[6px] text-[15px] font-normal leading-[24px] text-[#171719]">
-                    <TypewriterText text="선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다." />
-                  </p>
-                )}
-
-                {/* [B 타입 CM1 리스트] A처럼 단순 행. 라디오 + 배지 + 제목 + chevron-right.
-                    추천 이유/유의/태그 같은 상세는 BottomSheet에서 노출. */}
-                {cm1IntroDone && (
-                <section className="mt-[20px]">
+                <section className="mt-[66px] flex flex-col gap-[12px]">
                   {SAMPLE_DRAFTS.map((draft) => {
-                    const isPicked = cm1Candidate?.draftId === draft.draftId;
-                    const meta = DRAFT_VISUAL_META[draft.draftId] ?? {
-                      emoji: "\u2728",
-                      badgeLabel: draft.draftTitle,
-                      badgeColor: "#171719",
-                      badgeBg: "rgba(55,56,60,0.06)",
-                      tags: [] as string[],
+                    const draftCardMeta = DRAFT_CARD_META[draft.draftId] ?? {
+                      title: draft.draftTitle,
+                      description: draft.draftDirection,
+                      chips: ["수치", "임팩트"],
                     };
                     return (
-                      <div
+                      <button
                         key={draft.draftId}
-                        className="flex h-[60px] w-full items-center gap-[10px] border-b border-[#70737C29]"
+                        type="button"
+                        onClick={() => openBottomSheetWith(draft)}
+                        className="w-full rounded-[18px] border border-[#E8EEF5] bg-white px-[24px] py-[25px] text-left shadow-[0_1px_2px_rgba(23,23,23,0.03)] transition-colors hover:bg-[#FAFBFC]"
                       >
-                        <button
-                          type="button"
-                          aria-label="이 초안을 선택지로 두기"
-                          aria-pressed={isPicked}
-                          onClick={() => handlePickDraftCandidate(draft)}
-                          className="flex h-[24px] w-[24px] flex-shrink-0 items-center justify-center"
-                        >
-                          <span
-                            className="flex h-[18px] w-[18px] items-center justify-center rounded-full border"
-                            style={{ borderColor: isPicked ? "#171719" : "#C4C6CA" }}
-                          >
-                            {isPicked && (
-                              <span
-                                className="block rounded-full"
-                                style={{ width: 10, height: 10, background: "#171719" }}
-                              />
-                            )}
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => openBottomSheetWith(draft)}
-                          className="flex flex-1 items-center justify-between gap-[10px]"
-                        >
-                          <div className="flex items-center gap-[10px] min-w-0">
+                        <h3 className="text-[20px] font-bold leading-[28px] tracking-[-0.2px] text-black">
+                          {draftCardMeta.title}
+                        </h3>
+                        <p className="mt-[10px] text-[16px] font-medium leading-[24px] tracking-[-0.1px] text-[rgba(55,56,60,0.72)]">
+                          {draftCardMeta.description}
+                        </p>
+                        <div className="mt-[18px] flex flex-wrap gap-[8px]">
+                          {draftCardMeta.chips.map((tag) => (
                             <span
-                              className="inline-flex flex-shrink-0 items-center gap-[6px] rounded-[999px] px-[10px] py-[5px] text-[12px] font-semibold leading-[16px]"
-                              style={{ background: meta.badgeBg, color: meta.badgeColor }}
+                              key={tag}
+                              className="rounded-[8px] bg-[rgba(0,102,255,0.08)] px-[9px] py-[6px] text-[14px] font-bold leading-[18px] text-[#0066FF]"
                             >
-                              <span aria-hidden="true">{meta.emoji}</span>
-                              <span>{meta.badgeLabel}</span>
+                              {tag}
                             </span>
-                            <span className="truncate text-[16px] font-medium leading-[24px] tracking-[0.57px] text-black">
-                              {draft.draftTitle}
-                            </span>
-                          </div>
-                          <ChevronRightIcon />
-                        </button>
-                      </div>
+                          ))}
+                        </div>
+                      </button>
                     );
                   })}
                 </section>
-                )}
               </div>
             ) : (
               <div className="flex min-h-full flex-col px-[20px] pt-[36px]">
                 <section>
                   <div className="flex items-center gap-[8px]">
-                    <AiOrbLogo size={20} />
+                    <AiOrb size={20} />
                     <h2 className="text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-black">
                       에이전트 답변
                     </h2>
@@ -1981,7 +2102,7 @@ export default function Page() {
                 ) : (
                   <div className="flex flex-col" key={`${chatMessage.type}-${index}`}>
                     <div className="flex items-center gap-2">
-                      <AiOrbLogo size={20} />
+                      <AiOrb size={20} />
                       <span style={{ fontSize: 15, fontWeight: 600 }}>
                         에이전트 답변
                       </span>
@@ -2088,6 +2209,15 @@ export default function Page() {
                             </div>
                           );
                         })}
+                      </div>
+                    )}
+                    {chatMessage.refinementCard && (
+                      <div className="mt-[28px]">
+                        <Cm02ReviewCard
+                          draftId={selectedDraft?.draftId}
+                          onApply={handleRefinementApply}
+                          onKeep={handleRefinementKeep}
+                        />
                       </div>
                     )}
                     {!isLoading && (() => {
@@ -2206,8 +2336,8 @@ export default function Page() {
                           </div>
                         );
                       })()}
-                    {chatMessage.refinementCard && (() => {
-                      const rc = chatMessage.refinementCard;
+                    {false && chatMessage.refinementCard && (() => {
+                      const rc = chatMessage.refinementCard!;
                       const decided = refinementCardOutcome !== null;
                       const SPEED = 30;
                       const isMessageDone = messageDone[index] === true;
@@ -2476,7 +2606,7 @@ export default function Page() {
               {isLoading && (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
-                    <AiOrbLogo size={20} />
+                    <AiOrb size={20} />
                     <span style={{ fontSize: 15, fontWeight: 600 }}>에이전트 답변</span>
                   </div>
                   <div className="h-px" style={{ background: "#E5E5E5" }} />
@@ -2532,7 +2662,7 @@ export default function Page() {
         {/* [하단 영역]
             - CM1(초안 선택 화면)에서는 채팅창 숨기고 '이 초안 선택하기' 버튼만 노출
             - 그 외(CM2 챗, selectRole 등)에서는 기존 채팅 입력창을 그대로 유지 */}
-        {flowStep === "draftReady" && view === "home" && cm1IntroDone ? (
+        {false ? (
           <div className="flex flex-shrink-0 flex-col px-[20px] pb-[16px]">
             <button
               type="button"
@@ -2548,7 +2678,7 @@ export default function Page() {
               이 초안 선택하기
             </button>
           </div>
-        ) : flowStep !== "loadingDraft" && (
+        ) : view !== "start" && view !== "home" && flowStep !== "loadingDraft" && (
           <div className="flex flex-shrink-0 flex-col px-[20px] pb-[12px]">
             {showDraftQuickButtons && (
               <div className="mb-[12px] flex flex-col items-end gap-[8px]">
@@ -2616,7 +2746,14 @@ export default function Page() {
         <div className="flex flex-shrink-0 justify-center pb-[8px]">
           <div className="h-[5px] w-[134px] rounded-full bg-black" />
         </div>
-        <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)} draft={bottomSheetDraft} appliedRevision={appliedRevision} selectedRoleTitle={ROLE_OPTIONS.find((role) => role.id === selectedRoleId)?.title ?? ""} />
+        <BottomSheet
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          onSelect={handleDraftSelectFromSheet}
+          draft={bottomSheetDraft}
+          appliedRevision={appliedRevision}
+          selectedRoleTitle={ROLE_OPTIONS.find((role) => role.id === selectedRoleId)?.title ?? ""}
+        />
       </section>
     </main>
   );
