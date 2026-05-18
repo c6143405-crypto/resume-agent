@@ -1416,6 +1416,15 @@ function EndScreen({ draftTitle, onContinue }: { draftTitle: string; onContinue:
         <TbdCard label={`${draftTitle} (완성 ver.)`} />
       </div>
       <div className="flex-1" />
+      <div className="px-5 pb-8">
+        <button
+          type="button"
+          onClick={onContinue}
+          className="w-full rounded-xl bg-[#0066FF] px-6 py-4 text-center text-base font-bold text-white transition-colors hover:bg-[#005BE6] active:bg-[#004FCC]"
+        >
+          다음 타입 시작하기
+        </button>
+      </div>
     </>
   );
 }
