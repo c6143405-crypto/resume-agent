@@ -1386,7 +1386,7 @@ export default function APage() {
           draftIndex={1}
           draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title}
           onRefine={() => setScreen("cm2-chat")}
-          onFinalize={() => console.log("finalize — End 화면 (Phase 3a 마무리)")}
+          onFinalize={() => setScreen("end")}
         />
       )}
       {screen === "cm2-chat" && (

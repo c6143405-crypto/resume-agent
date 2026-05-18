@@ -1985,7 +1985,7 @@ export default function Page() {
               draftIndex={Math.max(1, scenarioDrafts.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1)}
               draftTitle={cm1Candidate?.draftTitle ?? ""}
               onRefine={commitCm1Selection}
-              onFinalize={handleFinalize}
+              onFinalize={() => setView("complete")}
             />
           ) : view === "home" ? (
             flowStep === "loadingDraft" ? (
