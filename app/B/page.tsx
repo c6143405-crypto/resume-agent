@@ -77,6 +77,7 @@ import { OrbCanvas } from "../components/OrbCanvas";
 import { TypewriterText } from "../components/TypewriterText";
 import { StartScreen } from "../components/StartScreen";
 import { AiOrb } from "../components/AiOrb";
+import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { StatusBar } from "../components/StatusBar";
 import { PageTitleBar } from "../components/PageTitleBar";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
@@ -1980,85 +1981,12 @@ export default function Page() {
               </div>
             </div>
           ) : view === "selected" ? (
-            <div className="relative min-h-full overflow-hidden bg-[linear-gradient(188.833deg,#FAFFFC_0.958%,#F3FBFF_49.336%,#E8F4FF_97.714%)]">
-              <div className="absolute left-0 top-[48px] flex w-full flex-col items-center justify-center gap-[20px] px-[20px] text-center">
-                <AiOrb size={40} />
-                <div className="flex w-full flex-col items-center gap-[8px]">
-                  <h2 className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[22px] font-semibold leading-[30px] tracking-[-0.427px] text-black">
-                    {`${Math.max(1, scenarioDrafts.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1)}번 초안을 선택했어요`}
-                  </h2>
-                  <p className="w-full text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
-                    내용을 AI와 함께 더 다듬을 수 있어요
-                  </p>
-                </div>
-              </div>
-
-              <div
-                aria-hidden="true"
-                className="absolute h-[474px] w-[590px]"
-                style={{
-                  left: -107,
-                  top: 44,
-                  background:
-                    "radial-gradient(circle at 40% 58%, rgba(0,102,255,0.18) 0%, rgba(58,230,194,0.14) 18%, rgba(255,255,255,0) 46%)",
-                  filter: "blur(34px)",
-                }}
-              />
-
-              <div className="absolute left-0 top-[272px] flex h-[378px] w-full items-start justify-center">
-                <div className="h-[330px] w-[211px] overflow-hidden rounded-[16.5px] border-[3.3px] border-[#0066FF] bg-[rgba(175,207,255,0.12)] shadow-[0_12px_62px_rgba(23,23,23,0.16)] backdrop-blur-[41px]">
-                  <div className="relative flex h-[277px] flex-col justify-between overflow-hidden px-[23px] py-[40px]">
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-[-30px] opacity-80"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, rgba(255,255,255,0.82) 0%, rgba(232,246,255,0.78) 42%, rgba(211,239,255,0.72) 100%)",
-                      }}
-                    />
-                    <div className="relative z-10 flex flex-col gap-[13px]">
-                      <div className="flex h-[23px] w-[23px] items-center justify-center rounded-full bg-[#171719] text-[14px] font-semibold leading-[18px] tracking-[0.349px] text-white">
-                        1
-                      </div>
-                      <p className="whitespace-pre-line text-[20px] font-bold leading-[26px] tracking-[-0.455px] text-[#171719]">
-                        {"결과가 강조되는\n성과 중심 초안"}
-                      </p>
-                    </div>
-                    <div className="relative z-10 ml-auto mr-[2px] h-[74px] w-[92px]">
-                      <div className="absolute bottom-[2px] left-[2px] h-[34px] w-[70px] rounded-[50%] bg-[#0066FF] shadow-[0_12px_18px_rgba(0,102,255,0.32)]" />
-                      <div className="absolute bottom-[18px] left-[16px] h-[38px] w-[70px] rotate-[-8deg] rounded-[50%] bg-[linear-gradient(135deg,#F8FCFF_0%,#DCEEFF_100%)] shadow-[0_10px_18px_rgba(23,23,23,0.14)]" />
-                      <div className="absolute bottom-[31px] left-[39px] h-[10px] w-[24px] rotate-[16deg] rounded-full border-[3px] border-[#0066FF]" />
-                      <div className="absolute bottom-[31px] left-[27px] h-[10px] w-[24px] rotate-[-16deg] rounded-full border-[3px] border-[#0066FF]" />
-                    </div>
-                  </div>
-                  <div className="flex h-[53px] items-center justify-end bg-[linear-gradient(125.139deg,#0066FF_0%,#3AE6C2_103.29%)] px-[24px] py-[16.5px]">
-                    <span className="text-[13px] font-semibold leading-[22px] tracking-[0.075px] text-white">
-                      V.01
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute bottom-0 left-0 flex w-full flex-col">
-                <div className="flex w-full flex-col gap-[8px] px-[20px] py-[20px]">
-                  <button
-                    type="button"
-                    onClick={commitCm1Selection}
-                    className="flex w-full items-center justify-center rounded-[12px] bg-[#0066FF] px-[28px] py-[14px] text-[17px] font-semibold leading-[24px] text-white transition-all duration-150 ease-out hover:bg-[#005BE6] hover:shadow-[0_8px_18px_rgba(0,102,255,0.22)] active:scale-[0.98] active:bg-[#004FCC] active:shadow-[0_3px_8px_rgba(0,102,255,0.18)]"
-                  >
-                    초안 내용 다듬기
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleFinalize}
-                    className="flex w-full items-center justify-center rounded-[12px] border border-[rgba(112,115,124,0.16)] bg-white px-[28px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#0066FF] transition-all duration-150 ease-out hover:bg-[#F5F9FF] hover:shadow-[0_6px_14px_rgba(0,102,255,0.12)] active:scale-[0.98] active:bg-[#EAF2FE] active:shadow-[0_2px_6px_rgba(0,102,255,0.1)]"
-                  >
-                    최종 마무리 단계로 넘어가기
-                  </button>
-                </div>
-                <div className="h-[34px] w-full" />
-              </div>
-            </div>
+            <Cm02LoadingScreen
+              draftIndex={Math.max(1, scenarioDrafts.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1)}
+              draftTitle={cm1Candidate?.draftTitle ?? ""}
+              onRefine={commitCm1Selection}
+              onFinalize={handleFinalize}
+            />
           ) : view === "home" ? (
             flowStep === "loadingDraft" ? (
               <div
