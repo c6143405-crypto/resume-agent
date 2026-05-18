@@ -16,6 +16,41 @@ import { useScenario } from "../hooks/useScenario";
 import type { Draft as ScenarioDraft, ScenarioPersona } from "../scenarios";
 import { B_TYPE_PROMPT } from "./style-prompt";
 
+// ─── 배경 그라데이션 원 (A 페이지와 동일) ──────────────────────────────
+function BackgroundEllipses() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+    >
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 340,
+          height: 331,
+          top: 219,
+          left: -107,
+          background: "#EEF7F3",
+          filter: "blur(87px)",
+          transform: "rotate(12.917deg)",
+        }}
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 310,
+          height: 294,
+          top: 144,
+          left: 115,
+          background: "#DBE9FB",
+          filter: "blur(87px)",
+          transform: "rotate(12.917deg)",
+        }}
+      />
+    </div>
+  );
+}
+
 // ─── 시나리오 → 기존 Draft 어댑터 ──────────────────────────────
 // scenarios/types.ts의 Draft (ScenarioDraft 별칭) 를
 // agent-state.ts의 Draft 형식(B 페이지가 사용 중인 형식)으로 변환한다.
@@ -1867,9 +1902,10 @@ export default function Page() {
   return (
     <main className="min-h-screen font-['Pretendard',sans-serif]" style={{ background: screenBackground }}>
       <section
-        className="relative mx-auto flex h-[100dvh] max-h-[932px] w-full max-w-[480px] flex-col overflow-hidden"
+        className="relative isolate mx-auto flex h-[100dvh] max-h-[932px] w-full max-w-[480px] flex-col overflow-hidden"
         style={{ background: screenBackground }}
       >
+        {(view === "home" || view === "selected" || view === "chat") && <BackgroundEllipses />}
         <StatusBar />
         <PageTitleBar />
 
@@ -2099,43 +2135,57 @@ export default function Page() {
                 </div>
               </div>
             ) : flowStep === "draftReady" ? (
-              <div className="min-h-full bg-[linear-gradient(184deg,#FAFFFC_0.96%,#F3FBFF_49.34%,#E8F4FF_97.71%)]">
-                <div className="min-h-full w-full px-[20px] pb-[28px] pt-[48px]">
-                  <div className="flex flex-col items-center text-center">
+              <div className="relative min-h-full">
+                <div className="relative z-10 min-h-full w-full px-5 pb-7">
+                  <section className="relative z-10 flex flex-col items-center gap-5 px-0 py-12">
                     <AiOrb size={40} />
-                    <h2 className="mt-[20px] text-[22px] font-semibold leading-[30px] tracking-[-0.427px] text-black">
-                      3가지 초안을 완성했어요
-                    </h2>
-                    <p className="mt-[8px] whitespace-pre-line text-[16px] font-normal leading-[24px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
-                      {"내 경험에 더 가까운 초안을 선택해주세요\n부족한 부분은 AI와 함께 수정할 수 있어요"}
-                    </p>
-                  </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <h2 className="text-heading-1 text-center font-bold text-label-strong">
+                        3가지 초안을 완성했어요
+                      </h2>
+                      <p className="text-body-1-reading text-center text-label-neutral">
+                        내 경험에 더 가까운 초안을 선택해주세요<br />
+                        부족한 부분은 AI와 함께 수정할 수 있어요
+                      </p>
+                    </div>
+                  </section>
 
-                  <section className="mt-[54px] flex flex-col gap-[8px]">
-                  {scenarioDrafts.map((draft) => {
-                    const draftCardMeta = DRAFT_CARD_META[draft.draftId] ?? {
-                      title: draft.draftTitle,
-                      description: draft.draftDirection,
-                      chips: ["수치", "임팩트"],
+                  <section className="flex flex-col gap-2">
+                  {scenarioDrafts.map((draft, idx) => {
+                    // 카드 본문은 BottomSheet의 "초안 작성 기준 → 적용된 점"(whyRecommended) 첫 문장을 자동 인용한다.
+                    const firstSentenceMatch = draft.whyRecommended.match(/^[^.!?]+[.!?]/);
+                    const firstSentence = firstSentenceMatch ? firstSentenceMatch[0] : draft.whyRecommended;
+                    // chips는 초안 인덱스(=direction)에 따라 고정. 어떤 직무든 동일 매핑.
+                    // 0=성과(achievement), 1=직무(fit), 2=경험(narrative)
+                    const chipsByIndex: string[][] = [
+                      ["수치", "임팩트"],
+                      ["역량", "직무"],
+                      ["과정", "성장"],
+                    ];
+                    const baseMeta = DRAFT_CARD_META[draft.draftId];
+                    const draftCardMeta = {
+                      title: baseMeta?.title ?? draft.draftTitle,
+                      description: firstSentence,
+                      chips: chipsByIndex[idx] ?? ["수치", "임팩트"],
                     };
                     return (
                       <button
                         key={draft.draftId}
                         type="button"
                         onClick={() => openBottomSheetWith(draft)}
-                        className="w-full rounded-[16px] border border-[#E8EEF5] bg-white p-[20px] text-left transition-colors hover:bg-[#FAFBFC]"
+                        className="flex w-full flex-col gap-3 rounded-2xl border border-[#E8EEF5] bg-white p-5 text-left transition-colors hover:bg-[#FAFBFC]"
                       >
-                        <h3 className="text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#171719]">
+                        <h3 className="text-body-1 font-bold text-label-normal">
                           {draftCardMeta.title}
                         </h3>
-                        <p className="mt-[4px] text-[14px] font-normal leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
+                        <p className="text-label-1-reading text-label-neutral">
                           {draftCardMeta.description}
                         </p>
-                        <div className="mt-[12px] flex flex-wrap gap-[4px]">
+                        <div className="flex flex-wrap gap-1">
                           {draftCardMeta.chips.map((tag) => (
                             <span
                               key={tag}
-                              className="rounded-[6px] bg-[rgba(0,94,235,0.08)] px-[6px] py-[4px] text-[12px] font-medium leading-[16px] tracking-[0.302px] text-[#005EEB]"
+                              className="rounded-md bg-[rgba(0,94,235,0.08)] px-1.5 py-1 text-caption-1 font-medium text-[#005EEB]"
                             >
                               {tag}
                             </span>
