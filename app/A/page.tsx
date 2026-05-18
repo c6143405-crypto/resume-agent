@@ -1431,7 +1431,7 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
 }
 
 // ─── End 화면 (Task 3 완료) ────────────────────────────────────────────
-function EndScreen({ draftTitle }: { draftTitle: string }) {
+function EndScreen({ draftTitle, onContinue }: { draftTitle: string; onContinue: () => void }) {
   return (
     <>
       <section className="flex flex-col items-center gap-5 px-5 py-12">
@@ -1471,6 +1471,17 @@ export default function APage() {
     }),
     [scenario]
   );
+
+  const handleContinueToNextStep = () => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get("s") ?? "accounting-manager";
+    const done = params.get("done") ?? "";
+    const doneTypes = done.split(",").filter(Boolean);
+    const currentType = "A";
+    const newDone = doneTypes.includes(currentType) ? done : [...doneTypes, currentType].join(",");
+    window.location.href = `/next-step?from=${currentType}&s=${s}&done=${newDone}`;
+  };
 
   const [screen, setScreen] = useState<Screen>("start");
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
@@ -1528,7 +1539,7 @@ export default function APage() {
           onFinish={() => setScreen("end")}
         />
       )}
-      {screen === "end" && <EndScreen draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title} />}
+      {screen === "end" && <EndScreen draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title} onContinue={handleContinueToNextStep} />}
 
       <HomeBar />
 
