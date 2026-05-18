@@ -70,6 +70,16 @@ export function classifyUserIntent(userMessage: string): UserIntent {
     return "UNCERTAIN";
   }
 
+  const hasNumericFact = /\d+\s*(건|년|개월|명|회|개|원|만원|억|%|퍼센트)/.test(normalized);
+  const soundsLikeCorrection =
+    /^(아니|ㄴㄴ|노|아냐|아니야)/.test(normalized) ||
+    /(이야|야|였어|이었어|입니다|임|라고|라니까|으로|로)\s*$/.test(normalized) ||
+    normalized.length <= 12;
+
+  if (hasNumericFact && soundsLikeCorrection) {
+    return "MODIFY_CONTENT";
+  }
+
   for (const { intent, keywords } of INTENT_KEYWORDS) {
     if (keywords.some((keyword) => normalized.includes(keyword))) {
       return intent;

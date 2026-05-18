@@ -497,14 +497,14 @@ function Cm02ReviewCard({
         <button
           type="button"
           onClick={onApply}
-          className="rounded-[10px] bg-[#0066FF] px-[20px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-white"
+          className="rounded-[10px] bg-[#0066FF] px-[20px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-white transition-all duration-150 ease-out hover:bg-[#005BE6] hover:shadow-[0_8px_18px_rgba(0,102,255,0.22)] active:scale-[0.98] active:bg-[#004FCC] active:shadow-[0_3px_8px_rgba(0,102,255,0.18)]"
         >
           수정 문장 채택
         </button>
         <button
           type="button"
           onClick={onKeep}
-          className="rounded-[10px] border border-[#0066FF] bg-white px-[20px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-[#0066FF]"
+          className="rounded-[10px] border border-[#0066FF] bg-white px-[20px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.57px] text-[#0066FF] transition-all duration-150 ease-out hover:bg-[#F5F9FF] hover:shadow-[0_6px_14px_rgba(0,102,255,0.12)] active:scale-[0.98] active:bg-[#EAF2FE] active:shadow-[0_2px_6px_rgba(0,102,255,0.1)]"
         >
           기존 유지
         </button>
@@ -573,10 +573,10 @@ function Cm02SecondReviewCard({ onComplete }: { onComplete: () => void }) {
             key={label}
             type="button"
             onClick={onComplete}
-            className={`rounded-[10px] px-[10px] py-[12px] text-[15px] font-semibold leading-[24px] tracking-[0.96px] ${
+            className={`rounded-[10px] px-[10px] py-[12px] text-[15px] font-semibold leading-[24px] tracking-[0.96px] transition-all duration-150 ease-out active:scale-[0.98] ${
               label === "기존 유지"
-                ? "border border-[#0066FF] bg-white text-[#0066FF]"
-                : "bg-[#0066FF] text-white"
+                ? "border border-[#0066FF] bg-white text-[#0066FF] hover:bg-[#F5F9FF] hover:shadow-[0_6px_14px_rgba(0,102,255,0.12)] active:bg-[#EAF2FE] active:shadow-[0_2px_6px_rgba(0,102,255,0.1)]"
+                : "bg-[#0066FF] text-white hover:bg-[#005BE6] hover:shadow-[0_8px_18px_rgba(0,102,255,0.22)] active:bg-[#004FCC] active:shadow-[0_3px_8px_rgba(0,102,255,0.18)]"
             }`}
           >
             {label}
@@ -632,14 +632,14 @@ function Cm02ConfirmCard({
         <button
           type="button"
           onClick={onReviewMore}
-          className="rounded-[10px] bg-[#0066FF] px-[18px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-white"
+          className="rounded-[10px] bg-[#0066FF] px-[18px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-white transition-all duration-150 ease-out hover:bg-[#005BE6] hover:shadow-[0_8px_18px_rgba(0,102,255,0.22)] active:scale-[0.98] active:bg-[#004FCC] active:shadow-[0_3px_8px_rgba(0,102,255,0.18)]"
         >
           추가 검토하기
         </button>
         <button
           type="button"
           onClick={onFinalize}
-          className="rounded-[10px] border border-[#0066FF] bg-white px-[18px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#0066FF]"
+          className="rounded-[10px] border border-[#0066FF] bg-white px-[18px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#0066FF] transition-all duration-150 ease-out hover:bg-[#F5F9FF] hover:shadow-[0_6px_14px_rgba(0,102,255,0.12)] active:scale-[0.98] active:bg-[#EAF2FE] active:shadow-[0_2px_6px_rgba(0,102,255,0.1)]"
         >
           최종 단계로 넘어가기
         </button>
@@ -986,7 +986,7 @@ function BottomSheet({
             onClick={() => {
               if (draft) onSelect(draft);
             }}
-            className="flex w-full items-center justify-center rounded-[12px] bg-[#0066FF] px-[28px] py-[14px] text-[17px] font-semibold leading-[24px] text-white disabled:bg-[#C4C6CA]"
+            className="flex w-full items-center justify-center rounded-[12px] bg-[#0066FF] px-[28px] py-[14px] text-[17px] font-semibold leading-[24px] text-white transition-all duration-150 ease-out hover:bg-[#005BE6] hover:shadow-[0_8px_18px_rgba(0,102,255,0.22)] active:scale-[0.98] active:bg-[#004FCC] active:shadow-[0_3px_8px_rgba(0,102,255,0.18)] disabled:bg-[#C4C6CA] disabled:hover:bg-[#C4C6CA] disabled:hover:shadow-none disabled:active:scale-100"
           >
             이 초안 선택하기
           </button>
@@ -1169,6 +1169,41 @@ export default function Page() {
       }
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (view !== "chat") return;
+    if (messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+    const shouldFollowAgent =
+      lastMessage?.type === "agent" &&
+      (streamingMessageIndex !== null ||
+        isLoading ||
+        messageDone[messages.length - 1] === false);
+
+    if (!shouldFollowAgent) return;
+
+    const frame = requestAnimationFrame(() => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [
+    view,
+    messages.length,
+    streamingMessageIndex,
+    streamedCharCount,
+    streamedSectionCount,
+    refinementCardStep,
+    messageDone,
+    isLoading,
+  ]);
 
   useEffect(() => {
     if (flowStep !== "loadingDraft") {
@@ -1940,18 +1975,43 @@ export default function Page() {
               }}
             />
           ) : view === "complete" ? (
-            <div className="flex min-h-full flex-col bg-[linear-gradient(184deg,#FAFFFC_0.96%,#F3FBFF_49.34%,#E8F4FF_97.71%)] pt-[104px] text-center">
-              <AiOrb size={48} />
-              <h2 className="mx-auto mt-[28px] whitespace-pre-line text-[26px] font-bold leading-[34px] tracking-[-0.4px] text-[#171719]">
-                {"경력기술서 초안 작성을 완료했어요"}
-              </h2>
-              <p className="mt-[12px] text-[17px] font-medium leading-[28px] tracking-[-0.2px] text-[rgba(55,56,60,0.72)]">
-                다음 단계에서 경력기술서를 최종 마무리할게요
-              </p>
-              <div className="mt-[68px] flex flex-1 items-center justify-center bg-[#FF313A]">
-                <div className="flex h-[310px] w-[250px] rotate-[-4deg] items-center justify-center rounded-[24px] bg-[#C80008] text-center text-[56px] font-bold leading-none text-white">
-                  TBD
+            <div className="relative min-h-full overflow-hidden bg-[linear-gradient(188.833deg,#FAFFFC_0.958%,#F3FBFF_49.336%,#E8F4FF_97.714%)] text-center">
+              <div
+                aria-hidden="true"
+                className="absolute h-[474px] w-[590px]"
+                style={{
+                  left: -107,
+                  top: 56,
+                  background:
+                    "radial-gradient(circle at 40% 58%, rgba(0,102,255,0.18) 0%, rgba(58,230,194,0.14) 18%, rgba(255,255,255,0) 46%)",
+                  filter: "blur(34px)",
+                }}
+              />
+              <div className="absolute left-0 top-0 flex w-full flex-col items-center justify-center gap-[20px] px-[20px] py-[48px]">
+                <AiOrb size={40} />
+                <div className="flex w-full flex-col items-center gap-[8px]">
+                  <h2 className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[22px] font-semibold leading-[30px] tracking-[-0.427px] text-black">
+                    경력기술서 초안 작성을 완료했어요
+                  </h2>
+                  <p className="w-full text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
+                    다음 단계에서 경력기술서를 최종 마무리할게요
+                  </p>
                 </div>
+              </div>
+              <div className="absolute left-0 top-[220px] h-[470px] w-full overflow-hidden bg-[rgba(255,0,0,0.8)]">
+                <div className="absolute left-[54.4px] top-[30.24px] flex h-[364.036px] w-[267.664px] items-center justify-center">
+                  <div className="flex h-[351.454px] w-[249.612px] rotate-[-3deg] items-center justify-center overflow-hidden rounded-[19.969px] bg-black shadow-[0px_4.992px_29.953px_rgba(116,191,250,0.05)] backdrop-blur-[2px]">
+                    <div className="rotate-[3deg] text-center text-[19.969px] font-semibold leading-[28px] tracking-[-0.24px] text-white/20">
+                      <p>{`'성과 중심 초안'`}</p>
+                      <p>관련</p>
+                      <p>그래픽 디자인</p>
+                      <p>(완성 ver.)</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="absolute left-1/2 top-[183px] -translate-x-1/2 whitespace-nowrap text-center text-[56px] font-bold leading-[72px] tracking-[-1.786px] text-white">
+                  TBD
+                </p>
               </div>
             </div>
           ) : view === "selected" ? (
@@ -2019,14 +2079,14 @@ export default function Page() {
                   <button
                     type="button"
                     onClick={commitCm1Selection}
-                    className="flex w-full items-center justify-center rounded-[12px] bg-[#0066FF] px-[28px] py-[14px] text-[17px] font-semibold leading-[24px] text-white"
+                    className="flex w-full items-center justify-center rounded-[12px] bg-[#0066FF] px-[28px] py-[14px] text-[17px] font-semibold leading-[24px] text-white transition-all duration-150 ease-out hover:bg-[#005BE6] hover:shadow-[0_8px_18px_rgba(0,102,255,0.22)] active:scale-[0.98] active:bg-[#004FCC] active:shadow-[0_3px_8px_rgba(0,102,255,0.18)]"
                   >
                     초안 내용 다듬기
                   </button>
                   <button
                     type="button"
                     onClick={handleFinalize}
-                    className="flex w-full items-center justify-center rounded-[12px] border border-[rgba(112,115,124,0.16)] bg-white px-[28px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#0066FF]"
+                    className="flex w-full items-center justify-center rounded-[12px] border border-[rgba(112,115,124,0.16)] bg-white px-[28px] py-[12px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#0066FF] transition-all duration-150 ease-out hover:bg-[#F5F9FF] hover:shadow-[0_6px_14px_rgba(0,102,255,0.12)] active:scale-[0.98] active:bg-[#EAF2FE] active:shadow-[0_2px_6px_rgba(0,102,255,0.1)]"
                   >
                     최종 마무리 단계로 넘어가기
                   </button>
@@ -2655,6 +2715,7 @@ export default function Page() {
                                         type="button"
                                         disabled={decided}
                                         onClick={handleRefinementApply}
+                                        className="transition-all duration-150 ease-out hover:-translate-y-[1px] hover:bg-[#F9FAFB] hover:shadow-[0_6px_14px_rgba(23,23,23,0.08)] active:translate-y-0 active:scale-[0.98] active:bg-[#F4F4F5] active:shadow-[0_2px_6px_rgba(23,23,23,0.08)] disabled:hover:translate-y-0 disabled:hover:bg-white disabled:hover:shadow-none disabled:active:scale-100"
                                         style={{
                                           ...buttonBase,
                                           background: refinementCardOutcome === "apply" ? "#171719" : "#FFFFFF",
@@ -2676,6 +2737,7 @@ export default function Page() {
                                         type="button"
                                         disabled={decided}
                                         onClick={handleRefinementKeep}
+                                        className="transition-all duration-150 ease-out hover:-translate-y-[1px] hover:bg-[#F9FAFB] hover:shadow-[0_6px_14px_rgba(23,23,23,0.08)] active:translate-y-0 active:scale-[0.98] active:bg-[#F4F4F5] active:shadow-[0_2px_6px_rgba(23,23,23,0.08)] disabled:hover:translate-y-0 disabled:hover:bg-white disabled:hover:shadow-none disabled:active:scale-100"
                                         style={{
                                           ...buttonBase,
                                           background: refinementCardOutcome === "keep" ? "#171719" : "#FFFFFF",
@@ -2697,6 +2759,7 @@ export default function Page() {
                                         type="button"
                                         disabled={decided}
                                         onClick={handleRefinementRetry}
+                                        className="transition-all duration-150 ease-out hover:-translate-y-[1px] hover:bg-[#F9FAFB] hover:shadow-[0_6px_14px_rgba(23,23,23,0.08)] active:translate-y-0 active:scale-[0.98] active:bg-[#F4F4F5] active:shadow-[0_2px_6px_rgba(23,23,23,0.08)] disabled:hover:translate-y-0 disabled:hover:bg-white disabled:hover:shadow-none disabled:active:scale-100"
                                         style={{
                                           ...buttonBase,
                                           background: refinementCardOutcome === "retry" ? "#171719" : "#FFFFFF",
@@ -2751,7 +2814,7 @@ export default function Page() {
                           <div className="mt-5 flex flex-col items-start gap-2">
                             {chips.map((chipLabel, chipIndex) => (
                               <button
-                                className="inline-flex cursor-pointer items-center hover:bg-[#F9F9F9]"
+                                className="inline-flex cursor-pointer items-center transition-all duration-150 ease-out hover:-translate-y-[1px] hover:bg-[#F9F9F9] hover:shadow-[0_5px_12px_rgba(23,23,23,0.07)] active:translate-y-0 active:scale-[0.97] active:bg-[#F4F4F5] active:shadow-[0_2px_5px_rgba(23,23,23,0.06)]"
                                 key={chipIndex}
                                 onClick={() => {
                                   if (chipLabel === "수정안 적용하기") return handleRefinementApply();
@@ -2900,11 +2963,12 @@ export default function Page() {
                   lineHeight: "24px",
                   color: "#171719",
                   fontFamily: "Pretendard",
+                  paddingRight: 44,
                 }}
                 value={message}
               />
               <button
-                className="absolute bottom-[17px] right-[12px] flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#0066FF]"
+                className="absolute right-[12px] top-1/2 flex h-[32px] w-[32px] -translate-y-1/2 items-center justify-center rounded-full bg-[#0066FF] shadow-[0_6px_14px_rgba(0,102,255,0.24)] transition-all duration-150 ease-out hover:bg-[#005BE6] active:scale-90 active:bg-[#004FCC] active:shadow-[0_2px_6px_rgba(0,102,255,0.2)]"
                 onClick={() => sendMessage()}
                 type="button"
               >
