@@ -8,6 +8,7 @@ const USE_AI = process.env.NEXT_PUBLIC_USE_AI === "true";
 const ROLE_OPTIONS = [
   {
     id: "accounting",
+    href: "/A",
     match: "직무 매칭률 87%",
     title: "옵션 A. 회계담당자",
     tags: [
@@ -17,6 +18,7 @@ const ROLE_OPTIONS = [
   },
   {
     id: "finance",
+    href: "/B",
     match: "직무 매칭률 82%",
     title: "옵션 B. 재무관리자",
     tags: [
@@ -960,7 +962,7 @@ export default function Page() {
                         key={roleOption.id}
                         onClick={() => {
                           setSelectedRoleId(roleOption.id);
-                          setFlowStep("loadingDraft");
+                          window.location.href = roleOption.href;
                         }}
                         style={{
                           borderColor: isSelected ? "#0066FF" : "#EAF2FE",

@@ -171,6 +171,15 @@ C 타입은 AI 응답의 본문 정보를 화면에서 개별 카드로 보여�
 - content 안에서 단락 분리가 필요하면 "\\n\\n"을 사용하세요.
 `;
 
+const NUMERIC_CORRECTION_PROMPT = `
+[Numeric correction rule]
+If the user says a short numeric fact such as "3건이야", "아니 3건", or "12년이 아니라 10년", treat it as a factual correction, not as a question.
+For CM2, revise only the relevant number or quantified phrase in selectedDraft/currentAiDraft to match the user's correction.
+Do not answer with judgment rationale, alternatives, or a new question unless the correction target is impossible to identify.
+Use sections labeled "수정안" and "변경 이유"; chips should follow MODIFY_CONTENT.
+Never replace the user's corrected number with a safer or more conservative number.
+`;
+
 function parseOpenAIResponse(content: string): ChatResponse {
   const jsonMatch = content.match(/\{[\s\S]*\}/);
   const jsonString = jsonMatch ? jsonMatch[0] : content;
@@ -339,10 +348,15 @@ CM2이면 selectedDraft 내부의 문장/표현 단위로 응답해야 합니다
     const typeStyleSystemMessage = resolvedTypeStylePrompt
       ? { role: 'system' as const, content: String(resolvedTypeStylePrompt) }
       : null;
+    const numericCorrectionSystemMessage =
+      /\d+\s*(건|년|개월|명|회|개|원|만원|억|%|퍼센트)/.test(String(userMessage))
+        ? { role: 'system' as const, content: NUMERIC_CORRECTION_PROMPT }
+        : null;
 
     const openAIMessages = [
       { role: 'system' as const, content: SYSTEM_PROMPT },
       ...(typeStyleSystemMessage ? [typeStyleSystemMessage] : []),
+      ...(numericCorrectionSystemMessage ? [numericCorrectionSystemMessage] : []),
       contextSystemMessage,
       ...((messages ?? []) as { type: string; text: string }[]).map((msg) => ({
         role: msg.type === 'user' ? ('user' as const) : ('assistant' as const),
