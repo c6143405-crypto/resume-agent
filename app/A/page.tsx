@@ -1533,8 +1533,9 @@ export default function APage() {
       )}
       {screen === "cm2-loading" && (
         <Cm02LoadingScreen
-          draftIndex={1}
+          draftIndex={confirmedDraftIndex ?? 1}
           draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title}
+          draftDirection={scenario.drafts[(confirmedDraftIndex ?? 1) - 1].direction}
           onRefine={() => setScreen("cm2-chat")}
           onFinalize={() => setScreen("end")}
         />
