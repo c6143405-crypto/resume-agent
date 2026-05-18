@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { AiOrb } from "../components/AiOrb";
 import { PageTitleBar } from "../components/PageTitleBar";
@@ -9,6 +9,8 @@ import { HomeBar } from "../components/HomeBar";
 import { StartScreen } from "../components/StartScreen";
 import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
+import { useScenario } from "../hooks/useScenario";
+import type { Draft, ScenarioPersona } from "../scenarios";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
@@ -163,6 +165,24 @@ const MOCK_AI_RESPONSE: { text: string; item: RefinementItem } = {
       "'99%'는 산출 기준이 명확할 때 설득력이 있지만, 근거가 불분명하면 과장으로 보일 수 있습니다. 정확성을 유지했다는 의미는 살리되, 검증 부담이 적은 표현으로 조정했습니다.",
   },
 };
+// 시나리오 데이터(scenario.drafts[i])를 페이지 내부 DraftData 형식으로 변환하는 어댑터.
+// 옵션 3 마이그레이션 중 기존 컴포넌트 코드를 최대한 보존하기 위해, 데이터 출처만 새 시나리오로 교체한다.
+function toDraftData(draft: Draft, persona: ScenarioPersona): DraftData {
+  return {
+    title: draft.draftTitle,
+    company: persona.company,
+    period: `${persona.period} · ${persona.role}`,
+    project: `[프로젝트 ${draft.project.number}] ${draft.project.title}`,
+    description: draft.project.description,
+    tasks: draft.tasks.map((b) => b.text),
+    achievements: draft.achievements.map((b) => b.text),
+    criteria: {
+      applied: draft.whyRecommended,
+      improve: draft.caution,
+    },
+  };
+}
+
 const DRAFT_DATA: Record<number, DraftData> = {
   1: {
     title: "성과 중심 초안",
@@ -1509,6 +1529,21 @@ function EndScreen({ draftTitle }: { draftTitle: string }) {
 type Screen = "start" | "cm1" | "cm2-loading" | "cm2-chat" | "end";
 
 export default function APage() {
+  // ─── 3.2a: 시나리오 데이터 어댑터 ─────────────────────────────────
+  // URL 파라미터(?s=<scenarioId>)로부터 현재 시나리오를 받아오고,
+  // 기존 페이지 코드가 기대하는 DraftData 형식으로 변환해 draftDataMap에 담는다.
+  // 3.2a 단계에서는 draftDataMap만 추가하고 기존 DRAFT_DATA 참조는 그대로 둔다.
+  // 3.2b 단계에서 페이지 내 DRAFT_DATA[...] 참조를 draftDataMap[...]로 일괄 치환한다.
+  const scenario = useScenario();
+  const draftDataMap = useMemo<Record<number, DraftData>>(
+    () => ({
+      1: toDraftData(scenario.drafts[0], scenario.persona),
+      2: toDraftData(scenario.drafts[1], scenario.persona),
+      3: toDraftData(scenario.drafts[2], scenario.persona),
+    }),
+    [scenario]
+  );
+
   const [screen, setScreen] = useState<Screen>("start");
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
   const [isChatScrolled, setIsChatScrolled] = useState(false);
