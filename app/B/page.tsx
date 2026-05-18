@@ -33,8 +33,8 @@ function toLegacyDraft(s: ScenarioDraft, persona: ScenarioPersona): Draft {
       period: `${persona.period} · ${persona.role}`,
       projectTitle: `프로젝트 ${s.project.number} · ${s.project.title}`,
       overview: s.project.description,
-      goals: s.tasks.map((t) => ({ text: t.text })),
-      roleAndResults: s.achievements.map((a) => ({ text: a.text })),
+      goals: s.tasks.map((t) => ({ text: t.text, emoji: t.emoji })),
+      roleAndResults: s.achievements.map((a) => ({ text: a.text, emoji: a.emoji })),
     },
     refinementTarget: s.refinementTarget,
   };
@@ -759,7 +759,7 @@ function BottomSheet({
                         </p>
                       </>
                     ) : (
-                      <p className="font-normal leading-[22px]">- {bullet.text}</p>
+                      <p className="font-normal leading-[22px]">{bullet.emoji ? `${bullet.emoji} ` : "- "}{bullet.text}</p>
                     )}
                     {tag && (
                       <div className="relative ml-[14px] self-start">
@@ -841,7 +841,7 @@ function BottomSheet({
                         </p>
                       </>
                     ) : (
-                      <p className="font-normal leading-[22px]">- {bullet.text}</p>
+                      <p className="font-normal leading-[22px]">{bullet.emoji ? `${bullet.emoji} ` : "- "}{bullet.text}</p>
                     )}
                     {tag && (
                       <div className="relative ml-[14px] self-start">
