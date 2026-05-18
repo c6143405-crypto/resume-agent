@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FileText, X, ChevronDown, ChevronUp, Info, Send } from "lucide-react";
 import type {
   CurrentStep,
@@ -13,7 +13,33 @@ import type {
 import { DEFAULT_AGENT_STATE } from "../agent-state";
 import { classifyUserIntent } from "../classify-intent";
 import { findDraftBySampleIndex, SAMPLE_DRAFTS } from "../drafts";
+import { useScenario } from "../hooks/useScenario";
+import type { Draft as ScenarioDraft, ScenarioPersona } from "../scenarios";
 import { B_TYPE_PROMPT } from "./style-prompt";
+
+// ─── 3.3a: 시나리오 → 기존 Draft 어댑터 ──────────────────────────────
+// scenarios/types.ts의 Draft (ScenarioDraft 별칭) 를
+// agent-state.ts의 Draft 형식(B 페이지가 이미 사용 중인 형식)으로 변환한다.
+// 옵션 3 마이그레이션 중 페이지 렌더링 로직을 그대로 보존하기 위한 어댑터.
+function toLegacyDraft(s: ScenarioDraft, persona: ScenarioPersona): Draft {
+  return {
+    draftId: s.draftId,
+    draftTitle: s.draftTitle,
+    draftDirection: s.draftTitle,
+    draftContent: `${persona.company}에서 ${persona.period} (${persona.role}) 근무. ${s.project.description}`,
+    whyRecommended: s.whyRecommended,
+    caution: s.caution,
+    body: {
+      company: persona.company,
+      period: `${persona.period} · ${persona.role}`,
+      projectTitle: `프로젝트 ${s.project.number} · ${s.project.title}`,
+      overview: s.project.description,
+      goals: s.tasks.map((t) => ({ text: t.text })),
+      roleAndResults: s.achievements.map((a) => ({ text: a.text })),
+    },
+    refinementTarget: s.refinementTarget,
+  };
+}
 import { OrbCanvas } from "../components/OrbCanvas";
 import { TypewriterText } from "../components/TypewriterText";
 import { StartScreen } from "../components/StartScreen";
@@ -966,6 +992,16 @@ export default function Page() {
     DEFAULT_AGENT_STATE.decisionStatus
   );
   // CM1에서 사용자가 비교 가능한 전체 초안 목록.
+  // ─── 3.3a: 시나리오 데이터 어댑터 ─────────────────────────────────
+  // URL 파라미터(?s=<scenarioId>)에서 현재 시나리오를 받아오고,
+  // B 페이지가 사용 중인 기존 Draft 형식으로 변환해 scenarioDrafts에 담는다.
+  // 3.3a 단계에서는 scenarioDrafts만 추가하고 기존 SAMPLE_DRAFTS 참조는 그대로 둔다.
+  const scenario = useScenario();
+  const scenarioDrafts = useMemo<Draft[]>(
+    () => scenario.drafts.map((d) => toLegacyDraft(d, scenario.persona)),
+    [scenario]
+  );
+
   // 현재는 SAMPLE_DRAFTS로 초기화하지만, 추후 API에서 받아오도록 바꿀 수 있다.
   const [draftOptions, setDraftOptions] = useState<Draft[]>(SAMPLE_DRAFTS);
   // CM1에서 사용자가 선택한 '전체 초안'. CM2로 진입할 때 채워진다.
