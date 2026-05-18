@@ -560,8 +560,8 @@ function BottomSheet({
   onClose,
   onSelect,
   draft,
-  appliedRevision,
-  selectedRoleTitle,
+  appliedRevision: _appliedRevision,
+  selectedRoleTitle: _selectedRoleTitle,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -574,34 +574,13 @@ function BottomSheet({
   } | null;
   selectedRoleTitle: string;
 }) {
-  // [B 타입 — 문장 태그 툴팁] 한 번에 하나의 chip 툴팁만 열림.
-  const [tooltipFor, setTooltipFor] = useState<string | null>(null);
-  const roleLabel = selectedRoleTitle || "선택한 인사";
-
-  // [외부 클릭 시 자동 닫힘] chip / tooltip 영역 밖을 클릭하면 닫는다.
-  // data-keyword-chip / data-keyword-tooltip 마커가 붙은 요소 또는 그 자손이면 무시.
-  useEffect(() => {
-    if (!tooltipFor) return;
-    const handler = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-      if (
-        target.closest("[data-keyword-chip]") ||
-        target.closest("[data-keyword-tooltip]")
-      ) {
-        return;
-      }
-      setTooltipFor(null);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [tooltipFor]);
-  // 근거 보기 아코디언은 시트 내부 로컬 상태로 관리.
-  // 다른 초안 시트를 열면 이전 펼침은 유지되지만, 시트가 다시 열릴 때 명시적으로 접고 싶다면
-  // useEffect로 isOpen/draft 변할 때 false로 리셋하면 된다.
+  // 3.7: BottomSheet 본문을 A 모달과 동일한 디자인으로 통일.
+  // - 헤더: A 스타일 (단, B는 번호 인디케이터 없이)
+  // - 본문: A의 DraftCriteriaCard / DraftDetailBody 구조 + B 특이성(chips, bullet emoji)
+  // - 푸터: A 스타일 "이 초안 선택하기" 버튼
   const [isRationaleOpen, setIsRationaleOpen] = useState(false);
-  const draftMeta = draft?.draftId ? DRAFT_CARD_META[draft.draftId] : undefined;
-  const detailBody = draft?.draftId ? DRAFT_DETAIL_BODY[draft.draftId] : undefined;
+  const chips = draft?.draftId ? DRAFT_DETAIL_CHIPS[draft.draftId] ?? [] : [];
+
   return (
     <div
       className={`absolute inset-0 z-50 flex justify-center transition-opacity duration-300 ${
@@ -619,280 +598,183 @@ function BottomSheet({
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >
-        <div className="flex justify-center pb-[28px] pt-[8px]">
-          <div className="h-[5px] w-[40px] rounded-full bg-[#D9D9D9]" />
+        {/* Drag handle */}
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="h-1 w-10 rounded-full bg-line-solid-strong" />
         </div>
-        <div className="relative flex h-[36px] items-center px-[20px]">
-          <h2 className="text-[20px] font-semibold leading-[28px] tracking-[-1.2px] text-black">
-            {draftMeta?.title ?? draft?.draftTitle ?? "샘플 경력기술서"}
+
+        {/* Header — A 스타일, 번호 없음 */}
+        <div className="flex items-center justify-between px-4 py-6">
+          <h2 className="text-heading-2 font-bold text-label-strong">
+            {draft?.draftTitle ?? "—"}
           </h2>
           <button
-            aria-label="닫기"
-            className="absolute right-[20px] top-[4px] flex h-[24px] w-[24px] items-center justify-center"
-            onClick={onClose}
             type="button"
+            onClick={onClose}
+            className="text-label-strong"
+            aria-label="닫기"
           >
-            <X className="h-[24px] w-[24px] text-black" strokeWidth={2} aria-hidden="true" />
+            <X size={24} strokeWidth={2} />
           </button>
         </div>
 
-        <div className="mt-[24px] flex-1 overflow-y-auto px-[20px] pb-[24px] [&::-webkit-scrollbar]:hidden">
-          {/* [근거 보기 아코디언] 초안의 방향·추천 이유·주의점을 시트 상단에서 보여줌 */}
-          <div>
+        {/* Scrollable content */}
+        <div
+          className="flex-1 overflow-y-auto px-5"
+          style={{ scrollbarGutter: "stable" }}
+        >
+          {/* 초안 작성 기준 카드 */}
+          <div
+            className="flex w-full flex-col rounded-xl border p-4 transition-colors"
+            style={{
+              borderColor: "#EAF2FE",
+              background:
+                "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%), #FFF",
+            }}
+          >
             <button
               type="button"
               onClick={() => setIsRationaleOpen((v) => !v)}
-              className="flex min-h-[56px] w-full items-center justify-between rounded-[12px] border border-[#EAF2FE] px-[20px] py-[16px] text-left"
+              className="flex w-full items-center gap-3 text-left"
               aria-expanded={isRationaleOpen}
-              style={{
-                background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%)",
-              }}
             >
-              <span className="flex items-center gap-[8px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#171719]">
-                <AiOrb size={20} />
+              <AiOrb size={20} />
+              <span className="flex-1 text-body-1 font-medium text-label-normal">
                 초안 작성 기준
               </span>
-              <ChevronDown className={`h-[20px] w-[20px] text-[#171719] transition-transform ${isRationaleOpen ? "rotate-180" : ""}`} strokeWidth={2} aria-hidden="true" />
+              <ChevronDown
+                className={`h-5 w-5 text-label-neutral transition-transform duration-300 ease-out ${
+                  isRationaleOpen ? "rotate-180" : ""
+                }`}
+                strokeWidth={2}
+                aria-hidden="true"
+              />
             </button>
-            {isRationaleOpen && (
-              <div
-                className="rounded-b-[12px] border-x border-b border-[#EAF2FE] px-[20px] pb-[16px] pt-[16px]"
-                style={{
-                  background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%)",
-                }}
-              >
-                <div className="text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
-                  반영한 내용
+            <div
+              className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out ${
+                isRationaleOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+              }`}
+              aria-hidden={!isRationaleOpen}
+            >
+              <div className="min-h-0">
+                <div className="mt-4 h-px w-full bg-line-solid-normal" />
+                <div className="mt-4 flex flex-col gap-4">
+                  <div>
+                    <p className="text-body-2-reading text-label-neutral mb-1">
+                      적용된 점
+                    </p>
+                    <p className="text-body-1-reading text-label-normal">
+                      {draft?.whyRecommended ?? "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-body-2-reading text-label-neutral mb-1">
+                      보완하면 좋은 점
+                    </p>
+                    <p className="text-body-1-reading text-label-normal">
+                      {draft?.caution ?? "—"}
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
-                  {draft?.draftDirection ?? "—"} {draft?.whyRecommended ?? ""}
-                </p>
-
-                <div className="mt-[16px] text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
-                  보완하면 좋은 점
-                </div>
-                <p className="mt-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
-                  {draft?.caution ?? "—"}
-                </p>
-
               </div>
-            )}
-          </div>
-
-          <div className="mt-[36px] flex flex-col gap-[8px]">
-            <h3 className="text-[20px] font-semibold leading-[28px] tracking-[-1.2px] text-black">
-              {draft?.body.company.split("—")[0].trim() ?? "(주) A 의류 유통 기업"}
-            </h3>
-            <p className="text-[15px] font-normal leading-[24px] tracking-[0.96px] text-[rgba(46,47,51,0.88)]">
-              {draft?.body.period ?? "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장"}
-            </p>
-            <div className="mt-[8px] flex flex-wrap gap-[8px]">
-              {((draft?.draftId ? DRAFT_DETAIL_CHIPS[draft.draftId] : undefined) ?? ["전표 1,500건", "자료 정확도 99%", "회계관리"]).map((chip) => (
-                <span
-                  key={chip}
-                  className="rounded-[8px] bg-[rgba(0,102,255,0.08)] px-[10px] py-[7px] text-[14px] font-semibold leading-[18px] tracking-[0.203px] text-[#0066FF]"
-                >
-                  {chip}
-                </span>
-              ))}
             </div>
           </div>
 
-          <div className="my-[24px] h-px w-full bg-[#E5E5E5]" />
-
-          {/* [동적 본문]
-              - 회사/프로젝트/개요/목표/역할 및 성과 — draft.body 기준
-              - A 타입: AI 정확율 칩(blue/purple)은 렌더 안 함.
-                gray 칩(사용자 실제 발화)만 본문 아래에 회색 언더라인 텍스트로 표시. */}
-          <div className="flex flex-col gap-[24px] text-[15px] tracking-[0.96px] text-[#171719]">
-            <section className="flex flex-col gap-[6px]">
-              <p className="text-[18px] font-semibold leading-[26px] tracking-[-0.02px] text-[#171719]">
-                {detailBody?.projectTitle ?? draft?.body.projectTitle.replace("프로젝트 1 ·", "[프로젝트 1]") ?? "—"}
+          {/* 본문 — A의 DraftDetailBody 구조 + B 특이성(chips, emoji) */}
+          <div className="flex flex-col gap-6 pb-2 pt-9">
+            {/* 회사명 + 기간 + chips */}
+            <div className="flex flex-col gap-1 px-1">
+              <h3 className="text-headline-1 font-bold text-label-normal">
+                {draft?.body.company.split("—")[0].trim() ?? "—"}
+              </h3>
+              <p className="text-body-2-reading text-label-neutral">
+                {draft?.body.period ?? "—"}
               </p>
-            </section>
-
-            <section className="flex flex-col gap-[8px]">
-              <p className="text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
-                {detailBody?.overview ?? draft?.body.overview ?? "—"}
-              </p>
-            </section>
-
-            <section className="flex flex-col gap-[10px]">
-              <p className="text-[18px] font-semibold leading-[26px] tracking-[-0.02px] text-[#171719]">업무 상세</p>
-              {detailBody ? (
-                <div className="flex flex-col gap-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
-                  {detailBody.goals.map((goal) => (
-                    <p key={goal}>{goal}</p>
+              {chips.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {chips.map((chip) => (
+                    <span
+                      key={chip}
+                      className="rounded-lg bg-[rgba(0,102,255,0.08)] px-2.5 py-1.5 text-body-2-reading font-semibold text-[#0066FF]"
+                    >
+                      {chip}
+                    </span>
                   ))}
                 </div>
-              ) : (
-                <>
-              {(draft?.body.goals ?? []).map((bullet, idx) => {
-                const isRevised =
-                  appliedRevision && bullet.text === appliedRevision.originalSentence;
-                const keywords = draft?.draftId ? SENTENCE_KEYWORDS[draft.draftId] : undefined;
-                const tag = keywords?.goals[idx];
-                const chipKey = `goal-${idx}`;
-                return (
-                  <div key={`goal-${idx}`} className="flex flex-col gap-[6px]">
-                    {isRevised ? (
-                      <>
-                        <p className="font-normal leading-[22px]">
-                          -{" "}
-                          <span
-                            style={{
-                              background: "rgba(255,220,80,0.55)",
-                              padding: "1px 4px",
-                              borderRadius: 2,
-                              boxDecorationBreak: "clone",
-                              WebkitBoxDecorationBreak: "clone",
-                            }}
-                          >
-                            {appliedRevision.revisedSentence}
-                          </span>
-                        </p>
-                        <p
-                          className="leading-[20px]"
-                          style={{ fontSize: 13, color: "#0066FF", paddingLeft: 14 }}
-                        >
-                          {appliedRevision.changeReason}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="font-normal leading-[22px]">{bullet.emoji ? `${bullet.emoji} ` : "- "}{bullet.text}</p>
-                    )}
-                    {tag && (
-                      <div className="relative ml-[14px] self-start">
-                        <button
-                          type="button"
-                          data-keyword-chip="true"
-                          onClick={() =>
-                            setTooltipFor(tooltipFor === chipKey ? null : chipKey)
-                          }
-                          className="inline-flex items-center gap-[4px] rounded-[6px] border px-[8px] py-[4px] text-[12px] font-medium leading-none transition"
-                          style={{
-                            borderColor: "rgba(0,102,255,0.24)",
-                            background: "rgba(0,102,255,0.08)",
-                            color: "#0066FF",
-                          }}
-                          aria-expanded={tooltipFor === chipKey}
-                        >
-                          <span>{tag}</span>
-                          <Info className="h-[12px] w-[12px]" strokeWidth={2} aria-hidden="true" />
-                        </button>
-                        {tooltipFor === chipKey && (
-                          <div
-                            role="tooltip"
-                            data-keyword-tooltip="true"
-                            className="absolute left-0 top-[calc(100%+6px)] z-50 max-w-[260px] rounded-[8px] px-[10px] py-[8px] text-[12px] leading-[18px] text-white shadow-lg"
-                            style={{ background: "#171719" }}
-                          >
-                            {tooltipForKeyword(tag, roleLabel)}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-                </>
               )}
-            </section>
+              <div className="mt-5 h-px w-full bg-line-solid-normal" />
+            </div>
 
-            <section className="flex flex-col gap-[10px] border-t border-[#E5E5E5] pt-[24px]">
-              <p className="text-[18px] font-semibold leading-[26px] tracking-[-0.02px] text-[#171719]">역할 및 성과</p>
-              {detailBody ? (
-                <div className="flex flex-col gap-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
-                  {detailBody.roleAndResults.map((result) => (
-                    <p key={result}>{result}</p>
-                  ))}
-                </div>
-              ) : (
-                <>
-              {(draft?.body.roleAndResults ?? []).map((bullet, idx) => {
-                const isRevised =
-                  appliedRevision && bullet.text === appliedRevision.originalSentence;
-                const keywords = draft?.draftId ? SENTENCE_KEYWORDS[draft.draftId] : undefined;
-                const tag = keywords?.roleAndResults[idx];
-                const chipKey = `role-${idx}`;
-                return (
-                  <div key={`role-${idx}`} className="flex flex-col gap-[6px]">
-                    {isRevised ? (
-                      <>
-                        <p className="font-normal leading-[22px]">
-                          -{" "}
-                          <span
-                            style={{
-                              background: "rgba(255,220,80,0.55)",
-                              padding: "1px 4px",
-                              borderRadius: 2,
-                              boxDecorationBreak: "clone",
-                              WebkitBoxDecorationBreak: "clone",
-                            }}
-                          >
-                            {appliedRevision.revisedSentence}
-                          </span>
-                        </p>
-                        <p
-                          className="leading-[20px]"
-                          style={{ fontSize: 13, color: "#0066FF", paddingLeft: 14 }}
-                        >
-                          {appliedRevision.changeReason}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="font-normal leading-[22px]">{bullet.emoji ? `${bullet.emoji} ` : "- "}{bullet.text}</p>
-                    )}
-                    {tag && (
-                      <div className="relative ml-[14px] self-start">
-                        <button
-                          type="button"
-                          data-keyword-chip="true"
-                          onClick={() =>
-                            setTooltipFor(tooltipFor === chipKey ? null : chipKey)
-                          }
-                          className="inline-flex items-center gap-[4px] rounded-[6px] border px-[8px] py-[4px] text-[12px] font-medium leading-none transition"
-                          style={{
-                            borderColor: "rgba(0,102,255,0.24)",
-                            background: "rgba(0,102,255,0.08)",
-                            color: "#0066FF",
-                          }}
-                          aria-expanded={tooltipFor === chipKey}
-                        >
-                          <span>{tag}</span>
-                          <Info className="h-[12px] w-[12px]" strokeWidth={2} aria-hidden="true" />
-                        </button>
-                        {tooltipFor === chipKey && (
-                          <div
-                            role="tooltip"
-                            data-keyword-tooltip="true"
-                            className="absolute left-0 top-[calc(100%+6px)] z-50 max-w-[260px] rounded-[8px] px-[10px] py-[8px] text-[12px] leading-[18px] text-white shadow-lg"
-                            style={{ background: "#171719" }}
-                          >
-                            {tooltipForKeyword(tag, roleLabel)}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-                </>
-              )}
-            </section>
+            {/* 프로젝트 */}
+            <div className="flex flex-col gap-3 px-1">
+              <h3 className="text-headline-1 font-bold text-label-normal">
+                {draft?.body.projectTitle.replace("프로젝트 1 ·", "[프로젝트 1]") ?? "—"}
+              </h3>
+              <p className="text-body-1-reading text-label-normal">
+                {draft?.body.overview ?? "—"}
+              </p>
+            </div>
+
+            {/* 업무 상세 */}
+            <div className="flex flex-col gap-1 px-1">
+              <h4 className="text-headline-1 font-bold text-label-normal">
+                업무 상세
+              </h4>
+              <ul className="flex flex-col gap-1 pt-3">
+                {(draft?.body.goals ?? []).map((bullet, i) => (
+                  <li
+                    key={i}
+                    className="text-body-1-reading text-label-normal flex gap-2 px-1"
+                  >
+                    <span aria-hidden="true">{bullet.emoji ?? "•"}</span>
+                    <span className="flex-1">{bullet.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* 역할 및 성과 */}
+            <div className="flex flex-col gap-1 px-1">
+              <h4 className="text-headline-1 font-bold text-label-normal">
+                역할 및 성과
+              </h4>
+              <ul className="flex flex-col gap-1 pt-3">
+                {(draft?.body.roleAndResults ?? []).map((bullet, i) => (
+                  <li
+                    key={i}
+                    className="text-body-1-reading text-label-normal flex gap-2 px-1"
+                  >
+                    <span aria-hidden="true">{bullet.emoji ?? "•"}</span>
+                    <span className="flex-1">{bullet.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-        <div className="shrink-0 px-[20px] pb-[34px] pt-[20px]">
-          <button
-            type="button"
-            disabled={!draft}
-            onClick={() => {
-              if (draft) onSelect(draft);
+
+        {/* CTA + 흰색 fade */}
+        <div className="relative w-full">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-10 left-0 right-0 h-10"
+            style={{
+              background:
+                "linear-gradient(0deg, #FFFFFF 0%, rgba(255, 255, 255, 0) 100%)",
             }}
-            className="h-[52px] w-full rounded-[12px] bg-[#0066FF] text-[17px] font-semibold leading-[24px] text-white disabled:bg-[#C4C6CA]"
-          >
-            이 초안 선택하기
-          </button>
+          />
+          <div className="px-7 py-3.5">
+            <button
+              type="button"
+              disabled={!draft}
+              onClick={() => {
+                if (draft) onSelect(draft);
+              }}
+              className="w-full self-stretch rounded-xl bg-primary-normal px-7 py-3.5 text-center text-headline-2 font-bold text-static-white transition-colors hover:bg-primary-strong active:bg-primary-heavy disabled:bg-[#C4C6CA]"
+            >
+              이 초안 선택하기
+            </button>
+          </div>
         </div>
       </section>
     </div>
