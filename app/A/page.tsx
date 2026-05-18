@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { AiOrb } from "../components/AiOrb";
 import { PageTitleBar } from "../components/PageTitleBar";
@@ -9,6 +9,8 @@ import { HomeBar } from "../components/HomeBar";
 import { StartScreen } from "../components/StartScreen";
 import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
+import { useScenario } from "../hooks/useScenario";
+import type { Draft, ScenarioPersona } from "../scenarios";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
@@ -163,84 +165,23 @@ const MOCK_AI_RESPONSE: { text: string; item: RefinementItem } = {
       "'99%'는 산출 기준이 명확할 때 설득력이 있지만, 근거가 불분명하면 과장으로 보일 수 있습니다. 정확성을 유지했다는 의미는 살리되, 검증 부담이 적은 표현으로 조정했습니다.",
   },
 };
-const DRAFT_DATA: Record<number, DraftData> = {
-  1: {
-    title: "성과 중심 초안",
-    company: "(주) A 의류 유통 기업",
-    period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
-    project: "[프로젝트 1] 월·연 결산 마감 프로세스 운영",
-    description:
-      "직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.",
-    tasks: [
-      "매월 결산 마감 일정 관리",
-      "외부 회계 감사 대응",
-      "부가세·법인세 신고 자료 정리",
-      "결산 종료 후 대표 보고 자료 작성",
-    ],
-    achievements: [
-      "매입·매출 전표 월 평균 1,500여 건 처리 및 검증",
-      "외부 감사 12년 연속 주요 지적 사항 0건 유지",
-      "신고 자료 정확도 99% 수준 유지",
-      "결산 마감 일정을 평균 5영업일 이내로 관리",
-    ],
+// 시나리오 데이터(scenario.drafts[i])를 페이지 내부 DraftData 형식으로 변환하는 어댑터.
+// 옵션 3 마이그레이션 중 기존 컴포넌트 코드를 최대한 보존하기 위해, 데이터 출처만 새 시나리오로 교체한다.
+function toDraftData(draft: Draft, persona: ScenarioPersona): DraftData {
+  return {
+    title: draft.draftTitle,
+    company: persona.company,
+    period: `${persona.period} · ${persona.role}`,
+    project: `[프로젝트 ${draft.project.number}] ${draft.project.title}`,
+    description: draft.project.description,
+    tasks: draft.tasks.map((b) => b.text),
+    achievements: draft.achievements.map((b) => b.text),
     criteria: {
-      applied:
-        "월·연 결산 운영 경험을 성과 중심으로 정리했어요. 전표 처리량, 감사 지적 0건, 신고 자료 정확도 99%를 주요 성과로 강조했어요.",
-      improve: "오류 개선 사례가 있으면 더 설득력 있어져요.",
+      applied: draft.whyRecommended,
+      improve: draft.caution,
     },
-  },
-  // 2, 3번은 Phase 4에서 정식 데이터로 교체. 일단 1번 데이터 재사용 (title만 변경)
-  2: {
-    title: "직무 적합 중심 초안",
-    company: "(주) A 의류 유통 기업",
-    period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
-    project: "[프로젝트 1] 월·연 결산 마감 프로세스 운영",
-    description:
-      "직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.",
-    tasks: [
-      "매월 결산 마감 일정 관리",
-      "외부 회계 감사 대응",
-      "부가세·법인세 신고 자료 정리",
-      "결산 종료 후 대표 보고 자료 작성",
-    ],
-    achievements: [
-      "매입·매출 전표 월 평균 1,500여 건 처리 및 검증",
-      "외부 감사 12년 연속 주요 지적 사항 0건 유지",
-      "신고 자료 정확도 99% 수준 유지",
-      "결산 마감 일정을 평균 5영업일 이내로 관리",
-    ],
-    criteria: {
-      applied:
-        "월·연 결산 운영 경험을 성과 중심으로 정리했어요. 전표 처리량, 감사 지적 0건, 신고 자료 정확도 99%를 주요 성과로 강조했어요.",
-      improve: "오류 개선 사례가 있으면 더 설득력 있어져요.",
-    },
-  },
-  3: {
-    title: "경험 서사 중심 초안",
-    company: "(주) A 의류 유통 기업",
-    period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
-    project: "[프로젝트 1] 월·연 결산 마감 프로세스 운영",
-    description:
-      "직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.",
-    tasks: [
-      "매월 결산 마감 일정 관리",
-      "외부 회계 감사 대응",
-      "부가세·법인세 신고 자료 정리",
-      "결산 종료 후 대표 보고 자료 작성",
-    ],
-    achievements: [
-      "매입·매출 전표 월 평균 1,500여 건 처리 및 검증",
-      "외부 감사 12년 연속 주요 지적 사항 0건 유지",
-      "신고 자료 정확도 99% 수준 유지",
-      "결산 마감 일정을 평균 5영업일 이내로 관리",
-    ],
-    criteria: {
-      applied:
-        "월·연 결산 운영 경험을 성과 중심으로 정리했어요. 전표 처리량, 감사 지적 0건, 신고 자료 정확도 99%를 주요 성과로 강조했어요.",
-      improve: "오류 개선 사례가 있으면 더 설득력 있어져요.",
-    },
-  },
-};
+  };
+}
 
 // ─── 닫기(X) 아이콘 ───────────────────────────────────────────────────
 function CloseIcon() {
@@ -659,11 +600,12 @@ function DraftDetailBody({ data }: { data: DraftData }) {
 // ─── 모달 (DraftDetail BottomSheet) ───────────────────────────────────
 interface DraftDetailModalProps {
   draftIndex: number;
+  data: DraftData;
   onClose: () => void;
   onSelect: () => void;
 }
-function DraftDetailModal({ draftIndex, onClose, onSelect }: DraftDetailModalProps) {
-  const data = DRAFT_DATA[draftIndex];
+function DraftDetailModal({ draftIndex, data, onClose, onSelect }: DraftDetailModalProps) {
+  // data는 부모(APage)가 draftDataMap[draftIndex]로 미리 매핑해 prop으로 전달한다.
   const [isVisible, setIsVisible] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -1117,10 +1059,16 @@ function RefinementItemBlock({
 // ─── AI Chat 화면 (CM 02 후반) ────────────────────────────────────────
 interface AiChatScreenProps {
   draftTitle: string;
+  // selectedDraftData: chat API에 전달할 현재 선택된 초안 데이터.
+  //   3.2b 단계에서는 부모가 항상 draftDataMap[1] (직무 적합 중심)을 넘긴다.
+  //   3.5 단계에서 사용자 실제 선택 인덱스로 연동 예정.
+  selectedDraftData: DraftData;
+  // draftOptionsMap: chat API의 draftOptions로 전송할 전체 초안 매핑.
+  draftOptionsMap: Record<number, DraftData>;
   onScrollChange: (scrolled: boolean) => void;
   onFinish: () => void;
 }
-function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProps) {
+function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScrollChange, onFinish }: AiChatScreenProps) {
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [confirmPreviewOpen, setConfirmPreviewOpen] = useState(false);
@@ -1203,20 +1151,20 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
           currentAiDraft: firstItem.revised ?? firstItem.original,
           selectedDraft: {
             draftId: "1",
-            draftTitle: DRAFT_DATA[1].title,
+            draftTitle: selectedDraftData.title,
             draftContent: [
-              DRAFT_DATA[1].company,
-              DRAFT_DATA[1].period,
-              DRAFT_DATA[1].project,
-              DRAFT_DATA[1].description,
-              ...DRAFT_DATA[1].tasks,
-              ...DRAFT_DATA[1].achievements,
+              selectedDraftData.company,
+              selectedDraftData.period,
+              selectedDraftData.project,
+              selectedDraftData.description,
+              ...selectedDraftData.tasks,
+              ...selectedDraftData.achievements,
             ].join("\n"),
-            draftDirection: DRAFT_DATA[1].title,
-            whyRecommended: DRAFT_DATA[1].criteria.applied,
-            caution: DRAFT_DATA[1].criteria.improve,
+            draftDirection: selectedDraftData.title,
+            whyRecommended: selectedDraftData.criteria.applied,
+            caution: selectedDraftData.criteria.improve,
           },
-          draftOptions: Object.entries(DRAFT_DATA).map(([draftId, draft]) => ({
+          draftOptions: Object.entries(draftOptionsMap).map(([draftId, draft]) => ({
             draftId,
             draftTitle: draft.title,
             draftContent: [
@@ -1483,7 +1431,7 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
 }
 
 // ─── End 화면 (Task 3 완료) ────────────────────────────────────────────
-function EndScreen({ draftTitle }: { draftTitle: string }) {
+function EndScreen({ draftTitle, onContinue }: { draftTitle: string; onContinue: () => void }) {
   return (
     <>
       <section className="flex flex-col items-center gap-5 px-5 py-12">
@@ -1501,6 +1449,15 @@ function EndScreen({ draftTitle }: { draftTitle: string }) {
         <TbdCard label={`${draftTitle} (완성 ver.)`} />
       </div>
       <div className="flex-1" />
+      <div className="px-5 pb-8">
+        <button
+          type="button"
+          onClick={onContinue}
+          className="w-full rounded-xl bg-[#0066FF] px-6 py-4 text-center text-base font-bold text-white transition-colors hover:bg-[#005BE6] active:bg-[#004FCC]"
+        >
+          다음 타입 시작하기
+        </button>
+      </div>
     </>
   );
 }
@@ -1509,8 +1466,38 @@ function EndScreen({ draftTitle }: { draftTitle: string }) {
 type Screen = "start" | "cm1" | "cm2-loading" | "cm2-chat" | "end";
 
 export default function APage() {
+  // ─── 3.2a: 시나리오 데이터 어댑터 ─────────────────────────────────
+  // URL 파라미터(?s=<scenarioId>)로부터 현재 시나리오를 받아오고,
+  // 기존 페이지 코드가 기대하는 DraftData 형식으로 변환해 draftDataMap에 담는다.
+  // 3.2a 단계에서는 draftDataMap만 추가하고 기존 DRAFT_DATA 참조는 그대로 둔다.
+  // 3.2b 단계에서 페이지 내 DRAFT_DATA[...] 참조를 draftDataMap[...]로 일괄 치환한다.
+  const scenario = useScenario();
+  const draftDataMap = useMemo<Record<number, DraftData>>(
+    () => ({
+      1: toDraftData(scenario.drafts[0], scenario.persona),
+      2: toDraftData(scenario.drafts[1], scenario.persona),
+      3: toDraftData(scenario.drafts[2], scenario.persona),
+    }),
+    [scenario]
+  );
+
+  const handleContinueToNextStep = () => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get("s") ?? "accounting-manager";
+    const done = params.get("done") ?? "";
+    const doneTypes = done.split(",").filter(Boolean);
+    const currentType = "A";
+    const newDone = doneTypes.includes(currentType) ? done : [...doneTypes, currentType].join(",");
+    window.location.href = `/next-step?from=${currentType}&s=${s}&done=${newDone}`;
+  };
+
   const [screen, setScreen] = useState<Screen>("start");
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
+  // ─── 3.5: CM2 진입 시점에 확정된 초안 인덱스 보존 ───────────────
+  // selectedDraft는 모달 표시/닫힘용이라 onSelect에서 null로 리셋되지만,
+  // 이 값은 사용자가 실제로 CM2로 가져간 초안 인덱스를 기억해 chat API에 전달한다.
+  const [confirmedDraftIndex, setConfirmedDraftIndex] = useState<number | null>(null);
   const [isChatScrolled, setIsChatScrolled] = useState(false);
 
   // 화면별 페이지 배경 — body / 상태바 영역과 동기화하기 위해 별도 변수로 추출
@@ -1547,19 +1534,21 @@ export default function APage() {
       {screen === "cm2-loading" && (
         <Cm02LoadingScreen
           draftIndex={1}
-          draftTitle={DRAFT_DATA[1].title}
+          draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title}
           onRefine={() => setScreen("cm2-chat")}
           onFinalize={() => console.log("finalize — End 화면 (Phase 3a 마무리)")}
         />
       )}
       {screen === "cm2-chat" && (
         <AiChatScreen
-          draftTitle={DRAFT_DATA[1].title}
+          draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title}
+          selectedDraftData={draftDataMap[confirmedDraftIndex ?? 1]}
+          draftOptionsMap={draftDataMap}
           onScrollChange={setIsChatScrolled}
           onFinish={() => setScreen("end")}
         />
       )}
-      {screen === "end" && <EndScreen draftTitle={DRAFT_DATA[1].title} />}
+      {screen === "end" && <EndScreen draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title} onContinue={handleContinueToNextStep} />}
 
       <HomeBar />
 
@@ -1567,8 +1556,10 @@ export default function APage() {
       {selectedDraft !== null && (
         <DraftDetailModal
           draftIndex={selectedDraft}
+          data={draftDataMap[selectedDraft]}
           onClose={() => setSelectedDraft(null)}
           onSelect={() => {
+            setConfirmedDraftIndex(selectedDraft);
             setSelectedDraft(null);
             setScreen("cm2-loading");
           }}
