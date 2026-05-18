@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FileText, X, ChevronDown, ChevronUp, Info, Send } from "lucide-react";
 import type {
   CurrentStep,
@@ -12,8 +12,32 @@ import type {
 } from "../agent-state";
 import { DEFAULT_AGENT_STATE } from "../agent-state";
 import { classifyUserIntent } from "../classify-intent";
-import { findDraftBySampleIndex, SAMPLE_DRAFTS } from "../drafts";
+import { useScenario } from "../hooks/useScenario";
+import type { Draft as ScenarioDraft, ScenarioPersona } from "../scenarios";
 import { B_TYPE_PROMPT } from "./style-prompt";
+
+// ─── 시나리오 → 기존 Draft 어댑터 ──────────────────────────────
+// scenarios/types.ts의 Draft (ScenarioDraft 별칭) 를
+// agent-state.ts의 Draft 형식(B 페이지가 사용 중인 형식)으로 변환한다.
+function toLegacyDraft(s: ScenarioDraft, persona: ScenarioPersona): Draft {
+  return {
+    draftId: s.draftId,
+    draftTitle: s.draftTitle,
+    draftDirection: s.draftTitle,
+    draftContent: `${persona.company}에서 ${persona.period} (${persona.role}) 근무. ${s.project.description}`,
+    whyRecommended: s.whyRecommended,
+    caution: s.caution,
+    body: {
+      company: persona.company,
+      period: `${persona.period} · ${persona.role}`,
+      projectTitle: `프로젝트 ${s.project.number} · ${s.project.title}`,
+      overview: s.project.description,
+      goals: s.tasks.map((t) => ({ text: t.text, emoji: t.emoji })),
+      roleAndResults: s.achievements.map((a) => ({ text: a.text, emoji: a.emoji })),
+    },
+    refinementTarget: s.refinementTarget,
+  };
+}
 import { OrbCanvas } from "../components/OrbCanvas";
 import { TypewriterText } from "../components/TypewriterText";
 import { StartScreen } from "../components/StartScreen";
@@ -653,8 +677,8 @@ function BottomSheet({
   onClose,
   onSelect,
   draft,
-  appliedRevision,
-  selectedRoleTitle,
+  appliedRevision: _appliedRevision,
+  selectedRoleTitle: _selectedRoleTitle,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -667,34 +691,13 @@ function BottomSheet({
   } | null;
   selectedRoleTitle: string;
 }) {
-  // [B 타입 — 문장 태그 툴팁] 한 번에 하나의 chip 툴팁만 열림.
-  const [tooltipFor, setTooltipFor] = useState<string | null>(null);
-  const roleLabel = selectedRoleTitle || "선택한 인사";
-
-  // [외부 클릭 시 자동 닫힘] chip / tooltip 영역 밖을 클릭하면 닫는다.
-  // data-keyword-chip / data-keyword-tooltip 마커가 붙은 요소 또는 그 자손이면 무시.
-  useEffect(() => {
-    if (!tooltipFor) return;
-    const handler = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-      if (
-        target.closest("[data-keyword-chip]") ||
-        target.closest("[data-keyword-tooltip]")
-      ) {
-        return;
-      }
-      setTooltipFor(null);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [tooltipFor]);
-  // 근거 보기 아코디언은 시트 내부 로컬 상태로 관리.
-  // 다른 초안 시트를 열면 이전 펼침은 유지되지만, 시트가 다시 열릴 때 명시적으로 접고 싶다면
-  // useEffect로 isOpen/draft 변할 때 false로 리셋하면 된다.
+  // 3.7: BottomSheet 본문을 A 모달과 동일한 디자인으로 통일.
+  // - 헤더: A 스타일 (단, B는 번호 인디케이터 없이)
+  // - 본문: A의 DraftCriteriaCard / DraftDetailBody 구조 + B 특이성(chips, bullet emoji)
+  // - 푸터: A 스타일 "이 초안 선택하기" 버튼
   const [isRationaleOpen, setIsRationaleOpen] = useState(false);
-  const draftMeta = draft?.draftId ? DRAFT_CARD_META[draft.draftId] : undefined;
-  const detailBody = draft?.draftId ? DRAFT_DETAIL_BODY[draft.draftId] : undefined;
+  const chips = draft?.draftId ? DRAFT_DETAIL_CHIPS[draft.draftId] ?? [] : [];
+
   return (
     <div
       className={`absolute inset-0 z-50 flex justify-center transition-opacity duration-300 ${
@@ -708,288 +711,187 @@ function BottomSheet({
         type="button"
       />
       <section
-        className={`absolute bottom-0 left-0 flex h-[calc(100dvh-44px)] max-h-[812px] w-full flex-col overflow-hidden rounded-t-[12px] border border-[rgba(112,115,124,0.22)] bg-white font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
+        className={`absolute bottom-0 left-0 flex h-[89dvh] w-full flex-col rounded-t-[12px] bg-white font-['Pretendard',sans-serif] transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >
-        <div className="flex h-[12px] shrink-0 items-end justify-center">
-          <div className="h-[5px] w-[40px] rounded-[1000px] bg-[rgba(112,115,124,0.16)]" />
+        {/* Drag handle */}
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="h-1 w-10 rounded-full bg-line-solid-strong" />
         </div>
-        <div className="relative flex shrink-0 items-start justify-center px-[16px] py-[24px]">
-          <div className="flex min-w-0 flex-1 items-center px-[4px]">
-            <h2 className="overflow-hidden text-ellipsis whitespace-nowrap text-[20px] font-semibold leading-[28px] tracking-[-0.24px] text-black">
-              {draftMeta?.title ?? draft?.draftTitle ?? "샘플 경력기술서"}
-            </h2>
-          </div>
+
+        {/* Header — A 스타일, 번호 없음 */}
+        <div className="flex items-center justify-between px-4 py-6">
+          <h2 className="text-heading-2 font-bold text-label-strong">
+            {draft?.draftTitle ?? "—"}
+          </h2>
           <button
-            aria-label="닫기"
-            className="flex h-[24px] w-[24px] shrink-0 items-center justify-center"
-            onClick={onClose}
             type="button"
+            onClick={onClose}
+            className="text-label-strong"
+            aria-label="닫기"
           >
-            <X className="h-[24px] w-[24px] text-black" strokeWidth={2} aria-hidden="true" />
+            <X size={24} strokeWidth={2} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-[20px] pb-[24px] [&::-webkit-scrollbar]:hidden">
+        {/* Scrollable content */}
+        <div
+          className="flex-1 overflow-y-auto px-5"
+          style={{ scrollbarGutter: "stable" }}
+        >
+          {/* 초안 작성 기준 카드 */}
           <div
-            className="flex w-full flex-col gap-[16px] rounded-[12px] border border-[#EAF2FE] px-[20px] py-[16px]"
+            className="flex w-full flex-col rounded-xl border p-4 transition-colors"
             style={{
-              background: "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%), #FFFFFF",
+              borderColor: "#EAF2FE",
+              background:
+                "linear-gradient(0deg, #F7F9FF 0%, #FCFDFE 100%), #FFF",
             }}
           >
             <button
               type="button"
               onClick={() => setIsRationaleOpen((v) => !v)}
-              className="flex w-full items-center justify-between text-left"
+              className="flex w-full items-center gap-3 text-left"
               aria-expanded={isRationaleOpen}
             >
-              <span className="flex items-center gap-[8px] text-[16px] font-semibold leading-[24px] tracking-[0.091px] text-[#171719]">
-                <AiOrb size={20} />
+              <AiOrb size={20} />
+              <span className="flex-1 text-body-1 font-medium text-label-normal">
                 초안 작성 기준
               </span>
-              <ChevronUp className={`h-[20px] w-[20px] text-[#171719] transition-transform ${isRationaleOpen ? "" : "rotate-180"}`} strokeWidth={2} aria-hidden="true" />
+              <ChevronDown
+                className={`h-5 w-5 text-label-neutral transition-transform duration-300 ease-out ${
+                  isRationaleOpen ? "rotate-180" : ""
+                }`}
+                strokeWidth={2}
+                aria-hidden="true"
+              />
             </button>
-            {isRationaleOpen && (
-              <>
-                <div className="h-px w-full bg-[rgba(112,115,124,0.16)]" />
-                <div className="flex flex-col gap-[16px]">
-                  <div className="flex flex-col gap-[4px]">
-                    <div className="text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
-                      반영한 내용
-                    </div>
-                    <p className="text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
-                      {draft?.draftDirection ?? "—"} {draft?.whyRecommended ?? ""}
+            <div
+              className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out ${
+                isRationaleOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+              }`}
+              aria-hidden={!isRationaleOpen}
+            >
+              <div className="min-h-0">
+                <div className="mt-4 h-px w-full bg-line-solid-normal" />
+                <div className="mt-4 flex flex-col gap-4">
+                  <div>
+                    <p className="text-body-2-reading text-label-neutral mb-1">
+                      적용된 점
+                    </p>
+                    <p className="text-body-1-reading text-label-normal">
+                      {draft?.whyRecommended ?? "—"}
                     </p>
                   </div>
-
-                  <div className="flex flex-col gap-[4px]">
-                    <div className="text-[14px] font-medium leading-[20px] tracking-[0.203px] text-[rgba(46,47,51,0.88)]">
+                  <div>
+                    <p className="text-body-2-reading text-label-neutral mb-1">
                       보완하면 좋은 점
-                    </div>
-                    <p className="text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
+                    </p>
+                    <p className="text-body-1-reading text-label-normal">
                       {draft?.caution ?? "—"}
                     </p>
                   </div>
                 </div>
-              </>
-            )}
-          </div>
-
-          <div className="mt-[36px] flex flex-col gap-[8px]">
-            <h3 className="text-[20px] font-semibold leading-[28px] tracking-[-1.2px] text-black">
-              {draft?.body.company.split("—")[0].trim() ?? "(주) A 의류 유통 기업"}
-            </h3>
-            <p className="text-[15px] font-normal leading-[24px] tracking-[0.96px] text-[rgba(46,47,51,0.88)]">
-              {draft?.body.period ?? "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장"}
-            </p>
-            <div className="mt-[8px] flex flex-wrap gap-[8px]">
-              {((draft?.draftId ? DRAFT_DETAIL_CHIPS[draft.draftId] : undefined) ?? ["전표 1,500건", "자료 정확도 99%", "회계관리"]).map((chip) => (
-                <span
-                  key={chip}
-                  className="rounded-[8px] bg-[rgba(0,102,255,0.08)] px-[10px] py-[7px] text-[14px] font-semibold leading-[18px] tracking-[0.203px] text-[#0066FF]"
-                >
-                  {chip}
-                </span>
-              ))}
+              </div>
             </div>
           </div>
 
-          <div className="my-[24px] h-px w-full bg-[#E5E5E5]" />
-
-          {/* [동적 본문]
-              - 회사/프로젝트/개요/목표/역할 및 성과 — draft.body 기준
-              - A 타입: AI 정확율 칩(blue/purple)은 렌더 안 함.
-                gray 칩(사용자 실제 발화)만 본문 아래에 회색 언더라인 텍스트로 표시. */}
-          <div className="flex flex-col gap-[24px] text-[15px] tracking-[0.96px] text-[#171719]">
-            <section className="flex flex-col gap-[6px]">
-              <p className="text-[18px] font-semibold leading-[26px] tracking-[-0.02px] text-[#171719]">
-                {detailBody?.projectTitle ?? draft?.body.projectTitle.replace("프로젝트 1 ·", "[프로젝트 1]") ?? "—"}
+          {/* 본문 — A의 DraftDetailBody 구조 + B 특이성(chips, emoji) */}
+          <div className="flex flex-col gap-6 pb-2 pt-9">
+            {/* 회사명 + 기간 + chips */}
+            <div className="flex flex-col gap-1 px-1">
+              <h3 className="text-headline-1 font-bold text-label-normal">
+                {draft?.body.company.split("—")[0].trim() ?? "—"}
+              </h3>
+              <p className="text-body-2-reading text-label-neutral">
+                {draft?.body.period ?? "—"}
               </p>
-            </section>
-
-            <section className="flex flex-col gap-[8px]">
-              <p className="text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[#171719]">
-                {detailBody?.overview ?? draft?.body.overview ?? "—"}
-              </p>
-            </section>
-
-            <section className="flex flex-col gap-[10px]">
-              <p className="text-[18px] font-semibold leading-[26px] tracking-[-0.02px] text-[#171719]">업무 상세</p>
-              {detailBody ? (
-                <div className="flex flex-col gap-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
-                  {detailBody.goals.map((goal) => (
-                    <p key={goal}>{goal}</p>
+              {chips.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {chips.map((chip) => (
+                    <span
+                      key={chip}
+                      className="rounded-lg bg-[rgba(0,102,255,0.08)] px-2.5 py-1.5 text-body-2-reading font-semibold text-[#0066FF]"
+                    >
+                      {chip}
+                    </span>
                   ))}
                 </div>
-              ) : (
-                <>
-              {(draft?.body.goals ?? []).map((bullet, idx) => {
-                const isRevised =
-                  appliedRevision && bullet.text === appliedRevision.originalSentence;
-                const keywords = draft?.draftId ? SENTENCE_KEYWORDS[draft.draftId] : undefined;
-                const tag = keywords?.goals[idx];
-                const chipKey = `goal-${idx}`;
-                return (
-                  <div key={`goal-${idx}`} className="flex flex-col gap-[6px]">
-                    {isRevised ? (
-                      <>
-                        <p className="font-normal leading-[22px]">
-                          -{" "}
-                          <span
-                            style={{
-                              background: "rgba(255,220,80,0.55)",
-                              padding: "1px 4px",
-                              borderRadius: 2,
-                              boxDecorationBreak: "clone",
-                              WebkitBoxDecorationBreak: "clone",
-                            }}
-                          >
-                            {appliedRevision.revisedSentence}
-                          </span>
-                        </p>
-                        <p
-                          className="leading-[20px]"
-                          style={{ fontSize: 13, color: "#0066FF", paddingLeft: 14 }}
-                        >
-                          {appliedRevision.changeReason}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="font-normal leading-[22px]">- {bullet.text}</p>
-                    )}
-                    {tag && (
-                      <div className="relative ml-[14px] self-start">
-                        <button
-                          type="button"
-                          data-keyword-chip="true"
-                          onClick={() =>
-                            setTooltipFor(tooltipFor === chipKey ? null : chipKey)
-                          }
-                          className="inline-flex items-center gap-[4px] rounded-[6px] border px-[8px] py-[4px] text-[12px] font-medium leading-none transition"
-                          style={{
-                            borderColor: "rgba(0,102,255,0.24)",
-                            background: "rgba(0,102,255,0.08)",
-                            color: "#0066FF",
-                          }}
-                          aria-expanded={tooltipFor === chipKey}
-                        >
-                          <span>{tag}</span>
-                          <Info className="h-[12px] w-[12px]" strokeWidth={2} aria-hidden="true" />
-                        </button>
-                        {tooltipFor === chipKey && (
-                          <div
-                            role="tooltip"
-                            data-keyword-tooltip="true"
-                            className="absolute left-0 top-[calc(100%+6px)] z-50 max-w-[260px] rounded-[8px] px-[10px] py-[8px] text-[12px] leading-[18px] text-white shadow-lg"
-                            style={{ background: "#171719" }}
-                          >
-                            {tooltipForKeyword(tag, roleLabel)}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-                </>
               )}
-            </section>
+              <div className="mt-5 h-px w-full bg-line-solid-normal" />
+            </div>
 
-            <section className="flex flex-col gap-[10px] border-t border-[#E5E5E5] pt-[24px]">
-              <p className="text-[18px] font-semibold leading-[26px] tracking-[-0.02px] text-[#171719]">역할 및 성과</p>
-              {detailBody ? (
-                <div className="flex flex-col gap-[4px] text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
-                  {detailBody.roleAndResults.map((result) => (
-                    <p key={result}>{result}</p>
-                  ))}
-                </div>
-              ) : (
-                <>
-              {(draft?.body.roleAndResults ?? []).map((bullet, idx) => {
-                const isRevised =
-                  appliedRevision && bullet.text === appliedRevision.originalSentence;
-                const keywords = draft?.draftId ? SENTENCE_KEYWORDS[draft.draftId] : undefined;
-                const tag = keywords?.roleAndResults[idx];
-                const chipKey = `role-${idx}`;
-                return (
-                  <div key={`role-${idx}`} className="flex flex-col gap-[6px]">
-                    {isRevised ? (
-                      <>
-                        <p className="font-normal leading-[22px]">
-                          -{" "}
-                          <span
-                            style={{
-                              background: "rgba(255,220,80,0.55)",
-                              padding: "1px 4px",
-                              borderRadius: 2,
-                              boxDecorationBreak: "clone",
-                              WebkitBoxDecorationBreak: "clone",
-                            }}
-                          >
-                            {appliedRevision.revisedSentence}
-                          </span>
-                        </p>
-                        <p
-                          className="leading-[20px]"
-                          style={{ fontSize: 13, color: "#0066FF", paddingLeft: 14 }}
-                        >
-                          {appliedRevision.changeReason}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="font-normal leading-[22px]">- {bullet.text}</p>
-                    )}
-                    {tag && (
-                      <div className="relative ml-[14px] self-start">
-                        <button
-                          type="button"
-                          data-keyword-chip="true"
-                          onClick={() =>
-                            setTooltipFor(tooltipFor === chipKey ? null : chipKey)
-                          }
-                          className="inline-flex items-center gap-[4px] rounded-[6px] border px-[8px] py-[4px] text-[12px] font-medium leading-none transition"
-                          style={{
-                            borderColor: "rgba(0,102,255,0.24)",
-                            background: "rgba(0,102,255,0.08)",
-                            color: "#0066FF",
-                          }}
-                          aria-expanded={tooltipFor === chipKey}
-                        >
-                          <span>{tag}</span>
-                          <Info className="h-[12px] w-[12px]" strokeWidth={2} aria-hidden="true" />
-                        </button>
-                        {tooltipFor === chipKey && (
-                          <div
-                            role="tooltip"
-                            data-keyword-tooltip="true"
-                            className="absolute left-0 top-[calc(100%+6px)] z-50 max-w-[260px] rounded-[8px] px-[10px] py-[8px] text-[12px] leading-[18px] text-white shadow-lg"
-                            style={{ background: "#171719" }}
-                          >
-                            {tooltipForKeyword(tag, roleLabel)}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-                </>
-              )}
-            </section>
+            {/* 프로젝트 */}
+            <div className="flex flex-col gap-3 px-1">
+              <h3 className="text-headline-1 font-bold text-label-normal">
+                {draft?.body.projectTitle.replace("프로젝트 1 ·", "[프로젝트 1]") ?? "—"}
+              </h3>
+              <p className="text-body-1-reading text-label-normal">
+                {draft?.body.overview ?? "—"}
+              </p>
+            </div>
+
+            {/* 업무 상세 */}
+            <div className="flex flex-col gap-1 px-1">
+              <h4 className="text-headline-1 font-bold text-label-normal">
+                업무 상세
+              </h4>
+              <ul className="flex flex-col gap-1 pt-3">
+                {(draft?.body.goals ?? []).map((bullet, i) => (
+                  <li
+                    key={i}
+                    className="text-body-1-reading text-label-normal flex gap-2 px-1"
+                  >
+                    <span aria-hidden="true">{bullet.emoji ?? "•"}</span>
+                    <span className="flex-1">{bullet.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* 역할 및 성과 */}
+            <div className="flex flex-col gap-1 px-1">
+              <h4 className="text-headline-1 font-bold text-label-normal">
+                역할 및 성과
+              </h4>
+              <ul className="flex flex-col gap-1 pt-3">
+                {(draft?.body.roleAndResults ?? []).map((bullet, i) => (
+                  <li
+                    key={i}
+                    className="text-body-1-reading text-label-normal flex gap-2 px-1"
+                  >
+                    <span aria-hidden="true">{bullet.emoji ?? "•"}</span>
+                    <span className="flex-1">{bullet.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-        <div className="shrink-0 px-[20px] pb-[34px] pt-[20px]">
-          <button
-            type="button"
-            disabled={!draft}
-            onClick={() => {
-              if (draft) onSelect(draft);
+
+        {/* CTA + 흰색 fade */}
+        <div className="relative w-full">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-10 left-0 right-0 h-10"
+            style={{
+              background:
+                "linear-gradient(0deg, #FFFFFF 0%, rgba(255, 255, 255, 0) 100%)",
             }}
-            className="flex w-full items-center justify-center rounded-[12px] bg-[#0066FF] px-[28px] py-[14px] text-[17px] font-semibold leading-[24px] text-white disabled:bg-[#C4C6CA]"
-          >
-            이 초안 선택하기
-          </button>
+          />
+          <div className="px-7 py-3.5">
+            <button
+              type="button"
+              disabled={!draft}
+              onClick={() => {
+                if (draft) onSelect(draft);
+              }}
+              className="w-full self-stretch rounded-xl bg-primary-normal px-7 py-3.5 text-center text-headline-2 font-bold text-static-white transition-colors hover:bg-primary-strong active:bg-primary-heavy disabled:bg-[#C4C6CA]"
+            >
+              이 초안 선택하기
+            </button>
+          </div>
         </div>
       </section>
     </div>
@@ -1088,8 +990,15 @@ export default function Page() {
     DEFAULT_AGENT_STATE.decisionStatus
   );
   // CM1에서 사용자가 비교 가능한 전체 초안 목록.
-  // 현재는 SAMPLE_DRAFTS로 초기화하지만, 추후 API에서 받아오도록 바꿀 수 있다.
-  const [draftOptions, setDraftOptions] = useState<Draft[]>(SAMPLE_DRAFTS);
+  // ─── 시나리오 데이터 어댑터 ─────────────────────────────────
+  // URL 파라미터(?s=<scenarioId>)에서 현재 시나리오를 받아 scenarioDrafts에 담는다.
+  const scenario = useScenario();
+  const scenarioDrafts = useMemo<Draft[]>(
+    () => scenario.drafts.map((d) => toLegacyDraft(d, scenario.persona)),
+    [scenario]
+  );
+
+  const [draftOptions, setDraftOptions] = useState<Draft[]>(scenarioDrafts);
   // CM1에서 사용자가 선택한 '전체 초안'. CM2로 진입할 때 채워진다.
   const [selectedDraft, setSelectedDraft] = useState<SelectedDraft>(
     DEFAULT_AGENT_STATE.selectedDraft
@@ -1191,7 +1100,7 @@ export default function Page() {
     const SPEED = 30;
     const GAP = 200;
     const lines = [
-      `아래 ${SAMPLE_DRAFTS.length}가지 방향의 경력기술서 초안을 준비했습니다.`,
+      `아래 ${scenarioDrafts.length}가지 방향의 경력기술서 초안을 준비했습니다.`,
       "각 초안은 같은 경험을 바탕으로 하지만, 강조하는 방향이 다릅니다.",
       "먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요.",
       "선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다.",
@@ -1346,7 +1255,7 @@ export default function Page() {
     // selectedDraft / currentAiDraft / decisionStatus를 함께 갱신한다.
     // findDraftBySampleIndex는 Draft | undefined를 반환하므로 가드 필요.
     if (trimmedMessage.includes("샘플 경력기술서 1")) {
-      const draft = findDraftBySampleIndex(0);
+      const draft = scenarioDrafts[0];
       if (draft) {
         setEditingSampleIndex(0);
         setSelectedDraft(draft);
@@ -1355,7 +1264,7 @@ export default function Page() {
         setDecisionStatus("selected");
       }
     } else if (trimmedMessage.includes("샘플 경력기술서 2")) {
-      const draft = findDraftBySampleIndex(1);
+      const draft = scenarioDrafts[1];
       if (draft) {
         setEditingSampleIndex(1);
         setSelectedDraft(draft);
@@ -1621,7 +1530,7 @@ export default function Page() {
 
   const openBottomSheet = (index: number) => {
     console.log("샘플 경력기술서 클릭됨", index);
-    const draft = SAMPLE_DRAFTS[index] ?? selectedDraft ?? null;
+    const draft = scenarioDrafts[index] ?? selectedDraft ?? null;
     if (draft) setBottomSheetDraft(draft);
     setIsOpen(true);
   };
@@ -1667,7 +1576,7 @@ export default function Page() {
   // sendMessage 흐름(STAGES/AI) 대신, CM2 진입에 맞는 안내 + 수정 카드를 직접 push한다.
   const commitCm1Selection = () => {
     if (!cm1Candidate) return;
-    const index = SAMPLE_DRAFTS.findIndex((d) => d.draftId === cm1Candidate.draftId);
+    const index = scenarioDrafts.findIndex((d) => d.draftId === cm1Candidate.draftId);
     if (index >= 0) setEditingSampleIndex(index);
     setSelectedDraft(cm1Candidate);
     setCurrentStep("CM2");
@@ -1960,7 +1869,7 @@ export default function Page() {
                 <AiOrb size={40} />
                 <div className="flex w-full flex-col items-center gap-[8px]">
                   <h2 className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[22px] font-semibold leading-[30px] tracking-[-0.427px] text-black">
-                    {`${Math.max(1, SAMPLE_DRAFTS.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1)}번 초안을 선택했어요`}
+                    {`${Math.max(1, scenarioDrafts.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1)}번 초안을 선택했어요`}
                   </h2>
                   <p className="w-full text-[16px] font-normal leading-[26px] tracking-[0.091px] text-[rgba(46,47,51,0.88)]">
                     내용을 AI와 함께 더 다듬을 수 있어요
@@ -2123,7 +2032,7 @@ export default function Page() {
                   </div>
 
                   <section className="mt-[54px] flex flex-col gap-[8px]">
-                  {SAMPLE_DRAFTS.map((draft) => {
+                  {scenarioDrafts.map((draft) => {
                     const draftCardMeta = DRAFT_CARD_META[draft.draftId] ?? {
                       title: draft.draftTitle,
                       description: draft.draftDirection,
