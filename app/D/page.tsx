@@ -22,12 +22,20 @@ import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
 interface ProgressSectionProps {
   completedCount: number;
   totalCount?: number;
+  isScrolled?: boolean;
 }
 
-function ProgressSection({ completedCount, totalCount = 2 }: ProgressSectionProps) {
+function ProgressSection({ completedCount, totalCount = 2, isScrolled = false }: ProgressSectionProps) {
   const isFull = completedCount === totalCount;
   return (
-    <div className="flex flex-col gap-[8px] px-[20px] pb-[12px]">
+    <div
+      className="flex flex-col gap-[8px] px-[20px] pb-[12px] z-10"
+      style={isScrolled ? {
+        boxShadow: '0 4px 10px rgba(0,0,0,0.10)',
+        overflow: 'hidden',
+        clipPath: 'inset(0px -10px -10px -10px)',
+      } : undefined}
+    >
       <div className="flex justify-end">
         <div className={`rounded-[8px] px-[4px] py-[5px] ${isFull ? 'bg-[#E5F2FF]' : 'bg-[#FEECEC]'}`}>
           <span className={`text-[12px] font-normal leading-[16px] tracking-[0.3024px] ${isFull ? 'text-[#0066FF]' : 'text-[#E52222]'}`}>
@@ -1112,35 +1120,126 @@ interface AiChatScreenProps {
   draftTitle: string;
   onScrollChange: (scrolled: boolean) => void;
   onFinish: () => void;
+  isChatScrolled: boolean;
 }
-function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProps) {
+function AiChatScreen({ draftTitle, onScrollChange, onFinish, isChatScrolled }: AiChatScreenProps) {
   const draftData = DRAFT_DATA[1];
   const [completedCount, setCompletedCount] = useState(0);
   const [isFirstBadgeModified, setIsFirstBadgeModified] = useState(false);
   const [isSecondBadgeModified, setIsSecondBadgeModified] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [messages, setMessages] = useState<Array<{ kind: "user" | "ai"; content: string; sections?: Array<{ label: string; content: string }> }>>([]);
+  const [achievementRevisions, setAchievementRevisions] = useState<Record<number, { original: string; revised: string; isModified: boolean }>>({});
+  const totalCount = 2 + Object.keys(achievementRevisions).length;
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     onScrollChange(e.currentTarget.scrollTop > 0);
   };
 
   const handleFirstBadgeTap = () => {
-    setIsFirstBadgeModified((prev) => {
-      const newState = !prev;
-      setCompletedCount((prevCount) => prevCount + (newState ? 1 : -1));
-      return newState;
-    });
+    if (!isFirstBadgeModified) {
+      setIsFirstBadgeModified(true);
+      setCompletedCount((c) => Math.min(c + 1, totalCount));
+    } else {
+      setIsFirstBadgeModified(false);
+      setCompletedCount((c) => Math.max(c - 1, 0));
+    }
   };
 
   const handleSecondBadgeTap = () => {
-    setIsSecondBadgeModified((prev) => {
-      const newState = !prev;
-      setCompletedCount((prevCount) => prevCount + (newState ? 1 : -1));
-      return newState;
+    if (!isSecondBadgeModified) {
+      setIsSecondBadgeModified(true);
+      setCompletedCount((c) => Math.min(c + 1, totalCount));
+    } else {
+      setIsSecondBadgeModified(false);
+      setCompletedCount((c) => Math.max(c - 1, 0));
+    }
+  };
+
+  const handleAchievementRevisionTap = (index: number) => {
+    const current = achievementRevisions[index];
+    if (!current) return;
+
+    if (!current.isModified) {
+      setAchievementRevisions((prev) => ({
+        ...prev,
+        [index]: {
+          ...prev[index],
+          isModified: true,
+        },
+      }));
+      setCompletedCount((c) => Math.min(c + 1, totalCount));
+    } else {
+      setAchievementRevisions((prev) => ({
+        ...prev,
+        [index]: {
+          ...prev[index],
+          isModified: false,
+        },
+      }));
+      setCompletedCount((c) => Math.max(c - 1, 0));
+    }
+  };
+
+  const handleApplyRevision = (section: { label: string; content: string }) => {
+    const parts = section.content.split("→");
+    const revised = parts.length === 2 ? parts[1].trim() : section.content.trim();
+
+    setAchievementRevisions((prev) => {
+      const next = { ...prev };
+
+      // Find first available achievement index
+      let availableIndex = -1;
+      draftData.achievements.forEach((achievement, index) => {
+        if (next[index]) return;
+        if (availableIndex === -1) availableIndex = index;
+      });
+
+      if (availableIndex !== -1) {
+        next[availableIndex] = {
+          original: draftData.achievements[availableIndex],
+          revised,
+          isModified: false,
+        };
+      }
+
+      return next;
     });
   };
 
-  const handleSend = () => {
+  const handleApplyAllRevisions = (sections: Array<{ label: string; content: string }>) => {
+    const revisionSections = sections.filter(
+      (section) => (section.label?.includes("수정") || section.label?.includes("적용")) && section.content
+    );
+
+    setAchievementRevisions((prev) => {
+      const next = { ...prev };
+
+      revisionSections.forEach((section) => {
+        const parts = section.content.split("→");
+        const revised = parts.length === 2 ? parts[1].trim() : section.content.trim();
+
+        // Find first available achievement index
+        let availableIndex = -1;
+        draftData.achievements.forEach((achievement, index) => {
+          if (next[index]) return;
+          if (availableIndex === -1) availableIndex = index;
+        });
+
+        if (availableIndex !== -1) {
+          next[availableIndex] = {
+            original: draftData.achievements[availableIndex],
+            revised,
+            isModified: false,
+          };
+        }
+      });
+
+      return next;
+    });
+  };
+
+  const handleSend = async () => {
     const text = chatInput.trim();
     if (!text) return;
     if (text === "완료했어요") {
@@ -1148,18 +1247,74 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
       return;
     }
     setChatInput("");
+
+    // Add user message
+    setMessages((prev) => [...prev, { kind: "user", content: text }]);
+
+    // Check for selective revision application
+    if (text.includes("1안") && (text.includes("만 적용") || text.includes("으로"))) {
+      // Apply only first revision section
+      const lastAiMessage = messages[messages.length - 1];
+      if (lastAiMessage?.kind === "ai" && lastAiMessage.sections) {
+        const revisionSections = lastAiMessage.sections.filter(
+          (section) => (section.label?.includes("수정") || section.label?.includes("적용")) && section.content
+        );
+        if (revisionSections.length > 0) {
+          handleApplyRevision(revisionSections[0]);
+        }
+      }
+    } else if (text.includes("2안") && (text.includes("만 적용") || text.includes("으로"))) {
+      // Apply only second revision section
+      const lastAiMessage = messages[messages.length - 1];
+      if (lastAiMessage?.kind === "ai" && lastAiMessage.sections) {
+        const revisionSections = lastAiMessage.sections.filter(
+          (section) => (section.label?.includes("수정") || section.label?.includes("적용")) && section.content
+        );
+        if (revisionSections.length > 1) {
+          handleApplyRevision(revisionSections[1]);
+        }
+      }
+    }
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [
+            ...messages.map((msg) => ({
+              type: msg.kind === "user" ? "user" : "assistant",
+              text: msg.content,
+            })),
+            { type: "user", text },
+          ],
+          prototypeType: "D",
+          typeStylePrompt: "",
+          userMessage: `${text}\n\n[현재 초안 내용]\n${JSON.stringify(draftData, null, 2)}`,
+          currentAiDraft: draftData.achievements.join("\n"),
+        }),
+      });
+      const data = await response.json();
+      // Add AI message with sections
+      setMessages((prev) => [...prev, { kind: "ai", content: data.text || "", sections: data.sections }]);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
   };
 
   const handleReset = () => {
     setIsFirstBadgeModified(false);
     setIsSecondBadgeModified(false);
+    setAchievementRevisions({});
     setCompletedCount(0);
   };
 
   return (
     <>
       {/* Progress Section */}
-      <ProgressSection completedCount={completedCount} totalCount={2} />
+      <ProgressSection completedCount={completedCount} totalCount={totalCount} isScrolled={isChatScrolled} />
 
       {/* Scrollable content */}
       <div
@@ -1190,7 +1345,7 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
           </div>
 
           {/* Draft Content Card */}
-          <div className="flex w-full flex-col overflow-hidden rounded-[16px] border border-[rgba(112,115,124,0.22)] bg-white px-[20px] py-[30px]">
+          <div className="flex w-full flex-col gap-[24px] overflow-hidden rounded-[16px] border border-[rgba(112,115,124,0.22)] bg-white px-[20px] py-[30px]">
             {/* Company & Period */}
             <div className="flex w-full flex-col gap-[5px] px-[4px]">
               <h3 className="text-[18px] font-semibold leading-[26px] tracking-[-0.0036px] text-[#171719]">
@@ -1202,7 +1357,7 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
             </div>
 
             {/* Divider */}
-            <div className="h-px w-full bg-[rgba(112,115,124,0.22)] my-[24px]" />
+            <div className="h-px w-full bg-[rgba(112,115,124,0.22)]" />
 
             {/* Project Info */}
             <div className="flex w-full flex-col gap-[12px] px-[4px]">
@@ -1235,9 +1390,12 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
               </h4>
               <div className="flex flex-col gap-[4px]">
                 {draftData.achievements.map((item, i) => {
+                  // Check if this achievement has a revision
+                  const revision = achievementRevisions[i];
+                  
                   if (i === 1) {
                     return (
-                      <li key={i} className="ml-[24px] list-disc text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)] relative">
+                      <li key={i} className="ml-[24px] list-disc text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)] relative" onClick={(e) => e.stopPropagation()}>
                         외부 감사{' '}
                         <span
                           onClick={handleFirstBadgeTap}
@@ -1279,6 +1437,18 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
                       </li>
                     );
                   }
+                  
+                  // Handle revision badge
+                  if (revision) {
+                    return (
+                      <li key={i} className="ml-[24px] list-disc text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)] cursor-pointer" onClick={() => handleAchievementRevisionTap(i)}>
+                        <span className={revision.isModified ? "bg-[#E5F2FF] px-[3px] py-0 text-[16px] font-semibold leading-[30px] tracking-[0.0912px] text-[#0066FF]" : "bg-[#FEECEC] px-[3px] py-0 text-[16px] font-semibold leading-[30px] tracking-[0.0912px] text-[#FF4242]"}>
+                          {revision.isModified ? revision.revised : (revision.original || "")}
+                        </span>
+                      </li>
+                    );
+                  }
+                  
                   return (
                     <li key={i} className="ml-[24px] list-disc text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)]">
                       {item}
@@ -1288,25 +1458,83 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
               </div>
             </div>
           </div>
+
+          {/* Action Buttons */}
+          <div className="flex w-full gap-[8px]">
+            <button
+              type="button"
+              onClick={handleSend}
+              className="flex h-[44px] items-center justify-center rounded-[10px] bg-[#0066FF] px-[16px] py-[8px] text-[15px] font-semibold leading-[24px] tracking-[0.144px] text-white"
+            >
+              이대로 반영하기
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="flex h-[44px] items-center justify-center rounded-[10px] border border-[#0066FF] bg-white px-[16px] py-[8px] text-[15px] font-semibold leading-[24px] tracking-[0.144px] text-[#0066FF]"
+            >
+              처음으로 되돌리기
+            </button>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="flex w-full flex-col items-end gap-[48px]">
+            {messages.map((message, index) => {
+              if (message.kind === "user") {
+                return (
+                  <div key={index} className="max-w-[300px] rounded-2xl border border-[rgba(112,115,124,0.22)] bg-[#F5F5F5] px-[16px] py-[12px]">
+                    <p className="text-[16px] font-medium leading-[26px] tracking-[0.0912px] text-[#171719]">
+                      {message.content}
+                    </p>
+                  </div>
+                );
+              }
+              if (message.kind === "ai") {
+                return (
+                  <div key={index} className="flex w-full flex-col items-start gap-[16px]">
+                    <div className="flex items-center gap-[8px]">
+                      <AiOrb size={20} />
+                      <span className="text-[16px] font-semibold leading-[26px] tracking-[0.0912px] text-[#171719]">
+                        AI 에이전트
+                      </span>
+                    </div>
+                    <p className="text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)]">
+                      {message.content}
+                    </p>
+                    {message.sections && message.sections.length > 0 && (
+                      <div className="flex flex-col gap-[4px]">
+                        {message.sections.map((section, sectionIndex) => (
+                          <p key={sectionIndex} className="text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)]">
+                            • {section.label}: {section.content}
+                          </p>
+                        ))}
+                        <div className="mt-[16px]">
+                          {message.sections.some((section) => section.label?.includes("수정") || section.label?.includes("적용")) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (message.sections) handleApplyAllRevisions(message.sections);
+                              }}
+                              className="self-start rounded-[10px] border border-[#0066FF] bg-transparent px-[16px] py-[10px] text-[15px] font-semibold leading-[24px] tracking-[0.144px] text-[#0066FF]"
+                            >
+                              모두 적용하기
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Bottom Buttons */}
-      <div className="flex w-full gap-[8px] px-[20px] py-[16px] pb-[calc(20px+env(safe-area-inset-bottom))]">
-        <button
-          type="button"
-          onClick={handleSend}
-          className="flex h-[44px] items-center justify-center rounded-[10px] bg-[#0066FF] px-[16px] py-[8px] text-[15px] font-semibold leading-[24px] tracking-[0.144px] text-white"
-        >
-          이대로 반영하기
-        </button>
-        <button
-          type="button"
-          onClick={handleReset}
-          className="flex h-[44px] items-center justify-center rounded-[10px] border border-[#0066FF] bg-white px-[16px] py-[8px] text-[15px] font-semibold leading-[24px] tracking-[0.144px] text-[#0066FF]"
-        >
-          처음으로 되돌리기
-        </button>
+      {/* Chat Input */}
+      <div className="flex w-full flex-col items-center gap-[16px] bg-white px-[20px] py-[16px] pb-[calc(20px+env(safe-area-inset-bottom))]">
+        <ChatInput value={chatInput} onChange={setChatInput} onSend={handleSend} />
       </div>
     </>
   );
@@ -1395,7 +1623,7 @@ export default function APage() {
       {(screen === "cm1-complete" || screen === "cm2-loading" || screen === "cm2-chat") && <BackgroundEllipses />}
 
       <StatusBar />
-      <PageTitleBar showBorderBottom={screen === "cm2-chat" && isChatScrolled} />
+      <PageTitleBar />
 
       {screen === "start" && (
         <StartScreen onStart={() => setScreen("cm1-complete")} />
@@ -1416,6 +1644,7 @@ export default function APage() {
           draftTitle={DRAFT_DATA[1].title}
           onScrollChange={setIsChatScrolled}
           onFinish={() => setScreen("end")}
+          isChatScrolled={isChatScrolled}
         />
       )}
       {screen === "end" && <EndScreen draftTitle={DRAFT_DATA[1].title} />}
