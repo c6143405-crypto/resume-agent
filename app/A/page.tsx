@@ -1474,6 +1474,10 @@ export default function APage() {
 
   const [screen, setScreen] = useState<Screen>("start");
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
+  // ─── 3.5: CM2 진입 시점에 확정된 초안 인덱스 보존 ───────────────
+  // selectedDraft는 모달 표시/닫힘용이라 onSelect에서 null로 리셋되지만,
+  // 이 값은 사용자가 실제로 CM2로 가져간 초안 인덱스를 기억해 chat API에 전달한다.
+  const [confirmedDraftIndex, setConfirmedDraftIndex] = useState<number | null>(null);
   const [isChatScrolled, setIsChatScrolled] = useState(false);
 
   // 화면별 페이지 배경 — body / 상태바 영역과 동기화하기 위해 별도 변수로 추출
@@ -1510,21 +1514,21 @@ export default function APage() {
       {screen === "cm2-loading" && (
         <Cm02LoadingScreen
           draftIndex={1}
-          draftTitle={draftDataMap[1].title}
+          draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title}
           onRefine={() => setScreen("cm2-chat")}
           onFinalize={() => console.log("finalize — End 화면 (Phase 3a 마무리)")}
         />
       )}
       {screen === "cm2-chat" && (
         <AiChatScreen
-          draftTitle={draftDataMap[1].title}
-          selectedDraftData={draftDataMap[1]}
+          draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title}
+          selectedDraftData={draftDataMap[confirmedDraftIndex ?? 1]}
           draftOptionsMap={draftDataMap}
           onScrollChange={setIsChatScrolled}
           onFinish={() => setScreen("end")}
         />
       )}
-      {screen === "end" && <EndScreen draftTitle={draftDataMap[1].title} />}
+      {screen === "end" && <EndScreen draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title} />}
 
       <HomeBar />
 
@@ -1535,6 +1539,7 @@ export default function APage() {
           data={draftDataMap[selectedDraft]}
           onClose={() => setSelectedDraft(null)}
           onSelect={() => {
+            setConfirmedDraftIndex(selectedDraft);
             setSelectedDraft(null);
             setScreen("cm2-loading");
           }}
