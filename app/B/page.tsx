@@ -12,7 +12,6 @@ import type {
 } from "../agent-state";
 import { DEFAULT_AGENT_STATE } from "../agent-state";
 import { classifyUserIntent } from "../classify-intent";
-import { findDraftBySampleIndex, SAMPLE_DRAFTS } from "../drafts";
 import { useScenario } from "../hooks/useScenario";
 import type { Draft as ScenarioDraft, ScenarioPersona } from "../scenarios";
 import { B_TYPE_PROMPT } from "./style-prompt";
@@ -1283,7 +1282,6 @@ export default function Page() {
     // [CM1 → CM2 전이]
     // 사용자가 두 초안 중 하나를 '고치고 싶다'고 선택한 순간 CM2로 넘어간다.
     // selectedDraft / currentAiDraft / decisionStatus를 함께 갱신한다.
-    // findDraftBySampleIndex는 Draft | undefined를 반환하므로 가드 필요.
     if (trimmedMessage.includes("샘플 경력기술서 1")) {
       const draft = scenarioDrafts[0];
       if (draft) {
