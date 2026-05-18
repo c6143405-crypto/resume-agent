@@ -1,5 +1,8 @@
 "use client";
 
+// Next.js: useSearchParams는 Suspense 또는 dynamic 렌더링 필요
+export const dynamic = "force-dynamic";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { AiOrb } from "../components/AiOrb";
