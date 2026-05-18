@@ -679,11 +679,12 @@ function DraftDetailBody({ data }: { data: DraftData }) {
 // ─── 모달 (DraftDetail BottomSheet) ───────────────────────────────────
 interface DraftDetailModalProps {
   draftIndex: number;
+  data: DraftData;
   onClose: () => void;
   onSelect: () => void;
 }
-function DraftDetailModal({ draftIndex, onClose, onSelect }: DraftDetailModalProps) {
-  const data = DRAFT_DATA[draftIndex];
+function DraftDetailModal({ draftIndex, data, onClose, onSelect }: DraftDetailModalProps) {
+  // data는 부모(APage)가 draftDataMap[draftIndex]로 미리 매핑해 prop으로 전달한다.
   const [isVisible, setIsVisible] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -1137,10 +1138,16 @@ function RefinementItemBlock({
 // ─── AI Chat 화면 (CM 02 후반) ────────────────────────────────────────
 interface AiChatScreenProps {
   draftTitle: string;
+  // selectedDraftData: chat API에 전달할 현재 선택된 초안 데이터.
+  //   3.2b 단계에서는 부모가 항상 draftDataMap[1] (직무 적합 중심)을 넘긴다.
+  //   3.5 단계에서 사용자 실제 선택 인덱스로 연동 예정.
+  selectedDraftData: DraftData;
+  // draftOptionsMap: chat API의 draftOptions로 전송할 전체 초안 매핑.
+  draftOptionsMap: Record<number, DraftData>;
   onScrollChange: (scrolled: boolean) => void;
   onFinish: () => void;
 }
-function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProps) {
+function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScrollChange, onFinish }: AiChatScreenProps) {
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [confirmPreviewOpen, setConfirmPreviewOpen] = useState(false);
@@ -1223,20 +1230,20 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish }: AiChatScreenProp
           currentAiDraft: firstItem.revised ?? firstItem.original,
           selectedDraft: {
             draftId: "1",
-            draftTitle: DRAFT_DATA[1].title,
+            draftTitle: selectedDraftData.title,
             draftContent: [
-              DRAFT_DATA[1].company,
-              DRAFT_DATA[1].period,
-              DRAFT_DATA[1].project,
-              DRAFT_DATA[1].description,
-              ...DRAFT_DATA[1].tasks,
-              ...DRAFT_DATA[1].achievements,
+              selectedDraftData.company,
+              selectedDraftData.period,
+              selectedDraftData.project,
+              selectedDraftData.description,
+              ...selectedDraftData.tasks,
+              ...selectedDraftData.achievements,
             ].join("\n"),
-            draftDirection: DRAFT_DATA[1].title,
-            whyRecommended: DRAFT_DATA[1].criteria.applied,
-            caution: DRAFT_DATA[1].criteria.improve,
+            draftDirection: selectedDraftData.title,
+            whyRecommended: selectedDraftData.criteria.applied,
+            caution: selectedDraftData.criteria.improve,
           },
-          draftOptions: Object.entries(DRAFT_DATA).map(([draftId, draft]) => ({
+          draftOptions: Object.entries(draftOptionsMap).map(([draftId, draft]) => ({
             draftId,
             draftTitle: draft.title,
             draftContent: [
@@ -1582,19 +1589,21 @@ export default function APage() {
       {screen === "cm2-loading" && (
         <Cm02LoadingScreen
           draftIndex={1}
-          draftTitle={DRAFT_DATA[1].title}
+          draftTitle={draftDataMap[1].title}
           onRefine={() => setScreen("cm2-chat")}
           onFinalize={() => console.log("finalize — End 화면 (Phase 3a 마무리)")}
         />
       )}
       {screen === "cm2-chat" && (
         <AiChatScreen
-          draftTitle={DRAFT_DATA[1].title}
+          draftTitle={draftDataMap[1].title}
+          selectedDraftData={draftDataMap[1]}
+          draftOptionsMap={draftDataMap}
           onScrollChange={setIsChatScrolled}
           onFinish={() => setScreen("end")}
         />
       )}
-      {screen === "end" && <EndScreen draftTitle={DRAFT_DATA[1].title} />}
+      {screen === "end" && <EndScreen draftTitle={draftDataMap[1].title} />}
 
       <HomeBar />
 
@@ -1602,6 +1611,7 @@ export default function APage() {
       {selectedDraft !== null && (
         <DraftDetailModal
           draftIndex={selectedDraft}
+          data={draftDataMap[selectedDraft]}
           onClose={() => setSelectedDraft(null)}
           onSelect={() => {
             setSelectedDraft(null);
