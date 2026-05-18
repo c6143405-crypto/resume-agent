@@ -15,7 +15,7 @@ const JOB_OPTIONS: { label: string; scenarioId: string }[] = [
   { label: "금융 / 재무 / 회계", scenarioId: "accounting-manager" },
   { label: "영업 / 마케팅", scenarioId: "sales-marketing" },
   { label: "기획 / 전략", scenarioId: "planning-strategy" },
-  { label: "행정 / 공공", scenarioId: "general-office" },
+  { label: "행정 / 공공", scenarioId: "public-administration" },
   { label: "교육 / 연구", scenarioId: "general-office" },
   { label: "IT / 디자인", scenarioId: "it-planning" },
   { label: "기타", scenarioId: "general-office" },
