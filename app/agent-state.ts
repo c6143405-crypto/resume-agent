@@ -39,6 +39,7 @@ export interface DraftChip {
 export interface DraftBullet {
   text: string;
   chips?: DraftChip[];
+  emoji?: string; // B 타입에서 항목 앞에 노출되는 이모지. A/C 등 다른 타입은 무시.
 }
 
 // 바텀시트 본문 = 한 초안이 실제로 어떤 경력기술서로 표현되는지.
