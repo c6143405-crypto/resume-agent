@@ -926,6 +926,17 @@ function getSectionVariant(label: string): "strikethrough" | "underline" | "plai
 export default function Page() {
   const MAX_REFINEMENT_TURNS = 8;
   const MAX_AI_CALLS_PER_SESSION = 8;
+  const handleContinueToNextStepB = () => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get("s") ?? "accounting-manager";
+    const done = params.get("done") ?? "";
+    const doneTypes = done.split(",").filter(Boolean);
+    const currentType = "B";
+    const newDone = doneTypes.includes(currentType) ? done : [...doneTypes, currentType].join(",");
+    window.location.href = `/next-step?from=${currentType}&s=${s}&done=${newDone}`;
+  };
+
   const [view, setView] = useState<"start" | "home" | "selected" | "chat" | "complete">("start");
   const [messages, setMessages] = useState<
     {
@@ -1921,6 +1932,15 @@ export default function Page() {
                 <p className="absolute left-1/2 top-[183px] -translate-x-1/2 whitespace-nowrap text-center text-[56px] font-bold leading-[72px] tracking-[-1.786px] text-white">
                   TBD
                 </p>
+              </div>
+              <div className="absolute bottom-0 left-0 flex w-full flex-col px-[20px] pb-[34px] pt-[20px]">
+                <button
+                  type="button"
+                  onClick={handleContinueToNextStepB}
+                  className="flex w-full items-center justify-center rounded-[12px] bg-[#0066FF] px-[28px] py-[14px] text-[17px] font-semibold leading-[24px] text-white transition-all duration-150 ease-out hover:bg-[#005BE6] active:scale-[0.98] active:bg-[#004FCC]"
+                >
+                  다음 타입 시작하기
+                </button>
               </div>
             </div>
           ) : view === "selected" ? (

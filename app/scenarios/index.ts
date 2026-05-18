@@ -8,16 +8,21 @@
 
 import type { Scenario } from "./types";
 import { ACCOUNTING_MANAGER } from "./accounting-manager";
+import { GENERAL_OFFICE } from "./general-office";
+import { SALES_MARKETING } from "./sales-marketing";
+import { PLANNING_STRATEGY } from "./planning-strategy";
+import { PUBLIC_ADMINISTRATION } from "./public-administration";
 
 // 시나리오 ID → 시나리오 데이터 매핑.
 // 키는 URL ?s= 파라미터로 사용되는 문자열과 동일하다.
 export const SCENARIOS: Record<string, Scenario> = {
   "accounting-manager": ACCOUNTING_MANAGER,
+  "general-office": GENERAL_OFFICE,
+  "sales-marketing": SALES_MARKETING,
+  "planning-strategy": PLANNING_STRATEGY,
+  "public-administration": PUBLIC_ADMINISTRATION,
   // 추후 추가 예정:
   // "it-planning": IT_PLANNING,
-  // "sales-marketing": SALES_MARKETING,
-  // "planning-strategy": PLANNING_STRATEGY,
-  // "general-office": GENERAL_OFFICE,
 };
 
 // URL ?s= 파라미터가 없거나 매칭 실패할 때 사용할 기본 시나리오.
