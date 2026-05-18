@@ -632,13 +632,17 @@ function DraftDetailBody({ data }: { data: DraftData }) {
 interface DraftDetailModalProps {
   draftIndex: number;
   data: DraftData;
+  dataMap: Record<number, DraftData>;
   onClose: () => void;
   onSelect: () => void;
 }
-function DraftDetailModal({ draftIndex, data, onClose, onSelect }: DraftDetailModalProps) {
-  // data는 부모(APage)가 draftDataMap[draftIndex]로 미리 매핑해 prop으로 전달한다.
+function DraftDetailModal({ draftIndex, data, dataMap, onClose, onSelect }: DraftDetailModalProps) {
+  // data는 부모가 draftIndex로 매핑해 넘긴 초기값. 탭 전환 시에는 dataMap[activeTab+1]을 사용한다.
   const [isVisible, setIsVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  // 모달 열릴 때 카드 인덱스(1·2·3)에 맞는 탭(0·1·2)이 초기 활성.
+  const [activeTab, setActiveTab] = useState(Math.max(0, draftIndex - 1));
+  // 탭에 따라 표시될 본문 데이터. dataMap에서 가져옴.
+  const activeData = dataMap[activeTab + 1] ?? data;
 
   // 마운트 시 페이드인 애니메이션
   useEffect(() => {
@@ -690,7 +694,7 @@ function DraftDetailModal({ draftIndex, data, onClose, onSelect }: DraftDetailMo
           className="flex-1 overflow-y-auto px-5 pb-6"
           style={{ scrollbarGutter: "stable" }}
         >
-          <DraftDetailBody data={data} />
+          <DraftDetailBody data={activeData} />
         </div>
 
         {/* Bottom action */}
@@ -1382,6 +1386,7 @@ export default function APage() {
         <DraftDetailModal
           draftIndex={selectedDraft}
           data={draftDataMap[selectedDraft]}
+          dataMap={draftDataMap}
           onClose={() => setSelectedDraft(null)}
           onSelect={() => {
             setConfirmedDraftIndex(selectedDraft);
