@@ -995,15 +995,15 @@ export default function Page() {
   // ─── 3.3a: 시나리오 데이터 어댑터 ─────────────────────────────────
   // URL 파라미터(?s=<scenarioId>)에서 현재 시나리오를 받아오고,
   // B 페이지가 사용 중인 기존 Draft 형식으로 변환해 scenarioDrafts에 담는다.
-  // 3.3a 단계에서는 scenarioDrafts만 추가하고 기존 SAMPLE_DRAFTS 참조는 그대로 둔다.
+  // 3.3a 단계에서는 scenarioDrafts만 추가하고 기존 scenarioDrafts 참조는 그대로 둔다.
   const scenario = useScenario();
   const scenarioDrafts = useMemo<Draft[]>(
     () => scenario.drafts.map((d) => toLegacyDraft(d, scenario.persona)),
     [scenario]
   );
 
-  // 현재는 SAMPLE_DRAFTS로 초기화하지만, 추후 API에서 받아오도록 바꿀 수 있다.
-  const [draftOptions, setDraftOptions] = useState<Draft[]>(SAMPLE_DRAFTS);
+  // 현재는 scenarioDrafts로 초기화하지만, 추후 API에서 받아오도록 바꿀 수 있다.
+  const [draftOptions, setDraftOptions] = useState<Draft[]>(scenarioDrafts);
   // CM1에서 사용자가 선택한 '전체 초안'. CM2로 진입할 때 채워진다.
   const [selectedDraft, setSelectedDraft] = useState<SelectedDraft>(
     DEFAULT_AGENT_STATE.selectedDraft
@@ -1130,7 +1130,7 @@ export default function Page() {
     const SPEED = 30;
     const GAP = 200;
     const lines = [
-      `아래 ${SAMPLE_DRAFTS.length}가지 방향의 경력기술서 초안을 준비했습니다.`,
+      `아래 ${scenarioDrafts.length}가지 방향의 경력기술서 초안을 준비했습니다.`,
       "각 초안은 같은 경험을 바탕으로 하지만, 강조하는 방향이 다릅니다.",
       "먼저 전체 흐름을 읽어보시고, 본인에게 가장 맞는 방향을 하나 선택해 주세요.",
       "선택한 뒤에는 다음 단계에서 문장 표현을 더 담백하게 바꾸거나, 실제 경험과 맞지 않는 부분을 수정할 수 있습니다.",
@@ -1285,7 +1285,7 @@ export default function Page() {
     // selectedDraft / currentAiDraft / decisionStatus를 함께 갱신한다.
     // findDraftBySampleIndex는 Draft | undefined를 반환하므로 가드 필요.
     if (trimmedMessage.includes("샘플 경력기술서 1")) {
-      const draft = findDraftBySampleIndex(0);
+      const draft = scenarioDrafts[0];
       if (draft) {
         setEditingSampleIndex(0);
         setSelectedDraft(draft);
@@ -1294,7 +1294,7 @@ export default function Page() {
         setDecisionStatus("selected");
       }
     } else if (trimmedMessage.includes("샘플 경력기술서 2")) {
-      const draft = findDraftBySampleIndex(1);
+      const draft = scenarioDrafts[1];
       if (draft) {
         setEditingSampleIndex(1);
         setSelectedDraft(draft);
@@ -1560,7 +1560,7 @@ export default function Page() {
 
   const openBottomSheet = (index: number) => {
     console.log("샘플 경력기술서 클릭됨", index);
-    const draft = SAMPLE_DRAFTS[index] ?? selectedDraft ?? null;
+    const draft = scenarioDrafts[index] ?? selectedDraft ?? null;
     if (draft) setBottomSheetDraft(draft);
     setIsOpen(true);
   };
@@ -1606,7 +1606,7 @@ export default function Page() {
   // sendMessage 흐름(STAGES/AI) 대신, CM2 진입에 맞는 안내 + 수정 카드를 직접 push한다.
   const commitCm1Selection = () => {
     if (!cm1Candidate) return;
-    const index = SAMPLE_DRAFTS.findIndex((d) => d.draftId === cm1Candidate.draftId);
+    const index = scenarioDrafts.findIndex((d) => d.draftId === cm1Candidate.draftId);
     if (index >= 0) setEditingSampleIndex(index);
     setSelectedDraft(cm1Candidate);
     setCurrentStep("CM2");
@@ -1883,7 +1883,7 @@ export default function Page() {
             <div className="flex min-h-full flex-col bg-[linear-gradient(184deg,#FAFFFC_0.96%,#F3FBFF_49.34%,#E8F4FF_97.71%)] px-[20px] pb-[28px] pt-[88px] text-center">
               <AiOrb size={48} />
               <h2 className="mt-[28px] text-[26px] font-bold leading-[34px] tracking-[-0.4px] text-[#171719]">
-                {`${Math.max(1, SAMPLE_DRAFTS.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1)}번 초안을 선택했어요`}
+                {`${Math.max(1, scenarioDrafts.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1)}번 초안을 선택했어요`}
               </h2>
               <p className="mt-[12px] text-[17px] font-medium leading-[28px] tracking-[-0.2px] text-[rgba(55,56,60,0.72)]">
                 내용을 AI와 함께 더 다듬을 수 있어요
@@ -1994,7 +1994,7 @@ export default function Page() {
                 </div>
 
                 <section className="mt-[66px] flex flex-col gap-[12px]">
-                  {SAMPLE_DRAFTS.map((draft) => {
+                  {scenarioDrafts.map((draft) => {
                     const draftCardMeta = DRAFT_CARD_META[draft.draftId] ?? {
                       title: draft.draftTitle,
                       description: draft.draftDirection,
