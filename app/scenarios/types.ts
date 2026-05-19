@@ -71,6 +71,7 @@ export interface ScenarioRefinementTarget {
   // B 타입 전용 시각 라벨 (다른 타입은 무시)
   originalTags?: string[]; // 기존 문장에 붙는 라벨 (예: ["강한 표현"])
   revisedTags?: string[];  // 수정 문장에 붙는 라벨 (예: ["신뢰성", "정확성"])
+  reasonTags?: string[];   // 수정 이유 위에 붙는 라벨 (예: ["과장 완화", "신뢰도 개선"])
 }
 
 // CM1에서 비교 대상이 되는 한 초안의 전체 데이터.

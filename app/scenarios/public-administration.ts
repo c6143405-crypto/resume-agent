@@ -144,6 +144,7 @@ export const PUBLIC_ADMINISTRATION: Scenario = {
         "\"체계 구축\", \"수감 프로세스 리드\", \"지표 고도화\", \"전담\"이 한 문장에 함께 들어가 역할이 과장되어 보일 수 있습니다. 담당 업무와 범위가 명확하게 보이도록 문장을 정리했습니다.",
       originalTags: ["역할 과장"],
       revisedTags: ["명확성", "공공 적합성"],
+      reasonTags: ["역할 범위 명확화", "공공 문체 정리"],
     },
     {
       title: "감사 성과 표현 수위",
@@ -172,6 +173,7 @@ export const PUBLIC_ADMINISTRATION: Scenario = {
         "\"12년 연속\", \"Zero\"는 강한 성과 표현이지만, 증빙이 부족하면 단정적으로 보일 수 있습니다. 성과를 얼마나 직접적으로 보여줄지 선택할 수 있도록 표현 수위를 나눴습니다.",
       originalTags: ["단정 표현"],
       revisedTags: ["선택형", "표현 수위"],
+      reasonTags: ["감사 표현 조정", "증빙 부담 완화"],
     },
     {
       title: "직무 부적합 표현 수정",
@@ -183,6 +185,7 @@ export const PUBLIC_ADMINISTRATION: Scenario = {
         "\"손익 추정\", \"스트레스 테스트\", \"추정 재무제표\"는 공공 행정보다 기업 재무·전략기획에 가까운 표현입니다. 공공기관 행정 업무에 맞게 예산 집행, 정산, 증빙 관리 중심으로 조정했습니다.",
       originalTags: ["직무 부적합"],
       revisedTags: ["직무 적합성", "신뢰성"],
+      reasonTags: ["직무 적합성 개선", "공공 행정 반영"],
     },
   ],
 };
