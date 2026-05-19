@@ -1856,6 +1856,9 @@ function RefinementItemBlock({
         <span className="text-[13px] font-medium leading-[18px] tracking-[0.252px] text-label-neutral" style={{ fontFamily: "Pretendard" }}>
           기존 문장
         </span>
+        <p className="w-full text-body-1 font-bold text-label-neutral">
+          {item.original}
+        </p>
         {item.originalTags && item.originalTags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {item.originalTags.map((tag) => (
@@ -1868,9 +1871,6 @@ function RefinementItemBlock({
             ))}
           </div>
         )}
-        <p className="w-full text-body-1 font-bold text-label-neutral">
-          {item.original}
-        </p>
       </div>
 
       {/* 수정 문장 — single 또는 다지선다 */}
@@ -1878,18 +1878,6 @@ function RefinementItemBlock({
         <span className="text-[13px] font-medium leading-[18px] tracking-[0.252px] text-primary-normal" style={{ fontFamily: "Pretendard" }}>
           수정 문장
         </span>
-        {item.revisedTags && item.revisedTags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {item.revisedTags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center justify-center gap-2.5 rounded-lg border border-[#EAF2FE] bg-[#EAF2FE] px-[10px] py-1 text-[12px] font-medium text-[#0066FF] opacity-80"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
         {item.revised && (
           <p className="w-full text-body-1 font-bold text-primary-normal">
             {item.revised}
@@ -1904,6 +1892,9 @@ function RefinementItemBlock({
                     {`${opt.label}. ${opt.hint}`}
                   </p>
                 )}
+                <p className="font-pretendard text-body-1 font-bold text-primary-normal">
+                  {opt.hint ? opt.text : `${opt.label}. ${opt.text}`}
+                </p>
                 {opt.tags && opt.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {opt.tags.map((tag) => (
@@ -1916,10 +1907,19 @@ function RefinementItemBlock({
                     ))}
                   </div>
                 )}
-                <p className="font-pretendard text-body-1 font-bold text-primary-normal">
-                  {opt.hint ? opt.text : `${opt.label}. ${opt.text}`}
-                </p>
               </div>
+            ))}
+          </div>
+        )}
+        {item.revisedTags && item.revisedTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {item.revisedTags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center justify-center gap-2.5 rounded-lg border border-[#EAF2FE] bg-[#EAF2FE] px-[10px] py-1 text-[12px] font-medium text-[#0066FF] opacity-80"
+              >
+                {tag}
+              </span>
             ))}
           </div>
         )}
@@ -1931,6 +1931,9 @@ function RefinementItemBlock({
           <span className="text-[13px] font-medium leading-[18px] tracking-[0.252px] text-label-neutral" style={{ fontFamily: "Pretendard" }}>
             수정 이유
           </span>
+          <p className="w-full text-body-1 font-normal text-label-neutral">
+            {item.reason}
+          </p>
           {item.reasonTags && item.reasonTags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {item.reasonTags.map((tag) => (
@@ -1943,9 +1946,6 @@ function RefinementItemBlock({
               ))}
             </div>
           )}
-          <p className="w-full text-body-1 font-normal text-label-neutral">
-            {item.reason}
-          </p>
         </div>
       )}
 
