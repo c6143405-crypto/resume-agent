@@ -108,6 +108,17 @@ interface RefinementItem {
   reason?: string;
 }
 
+
+// 사용자가 각 검토 항목에 내린 결정.
+// decision === "accept": 수정 문장 채택 → revised가 채택된 문장
+// decision === "keep":   기존 유지 → revised는 original과 같음
+// 이 데이터는 미리보기/최종 확인 단계에서 원래 문장 → 채택된 문장으로 치환하는 데 쓰인다.
+interface AcceptedRevision {
+  decision: "accept" | "keep";
+  original: string;
+  revised: string;
+}
+
 // 두 번째 검토 항목 mock (다지선다 — 첫 번째 채택/유지 후 등장)
 const SECOND_REFINEMENT_ITEM: RefinementItem = {
   step: 2,
@@ -367,17 +378,63 @@ function ConfirmCriteriaCard() {
   );
 }
 
-// ─── Confirm Preview 본문 (수정 부분 파란색, weight medium) ────────────
-function ConfirmPreviewBody() {
+// ─── Confirm Preview 본문 (시나리오 데이터 + 채택된 수정 문장 자동 치환) ─────
+// data = 시나리오 기반 draft 데이터
+// acceptedRevisions = 사용자가 채택/유지한 결정들 (step → {original, revised, decision})
+//
+// 동작:
+//  - tasks/achievements 라인이 acceptedRevisions의 어떤 original과 정확히 일치하면
+//    → revised 문장으로 교체 + primary 색상 표시 (= 사용자가 수정한 부분 강조)
+//  - 일치하지 않거나 decision === "keep" 이면 원문 그대로 (라벨 컬러 변경 없음)
+function ConfirmPreviewBody({
+  data,
+  acceptedRevisions,
+}: {
+  data: DraftData;
+  acceptedRevisions: Record<number, AcceptedRevision>;
+}) {
+  // 원문 → 채택된 수정 문장 매핑 (decision === "accept" 만)
+  const revisionMap = new Map<string, string>();
+  Object.values(acceptedRevisions).forEach((rev) => {
+    if (rev.decision === "accept" && rev.revised !== rev.original) {
+      revisionMap.set(rev.original, rev.revised);
+    }
+  });
+
+  // 한 라인이 채택된 수정안이면 revised + primary 색상으로, 아니면 원문 그대로.
+  const renderLine = (text: string, key: number | string) => {
+    const replaced = revisionMap.get(text);
+    if (replaced) {
+      return (
+        <li
+          key={key}
+          className="flex gap-2 px-1 text-body-1-reading font-medium text-primary-normal"
+        >
+          <span aria-hidden="true">•</span>
+          <span className="flex-1">{replaced}</span>
+        </li>
+      );
+    }
+    return (
+      <li
+        key={key}
+        className="flex gap-2 px-1 text-body-1-reading font-medium text-label-normal"
+      >
+        <span aria-hidden="true">•</span>
+        <span className="flex-1">{text}</span>
+      </li>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-6 pb-12 pt-9">
-      {/* 회사명 + 기간 (기간만 파란색) */}
+      {/* 회사명 + 기간 */}
       <div className="flex flex-col gap-1 px-1">
         <h3 className="text-headline-1 font-bold text-label-normal">
-          (주) A 의류 유통 기업
+          {data.company}
         </h3>
-        <p className="text-body-2-reading font-medium text-primary-normal">
-          2012.03 ~ 2024.05 · 회계팀 과장
+        <p className="text-body-2-reading font-medium text-label-neutral">
+          {data.period}
         </p>
         <div className="mt-5 h-px w-full bg-line-solid-normal" />
       </div>
@@ -385,10 +442,10 @@ function ConfirmPreviewBody() {
       {/* 프로젝트 */}
       <div className="flex flex-col gap-3 px-1">
         <h3 className="text-headline-1 font-bold text-label-normal">
-          [프로젝트 1] 월·연 결산 마감 프로세스 운영
+          {data.project}
         </h3>
         <p className="text-body-1-reading font-medium text-label-normal">
-          직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.
+          {data.description}
         </p>
       </div>
 
@@ -396,49 +453,15 @@ function ConfirmPreviewBody() {
       <div className="flex flex-col gap-1 px-1">
         <h4 className="text-headline-1 font-bold text-label-normal">업무 상세</h4>
         <ul className="flex flex-col gap-1 pt-3">
-          {[
-            "매월 결산 마감 일정 관리",
-            "외부 회계 감사 대응",
-            "부가세·법인세 신고 자료 정리",
-            "결산 종료 후 대표 보고 자료 작성",
-          ].map((task, i) => (
-            <li
-              key={i}
-              className="text-body-1-reading font-medium text-label-normal flex gap-2 px-1"
-            >
-              <span aria-hidden="true">•</span>
-              <span className="flex-1">{task}</span>
-            </li>
-          ))}
+          {data.tasks.map((task, i) => renderLine(task, `task-${i}`))}
         </ul>
       </div>
 
-      {/* 역할 및 성과 (두 번째 항목 파란색) */}
+      {/* 역할 및 성과 */}
       <div className="flex flex-col gap-1 px-1">
         <h4 className="text-headline-1 font-bold text-label-normal">역할 및 성과</h4>
         <ul className="flex flex-col gap-1 pt-3">
-          <li className="text-body-1-reading font-medium text-label-normal flex gap-2 px-1">
-            <span aria-hidden="true">•</span>
-            <span className="flex-1">
-              매입·매출 전표 월 평균 1,500여 건 처리 및 검증
-            </span>
-          </li>
-          <li className="text-body-1-reading font-medium flex gap-2 px-1 text-primary-normal">
-            <span aria-hidden="true">•</span>
-            <span className="flex-1">
-              외부 회계 감사 대응 과정에서 주요 지적 사항 없이 결산 자료의 정확성을 유지
-            </span>
-          </li>
-          <li className="text-body-1-reading font-medium text-label-normal flex gap-2 px-1">
-            <span aria-hidden="true">•</span>
-            <span className="flex-1">신고 자료 정확도 99% 수준 유지</span>
-          </li>
-          <li className="text-body-1-reading font-medium text-label-normal flex gap-2 px-1">
-            <span aria-hidden="true">•</span>
-            <span className="flex-1">
-              결산 마감 일정을 평균 5영업일 이내로 관리
-            </span>
-          </li>
+          {data.achievements.map((item, i) => renderLine(item, `ach-${i}`))}
         </ul>
       </div>
     </div>
@@ -449,11 +472,15 @@ function ConfirmPreviewBody() {
 interface ConfirmPreviewModalProps {
   draftIndex: number;
   draftTitle: string;
+  data: DraftData;
+  acceptedRevisions: Record<number, AcceptedRevision>;
   onClose: () => void;
 }
 function ConfirmPreviewModal({
   draftIndex,
   draftTitle,
+  data,
+  acceptedRevisions,
   onClose,
 }: ConfirmPreviewModalProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -530,7 +557,7 @@ function ConfirmPreviewModal({
           onScroll={handleScroll}
         >
           <ConfirmCriteriaCard />
-          <ConfirmPreviewBody />
+          <ConfirmPreviewBody data={data} acceptedRevisions={acceptedRevisions} />
         </div>
 
         {/* CTA 없음 — Confirm Preview는 정보 표시만 */}
@@ -1096,6 +1123,30 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
   },
   );
 
+  // 사용자가 각 검토 항목에 내린 결정을 저장 (step → AcceptedRevision)
+  // 미리보기/최종 확인 단계에서 원래 문장 → 채택된 문장으로 치환하는 데 사용.
+  const [acceptedRevisions, setAcceptedRevisions] = useState<Record<number, AcceptedRevision>>({});
+
+  // 검토 항목 채택 — 단일 수정안이면 revised, 다지선다면 해당 옵션 text를 저장
+  const recordAccept = (item: RefinementItem, label?: string) => {
+    const revised =
+      label && item.options
+        ? item.options.find((o) => o.label === label)?.text ?? item.original
+        : item.revised ?? item.original;
+    setAcceptedRevisions((prev) => ({
+      ...prev,
+      [item.step]: { decision: "accept", original: item.original, revised },
+    }));
+  };
+
+  // 검토 항목 기존 유지 — revised에 original을 그대로 저장 (치환 시 변화 없음)
+  const recordKeep = (item: RefinementItem) => {
+    setAcceptedRevisions((prev) => ({
+      ...prev,
+      [item.step]: { decision: "keep", original: item.original, revised: item.original },
+    }));
+  };
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     onScrollChange(e.currentTarget.scrollTop > 0);
   };
@@ -1314,8 +1365,14 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
             {/* 검토 항목 */}
             <RefinementItemBlock
               item={firstItem}
-              onAccept={() => handleFirstResolve()}
-              onKeep={() => handleFirstResolve()}
+              onAccept={(label) => {
+                recordAccept(firstItem, label);
+                handleFirstResolve();
+              }}
+              onKeep={() => {
+                recordKeep(firstItem);
+                handleFirstResolve();
+              }}
             />
 
             {/* 사용자 직접 입력 안내 (메시지 없을 때만) */}
@@ -1360,8 +1417,14 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
                 }
                 // ai
                 const step = msg.item?.step;
-                const resolve =
-                  step === 2 ? handleSecondResolve : handleFirstResolve;
+                const resolveAndRecord = (decision: "accept" | "keep", label?: string) => {
+                  if (msg.item) {
+                    if (decision === "accept") recordAccept(msg.item, label);
+                    else recordKeep(msg.item);
+                  }
+                  if (step === 2) handleSecondResolve();
+                  else handleFirstResolve();
+                };
                 return (
                   <div
                     key={i}
@@ -1406,8 +1469,8 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
                         <div className="h-px w-full bg-line-solid-normal" />
                         <RefinementItemBlock
                           item={msg.item}
-                          onAccept={() => resolve()}
-                          onKeep={() => resolve()}
+                          onAccept={(label) => resolveAndRecord("accept", label)}
+                          onKeep={() => resolveAndRecord("keep")}
                         />
                       </>
                     )}
@@ -1436,6 +1499,8 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
         <ConfirmPreviewModal
           draftIndex={1}
           draftTitle={draftTitle}
+          data={selectedDraftData}
+          acceptedRevisions={acceptedRevisions}
           onClose={() => setConfirmPreviewOpen(false)}
         />
       )}
