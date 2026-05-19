@@ -882,7 +882,7 @@ function AiResponseSectionCard({
   content: string;
 }) {
   return (
-    <section className="flex w-full flex-col gap-3 rounded-2xl border border-line-solid-neutral bg-red-500 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+    <section className="flex w-full flex-col gap-3 rounded-2xl border border-line-solid-neutral bg-static-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
       <div className="flex items-center gap-2">
         <Image
           src="/file.png"
