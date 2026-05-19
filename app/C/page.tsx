@@ -123,6 +123,14 @@ interface RefinementItem {
   reason?: string;
 }
 
+
+// 사용자가 각 검토 항목에 내린 결정.
+interface AcceptedRevision {
+  decision: "accept" | "keep";
+  original: string;
+  revised: string;
+}
+
 // 두 번째 검토 항목 mock (다지선다 — 첫 번째 채택/유지 후 등장)
 const SECOND_REFINEMENT_ITEM: RefinementItem = {
   step: 2,
@@ -1050,7 +1058,7 @@ function RefinementCarousel({
 }: {
   items: RefinementItem[];
   resolvedSteps: number[];
-  onItemResolve: (step: number, label?: string) => void;
+  onItemResolve: (step: number, decision: "accept" | "keep", label?: string) => void;
 }) {
   return (
     <div
@@ -1069,8 +1077,8 @@ function RefinementCarousel({
             <div className={`w-full ${isResolved ? "pointer-events-none" : ""}`}>
               <RefinementItemBlock
                 item={item}
-                onAccept={(label) => onItemResolve(item.step, label)}
-                onKeep={() => onItemResolve(item.step)}
+                onAccept={(label) => onItemResolve(item.step, "accept", label)}
+                onKeep={() => onItemResolve(item.step, "keep")}
               />
             </div>
           </div>
@@ -1287,7 +1295,32 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
 
   // 캐러셀 카드 처리 통합 핸들러 (step 1 또는 2).
   // 처리된 step을 resolvedSteps에 추가하고, 둘 다 처리되면 confirm 메시지를 띄운다.
-  const handleItemResolve = (step: number, _label?: string) => {
+  // 캐러셀 카드 채택/유지 시 채택 정보 저장
+  const [acceptedRevisions, setAcceptedRevisions] = useState<Record<number, AcceptedRevision>>({});
+
+  const recordAccept = (item: RefinementItem, label?: string) => {
+    const revised =
+      label && item.options
+        ? item.options.find((o) => o.label === label)?.text ?? item.original
+        : item.revised ?? item.original;
+    setAcceptedRevisions((prev) => ({
+      ...prev,
+      [item.step]: { decision: "accept", original: item.original, revised },
+    }));
+  };
+
+  const recordKeep = (item: RefinementItem) => {
+    setAcceptedRevisions((prev) => ({
+      ...prev,
+      [item.step]: { decision: "keep", original: item.original, revised: item.original },
+    }));
+  };
+
+  const handleItemResolve = (step: number, decision: "accept" | "keep" = "accept", label?: string) => {
+    // 어떤 item인지 step으로 식별
+    const item = step === 1 ? firstItem : secondItem;
+    if (decision === "accept") recordAccept(item, label);
+    else recordKeep(item);
     setResolvedSteps((prev) => {
       if (prev.includes(step)) return prev;
       const next = [...prev, step];
@@ -1382,8 +1415,8 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
                 console.log('sections:', msg.sections, 'text:', msg.text);
                 const step = msg.item?.step;
                 // 캐러셀로 통합 후엔 메시지 안의 item 처리도 같은 핸들러로
-                const resolve = () => {
-                  if (step) handleItemResolve(step);
+                const resolveAndRecord = (decision: "accept" | "keep", label?: string) => {
+                  if (step) handleItemResolve(step, decision, label);
                 };
                 return (
                   <div
@@ -1417,8 +1450,8 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
                         <div className="h-px w-full bg-line-solid-normal" />
                         <RefinementItemBlock
                           item={msg.item}
-                          onAccept={() => resolve()}
-                          onKeep={() => resolve()}
+                          onAccept={(label) => resolveAndRecord("accept", label)}
+                          onKeep={() => resolveAndRecord("keep")}
                         />
                       </>
                     )}

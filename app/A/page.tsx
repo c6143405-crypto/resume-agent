@@ -108,6 +108,17 @@ interface RefinementItem {
   reason?: string;
 }
 
+
+// 사용자가 각 검토 항목에 내린 결정.
+// decision === "accept": 수정 문장 채택 → revised가 채택된 문장
+// decision === "keep":   기존 유지 → revised는 original과 같음
+// 이 데이터는 미리보기/최종 확인 단계에서 원래 문장 → 채택된 문장으로 치환하는 데 쓰인다.
+interface AcceptedRevision {
+  decision: "accept" | "keep";
+  original: string;
+  revised: string;
+}
+
 // 두 번째 검토 항목 mock (다지선다 — 첫 번째 채택/유지 후 등장)
 const SECOND_REFINEMENT_ITEM: RefinementItem = {
   step: 2,
@@ -1096,6 +1107,30 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
   },
   );
 
+  // 사용자가 각 검토 항목에 내린 결정을 저장 (step → AcceptedRevision)
+  // 미리보기/최종 확인 단계에서 원래 문장 → 채택된 문장으로 치환하는 데 사용.
+  const [acceptedRevisions, setAcceptedRevisions] = useState<Record<number, AcceptedRevision>>({});
+
+  // 검토 항목 채택 — 단일 수정안이면 revised, 다지선다면 해당 옵션 text를 저장
+  const recordAccept = (item: RefinementItem, label?: string) => {
+    const revised =
+      label && item.options
+        ? item.options.find((o) => o.label === label)?.text ?? item.original
+        : item.revised ?? item.original;
+    setAcceptedRevisions((prev) => ({
+      ...prev,
+      [item.step]: { decision: "accept", original: item.original, revised },
+    }));
+  };
+
+  // 검토 항목 기존 유지 — revised에 original을 그대로 저장 (치환 시 변화 없음)
+  const recordKeep = (item: RefinementItem) => {
+    setAcceptedRevisions((prev) => ({
+      ...prev,
+      [item.step]: { decision: "keep", original: item.original, revised: item.original },
+    }));
+  };
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     onScrollChange(e.currentTarget.scrollTop > 0);
   };
@@ -1314,8 +1349,14 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
             {/* 검토 항목 */}
             <RefinementItemBlock
               item={firstItem}
-              onAccept={() => handleFirstResolve()}
-              onKeep={() => handleFirstResolve()}
+              onAccept={(label) => {
+                recordAccept(firstItem, label);
+                handleFirstResolve();
+              }}
+              onKeep={() => {
+                recordKeep(firstItem);
+                handleFirstResolve();
+              }}
             />
 
             {/* 사용자 직접 입력 안내 (메시지 없을 때만) */}
@@ -1360,8 +1401,14 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
                 }
                 // ai
                 const step = msg.item?.step;
-                const resolve =
-                  step === 2 ? handleSecondResolve : handleFirstResolve;
+                const resolveAndRecord = (decision: "accept" | "keep", label?: string) => {
+                  if (msg.item) {
+                    if (decision === "accept") recordAccept(msg.item, label);
+                    else recordKeep(msg.item);
+                  }
+                  if (step === 2) handleSecondResolve();
+                  else handleFirstResolve();
+                };
                 return (
                   <div
                     key={i}
@@ -1406,8 +1453,8 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
                         <div className="h-px w-full bg-line-solid-normal" />
                         <RefinementItemBlock
                           item={msg.item}
-                          onAccept={() => resolve()}
-                          onKeep={() => resolve()}
+                          onAccept={(label) => resolveAndRecord("accept", label)}
+                          onKeep={() => resolveAndRecord("keep")}
                         />
                       </>
                     )}
