@@ -6,6 +6,8 @@ import { AiOrb } from "../components/AiOrb";
 import { PageTitleBar } from "../components/PageTitleBar";
 import { StatusBar } from "../components/StatusBar";
 import { HomeBar } from "../components/HomeBar";
+import { EndScreen } from "../components/EndScreen";
+import { TbdCard } from "../components/TbdCard";
 import { StartScreen } from "../components/StartScreen";
 import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
@@ -21,26 +23,6 @@ import type { Draft, ScenarioPersona } from "../scenarios";
  */
 
 // ─── TBD placeholder 카드 (그래픽 미확정) ──────────────────────────────
-function TbdCard({ label }: { label?: string }) {
-  return (
-    <div className="relative w-full overflow-hidden rounded-3xl bg-[#E73E3E] px-6 py-20 text-center">
-      {label ? (
-        <>
-          <p className="mb-1 text-xs text-white opacity-50">{`'${label}'`}</p>
-          <p className="mb-1 text-5xl font-bold text-white">TBD</p>
-          <p className="text-xs text-white opacity-50">그래픽 디자인</p>
-        </>
-      ) : (
-        <>
-          <p className="mb-1 text-xs text-white opacity-50">T2에서 확정한</p>
-          <p className="mb-1 text-5xl font-bold text-white">TBD</p>
-          <p className="text-xs text-white opacity-50">ID 카드 그래픽 디자인</p>
-        </>
-      )}
-    </div>
-  );
-}
-
 // ─── 배경 그라데이션 원 ───────────────────────────────────────────────
 function BackgroundEllipses() {
   return (
@@ -1398,37 +1380,6 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
 }
 
 // ─── End 화면 (Task 3 완료) ────────────────────────────────────────────
-function EndScreen({ draftTitle, onContinue }: { draftTitle: string; onContinue: () => void }) {
-  return (
-    <>
-      <section className="flex flex-col items-center gap-5 px-5 py-12">
-        <AiOrb size={40} />
-        <div className="flex flex-col items-center gap-2">
-          <h2 className="text-heading-1 text-center font-bold text-label-strong">
-            경력기술서 초안 작성을 완료했어요
-          </h2>
-          <p className="text-body-1-reading text-center text-label-neutral">
-            다음 단계에서 경력기술서를 최종 마무리할게요
-          </p>
-        </div>
-      </section>
-      <div className="px-5">
-        <TbdCard label={`${draftTitle} (완성 ver.)`} />
-      </div>
-      <div className="flex-1" />
-      <div className="px-5 pb-8">
-        <button
-          type="button"
-          onClick={onContinue}
-          className="w-full rounded-xl bg-[#0066FF] px-6 py-4 text-center text-base font-bold text-white transition-colors hover:bg-[#005BE6] active:bg-[#004FCC]"
-        >
-          다음 타입 시작하기
-        </button>
-      </div>
-    </>
-  );
-}
-
 // ─── Page export ───────────────────────────────────────────────────────
 type Screen = "start" | "cm1" | "cm2-loading" | "cm2-chat" | "end";
 
@@ -1514,7 +1465,7 @@ export default function APage() {
           onFinish={() => setScreen("end")}
         />
       )}
-      {screen === "end" && <EndScreen draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title} onContinue={handleContinueToNextStep} />}
+      {screen === "end" && <EndScreen draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title} draftDirection={scenario.drafts[(confirmedDraftIndex ?? 1) - 1].direction} onContinue={handleContinueToNextStep} />}
 
       <HomeBar />
 
