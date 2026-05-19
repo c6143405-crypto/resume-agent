@@ -1086,6 +1086,17 @@ function AiChatScreen({ draftTitle, selectedDraftData, onScrollChange, onFinish,
   const toggleKeyword = (kwIdx: number) => {
     setModifiedKeywords((prev) => ({ ...prev, [kwIdx]: !prev[kwIdx] }));
   };
+  // ─── confirm 모드 ("이대로 반영하기" 클릭 시) ─────────────────────────
+  const [mode, setMode] = useState<"chat" | "confirm">("chat");
+  const originalLine = primaryTarget?.originalSentence ?? "";
+  const finalizedLine = primaryKeywords.reduce(
+    (acc, kw, idx) => (modifiedKeywords[idx] ? acc.replace(kw.original, kw.revised) : acc),
+    originalLine,
+  );
+  const acceptedCount = Object.values(modifiedKeywords).filter(Boolean).length;
+  const handleApplyAll = () => setMode("confirm");
+  const handleBackToChat = () => setMode("chat");
+
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<Array<{ kind: "user" | "ai"; content: string; sections?: Array<{ label: string; content: string }> }>>([]);
   const [achievementRevisions, setAchievementRevisions] = useState<Record<number, { original: string; revised: string; isModified: boolean }>>({});
@@ -1273,7 +1284,7 @@ function AiChatScreen({ draftTitle, selectedDraftData, onScrollChange, onFinish,
   return (
     <>
       {/* Progress Section */}
-      <ProgressSection completedCount={completedCount} totalCount={totalCount} isScrolled={isChatScrolled} />
+      <ProgressSection completedCount={acceptedCount} totalCount={Math.max(primaryKeywords.length, 1)} isScrolled={isChatScrolled} />
 
       {/* Scrollable content */}
       <div
@@ -1421,7 +1432,7 @@ function AiChatScreen({ draftTitle, selectedDraftData, onScrollChange, onFinish,
           <div className="flex w-full gap-[8px]">
             <button
               type="button"
-              onClick={handleSend}
+              onClick={handleApplyAll}
               className="flex h-[44px] items-center justify-center rounded-[10px] bg-[#0066FF] px-[16px] py-[8px] text-[15px] font-semibold leading-[24px] tracking-[0.144px] text-white"
             >
               이대로 반영하기
