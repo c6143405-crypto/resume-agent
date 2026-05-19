@@ -50,7 +50,7 @@ function ProgressSection({ completedCount, totalCount = 2, isScrolled = false }:
           </span>
         </div>
       </div>
-      <div className="relative h-[8px] w-full rounded-[9px] bg-[#171719] opacity-[0.06]">
+      <div className="relative h-[8px] w-full overflow-hidden rounded-[9px] bg-[#E5E8EB]">
         <div
           className="absolute left-0 top-0 h-[8px] rounded-[9px] bg-gradient-to-r from-[#0066FF] to-[#3AE6C2] transition-all duration-300"
           style={{ width: `${(completedCount / totalCount) * 100}%` }}
@@ -1285,6 +1285,7 @@ function AiChatScreen({ draftTitle, selectedDraftData, onScrollChange, onFinish,
   if (mode === "confirm") {
     return (
       <>
+        <ProgressSection completedCount={acceptedCount} totalCount={Math.max(primaryKeywords.length, 1)} isScrolled={isChatScrolled} />
         <div
           className="flex-1 overflow-y-auto"
           style={{ scrollbarGutter: "stable" }}
