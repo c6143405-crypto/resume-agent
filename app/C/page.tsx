@@ -1018,6 +1018,46 @@ function RefinementItemBlock({
   );
 }
 
+// ─── 두 검토 항목을 좌우로 슬라이드해서 보는 캐러셀 ─────────────
+// 한 화면에 1/2, 2/2를 동시에 보유하고 사용자가 swipe/scroll해서 본다.
+// 각 카드는 독립적으로 채택/유지 처리되며, 처리 후엔 카드가 비활성화된다.
+function RefinementCarousel({
+  items,
+  resolvedSteps,
+  onItemResolve,
+}: {
+  items: RefinementItem[];
+  resolvedSteps: number[];
+  onItemResolve: (step: number, label?: string) => void;
+}) {
+  return (
+    <div
+      className="-mx-5 flex w-[calc(100%+40px)] snap-x snap-mandatory gap-2 overflow-x-auto px-5 pb-4"
+      style={{ scrollbarWidth: "none" }}
+    >
+      {items.map((item) => {
+        const isResolved = resolvedSteps.includes(item.step);
+        return (
+          <div
+            key={item.step}
+            className={`flex w-full flex-shrink-0 snap-center transition-opacity ${
+              isResolved ? "opacity-50" : "opacity-100"
+            }`}
+          >
+            <div className={`w-full ${isResolved ? "pointer-events-none" : ""}`}>
+              <RefinementItemBlock
+                item={item}
+                onAccept={(label) => onItemResolve(item.step, label)}
+                onKeep={() => onItemResolve(item.step)}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── AI Chat 화면 (CM 02 후반) ────────────────────────────────────────
 interface AiChatScreenProps {
   draftTitle: string;
@@ -1043,6 +1083,11 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
     reason:
       "기간을 명시하지 않고 성과 중심으로 표현하면 더 안전하고 신뢰성 있습니다.",
   });
+
+  // 두 번째 검토 항목 — 첫 번째와 함께 캐러셀에 동시 노출된다.
+  const [secondItem] = useState<RefinementItem>(SECOND_REFINEMENT_ITEM);
+  // 처리(채택/유지)된 step 목록. 둘 다 처리되면 confirm 메시지를 트리거한다.
+  const [resolvedSteps, setResolvedSteps] = useState<number[]>([]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     onScrollChange(e.currentTarget.scrollTop > 0);
@@ -1206,34 +1251,28 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
     ]);
   };
 
-  // 첫 번째 채택/유지 → "좋아요. 다음 항목을 볼게요." + 두 번째 항목 추가
-  const handleFirstResolve = () => {
-    const alreadyHasSecond = messages.some(
-      (m) => m.kind === "ai" && m.item?.step === 2
-    );
-    if (alreadyHasSecond) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        kind: "ai",
-        text: "좋아요. 다음 항목을 볼게요.",
-        item: SECOND_REFINEMENT_ITEM,
-      },
-    ]);
-  };
-
-  // 두 번째 채택/유지 → confirm 메시지 추가
-  const handleSecondResolve = () => {
-    const alreadyHasConfirm = messages.some((m) => m.kind === "confirm");
-    if (alreadyHasConfirm) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        kind: "confirm",
-        text: "2가지 수정 사항이 모두 반영되었어요.\n\n초안을 더 수정할까요?\n최종 마무리 단계로 넘어갈까요?",
-        draftTitle,
-      },
-    ]);
+  // 캐러셀 카드 처리 통합 핸들러 (step 1 또는 2).
+  // 처리된 step을 resolvedSteps에 추가하고, 둘 다 처리되면 confirm 메시지를 띄운다.
+  const handleItemResolve = (step: number, _label?: string) => {
+    setResolvedSteps((prev) => {
+      if (prev.includes(step)) return prev;
+      const next = [...prev, step];
+      // 두 항목 모두 처리됐을 때 confirm 메시지 추가
+      if (next.length === 2) {
+        setMessages((msgs) => {
+          if (msgs.some((m) => m.kind === "confirm")) return msgs;
+          return [
+            ...msgs,
+            {
+              kind: "confirm",
+              text: "2가지 수정 사항이 모두 반영되었어요.\n\n초안을 더 수정할까요?\n최종 마무리 단계로 넘어갈까요?",
+              draftTitle,
+            },
+          ];
+        });
+      }
+      return next;
+    });
   };
 
   return (
@@ -1258,11 +1297,11 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
             {/* 구분선 */}
             <div className="h-px w-full bg-line-solid-normal" />
 
-            {/* 검토 항목 */}
-            <RefinementItemBlock
-              item={firstItem}
-              onAccept={() => handleFirstResolve()}
-              onKeep={() => handleFirstResolve()}
+            {/* 검토 항목 — 1/2, 2/2 두 카드를 캐러셀로 동시 노출 */}
+            <RefinementCarousel
+              items={[firstItem, secondItem]}
+              resolvedSteps={resolvedSteps}
+              onItemResolve={handleItemResolve}
             />
 
             {/* 사용자 직접 입력 안내 (메시지 없을 때만) */}
@@ -1308,8 +1347,10 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
                 // ai
                 console.log('sections:', msg.sections, 'text:', msg.text);
                 const step = msg.item?.step;
-                const resolve =
-                  step === 2 ? handleSecondResolve : handleFirstResolve;
+                // 캐러셀로 통합 후엔 메시지 안의 item 처리도 같은 핸들러로
+                const resolve = () => {
+                  if (step) handleItemResolve(step);
+                };
                 return (
                   <div
                     key={i}
