@@ -1295,24 +1295,27 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
   };
 
   const handleFinalConfirm = () => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        kind: "ai",
-        text: "최종 확정된 내용을 확인해주세요.",
-        sections: [
-          {
-            label: "최종 확정 문장",
-            content: firstItem.revised ?? firstItem.original,
-          },
-          {
-            label: "반영 기준",
-            content: firstItem.reason ?? "",
-          },
-        ],
-        chips: ["완료했어요"],
-      },
-    ]);
+    // 최종 확정 메시지(채팅 안에서의 확인)는 일단 노출 안 함 (고도화 예정).
+    // 옛 로직은 아래에 주석으로 보존.
+    //     setMessages((prev) => [
+    //       ...prev,
+    //       {
+    //         kind: "ai",
+    //         text: "최종 확정된 내용을 확인해주세요.",
+    //         sections: [
+    //           {
+    //             label: "최종 확정 문장",
+    //             content: firstItem.revised ?? firstItem.original,
+    //           },
+    //           {
+    //             label: "반영 기준",
+    //             content: firstItem.reason ?? "",
+    //           },
+    //         ],
+    //         chips: ["완료했어요"],
+    //       },
+    //     ]);
+    onFinish();
   };
 
   // 캐러셀 카드 처리 통합 핸들러 (step 1 또는 2).

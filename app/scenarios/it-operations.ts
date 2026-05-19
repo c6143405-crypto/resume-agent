@@ -135,7 +135,6 @@ export const IT_OPERATIONS: Scenario = {
     },
   ],
   refinementTargets: [
-    // 1/2 — 단일 수정안: 역할 범위 명확화
     {
       title: "역할 범위 명확화",
       originalSentence: "사내 IT 인프라 운영과 사용자 지원 업무 전반 수행",
@@ -146,6 +145,9 @@ export const IT_OPERATIONS: Scenario = {
       originalTags: ["역할 과장"],
       revisedTags: ["명확성", "직무 적합성"],
       reasonTags: ["역할 범위 조정", "운영 역량 강화"],
+      keywords: [
+        { original: "사용자 지원 업무 전반 수행", revised: "사용자 지원 업무를 연결한 전산 운영 관리" },
+      ],
     },
     // 2/2 — 다지선다: 사용자 지원 업무 구체화
     {
@@ -157,18 +159,29 @@ export const IT_OPERATIONS: Scenario = {
           hint: "성과를 명확히 유지",
           text: "현업 부서의 전산 문의와 장애 요청 접수 및 처리 우선순위 관리",
           tags: ["성과 유지", "명확성"],
+          keywords: [
+            { original: "장애 요청을 접수하고", revised: "장애 요청 접수 및" },
+            { original: "우선순위 정리", revised: "처리 우선순위 관리" },
+          ],
         },
         {
           label: "B",
           hint: "더 신중하고 안전하게 표현",
           text: "현업 부서의 전산 문의와 장애 요청을 접수하고 처리 순서 조율",
           tags: ["안전한 표현", "자연스러움"],
+          keywords: [
+            { original: "우선순위 정리", revised: "처리 순서 조율" },
+          ],
         },
         {
           label: "C",
           hint: "성과 중심으로 압축",
           text: "전산 문의 및 장애 요청 관리 체계 운영을 통한 내부 지원 효율 개선",
           tags: ["성과 압축", "지원 효율"],
+          keywords: [
+            { original: "현업 부서의 전산 문의와 장애 요청", revised: "전산 문의 및 장애 요청 관리 체계" },
+            { original: "우선순위 정리", revised: "내부 지원 효율 개선" },
+          ],
         },
       ],
       changeReason:
@@ -188,6 +201,10 @@ export const IT_OPERATIONS: Scenario = {
       originalTags: ["강한 표현"],
       revisedTags: ["신뢰성", "안전/신뢰성"],
       reasonTags: ["과장 완화", "신뢰도 개선"],
+      keywords: [
+        { original: "복구 점검 체계 운영으로", revised: "복구 점검을 통한" },
+        { original: "자료 유실 리스크 감소", revised: "자료 유실 가능성 완화" },
+      ],
     },
   ],
 };
