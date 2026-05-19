@@ -1,36 +1,55 @@
-# 🛡 main이 너보다 앞서있으면 push 거부
-# 목적: 옛 base 위에서 작업한 변경이 다른 사람의 main 변경을 덮어쓰는 사고 방지
+# 🛡 main과 *진짜 충돌*이 있을 때만 push 거부 (완화 정책)
+#
+# 이전: main이 한 커밋이라도 앞서면 무조건 거부 → 매번 Update from main 강제
+# 현재: 양쪽이 같은 파일의 같은 줄을 수정한 경우(= 머지 시 충돌 마커 발생)에만 거부
+# 목적: 다른 사람 작업을 무심코 덮어쓸 위험만 차단, 단순 지연(따라잡기)은 허용
 
-# main 최신 정보 받아옴
 git fetch origin main --quiet
 
-# 갈라진 지점 vs origin/main 최신
-BASE=$(git merge-base HEAD origin/main)
-REMOTE=$(git rev-parse origin/main)
+# 1차 시도: git 2.38+ — git merge-tree --write-tree
+# exit 0 = 충돌 없음, exit 1 = 충돌, 그 외 = 옵션 없음 → fallback
+git merge-tree --write-tree HEAD origin/main >/dev/null 2>&1
+NEW_EXIT=$?
 
-if [ "$BASE" != "$REMOTE" ]; then
-  echo ""
-  echo "❌ 잠깐! 작업 시작 후 main이 업데이트됐어요."
-  echo ""
-  echo "📥 아직 받지 못한 변경:"
-  # 머지 커밋(Merge pull request ...)은 노이즈라 제외, 각 커밋의 작성자와 메시지 표시
-  git log HEAD..origin/main --pretty=format:"   • %an — %s" --no-merges
-  echo ""
-  echo ""
-  echo "📂 영향받은 파일:"
-  # 변경된 파일 목록 (최대 10개)
-  git diff --name-only HEAD..origin/main | sed 's/^/   • /' | head -10
-  TOTAL=$(git diff --name-only HEAD..origin/main | wc -l | tr -d ' ')
-  if [ "$TOTAL" -gt 10 ]; then
-    echo "   ... 외 $((TOTAL - 10))개 파일"
-  fi
-  echo ""
-  echo "🔁 GitHub Desktop에서 'Pull origin'을 먼저 해주세요."
-  echo "   (또는 Branch 메뉴 → Update from main)"
-  echo ""
-  echo "그래야 위 변경이 사라지지 않아요."
-  echo ""
-  exit 1
+if [ "$NEW_EXIT" = "0" ]; then
+  exit 0
 fi
 
-exit 0
+if [ "$NEW_EXIT" = "1" ]; then
+  CONFLICT=1
+else
+  # 2차 fallback: 옛 git merge-tree (3-args 모드)
+  # 출력에 충돌 마커(<<<<<<<)가 있으면 충돌
+  BASE=$(git merge-base HEAD origin/main)
+  if [ -z "$BASE" ]; then
+    # merge-base 못 찾음 — 안전하게 통과
+    exit 0
+  fi
+  if git merge-tree "$BASE" HEAD origin/main 2>/dev/null | grep -qE '^(\+?<{7} )'; then
+    CONFLICT=1
+  else
+    CONFLICT=0
+  fi
+fi
+
+if [ "$CONFLICT" = "0" ]; then
+  exit 0
+fi
+
+# 충돌 — 거부
+echo ""
+echo "❌ 잠깐! main과 진짜 충돌이 있어요."
+echo ""
+echo "📥 main에 들어간 변경 중 너의 변경과 같은 파일·같은 부분을 건드린 게 있어요."
+echo ""
+echo "📥 받지 못한 변경:"
+git log HEAD..origin/main --pretty=format:"   • %an — %s" --no-merges 2>/dev/null
+echo ""
+echo ""
+echo "🔁 GitHub Desktop에서 'Branch → Merge into current branch → main'을 선택해서"
+echo "   충돌을 직접 확인하고 해결한 후 다시 push 해주세요."
+echo ""
+echo "💡 충돌 해결 시 *양쪽 변경 모두* 의도와 맞는지 꼭 확인하세요."
+echo "   (한쪽만 살리고 다른 쪽 무시하는 실수 = 옛 코드 부활 사고)"
+echo ""
+exit 1
