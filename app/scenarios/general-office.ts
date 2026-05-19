@@ -201,7 +201,6 @@ export const GENERAL_OFFICE: Scenario = {
     },
   ],
   refinementTargets: [
-    // 1/2 — 단일 수정안: 과장 표현 완화
     {
       title: "과장 표현 완화",
       originalSentence: "12년 연속 고용노동부 점검 및 노사 분쟁 지적 사항 0건 유지",
@@ -212,6 +211,10 @@ export const GENERAL_OFFICE: Scenario = {
       originalTags: ["단정 표현"],
       revisedTags: ["신뢰성", "안전/신뢰성"],
       reasonTags: ["과장 완화", "신뢰도 개선"],
+      keywords: [
+        { original: "12년 연속", revised: "12년간" },
+        { original: "지적 사항 0건 유지", revised: "주요 지적 사항 없이 노무 리스크 관리" },
+      ],
     },
     // 2/2 — 다지선다: 성과 표현 수위 조정
     {
@@ -223,18 +226,28 @@ export const GENERAL_OFFICE: Scenario = {
           hint: "성과를 명확히 유지",
           text: "급여 집행 및 4대 보험 신고 데이터 검증을 통한 정확도 99.9% 수준 유지",
           tags: ["성과 유지", "정확성"],
+          keywords: [
+            { original: "데이터 정확도 99.9% 수준 확보", revised: "데이터 검증을 통한 정확도 99.9% 수준 유지" },
+          ],
         },
         {
           label: "B",
           hint: "더 신중하고 안전하게 표현",
           text: "급여 집행 및 4대 보험 신고 데이터 정기 검토를 통한 신고 오류 최소화",
           tags: ["안전한 표현", "리스크 완화"],
+          keywords: [
+            { original: "데이터 정확도 99.9% 수준 확보", revised: "데이터 정기 검토를 통한 신고 오류 최소화" },
+          ],
         },
         {
           label: "C",
           hint: "성과 중심으로 압축",
           text: "급여 및 4대 보험 신고 데이터 검증 체계 운영을 통한 인사·노무 데이터 정확성 강화",
           tags: ["성과 압축", "신뢰도"],
+          keywords: [
+            { original: "급여 집행 및 4대 보험 신고 데이터", revised: "급여 및 4대 보험 신고 데이터 검증 체계" },
+            { original: "정확도 99.9% 수준 확보", revised: "인사·노무 데이터 정확성 강화" },
+          ],
         },
       ],
       changeReason:
@@ -255,6 +268,10 @@ export const GENERAL_OFFICE: Scenario = {
       originalTags: ["강한 표현"],
       revisedTags: ["명확성", "자연스러움"],
       reasonTags: ["역할 범위 조정", "표현 완화"],
+      keywords: [
+        { original: "운영 체계를 도입해", revised: "운영 체계 정비를 통한" },
+        { original: "리스크 사전 차단", revised: "리스크 완화" },
+      ],
     },
   ],
 };

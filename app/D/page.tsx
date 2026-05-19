@@ -1073,6 +1073,19 @@ function AiChatScreen({ draftTitle, selectedDraftData, onScrollChange, onFinish,
   const [completedCount, setCompletedCount] = useState(0);
   const [isFirstBadgeModified, setIsFirstBadgeModified] = useState(false);
   const [isSecondBadgeModified, setIsSecondBadgeModified] = useState(false);
+
+  // ─── 시나리오 기반 키워드 칩 시스템 ─────────────────────────────
+  // scenario.refinementTargets[0]의 originalSentence와 일치하는 본문 라인을 찾아
+  // 그 안의 keywords를 빨강(original)/파랑(revised) 칩으로 표시한다.
+  // 각 키워드 칩은 독립적으로 toggle 가능 (modifiedKeywords state).
+  const chatScenario = useScenario();
+  const primaryTarget = chatScenario.refinementTargets?.[0];
+  const primaryKeywords = primaryTarget?.keywords ?? [];
+  // 키워드 인덱스별로 modified 여부 저장 (true = revised 보임, false = original 빨강 칩)
+  const [modifiedKeywords, setModifiedKeywords] = useState<Record<number, boolean>>({});
+  const toggleKeyword = (kwIdx: number) => {
+    setModifiedKeywords((prev) => ({ ...prev, [kwIdx]: !prev[kwIdx] }));
+  };
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<Array<{ kind: "user" | "ai"; content: string; sections?: Array<{ label: string; content: string }> }>>([]);
   const [achievementRevisions, setAchievementRevisions] = useState<Record<number, { original: string; revised: string; isModified: boolean }>>({});
@@ -1336,67 +1349,66 @@ function AiChatScreen({ draftTitle, selectedDraftData, onScrollChange, onFinish,
               </h4>
               <div className="flex flex-col gap-[4px]">
                 {draftData.achievements.map((item, i) => {
-                  // Check if this achievement has a revision
-                  const revision = achievementRevisions[i];
-                  
-                  if (i === 1) {
+                  // 시나리오 기반: 이 라인이 1번 검토 항목의 originalSentence와 일치하면
+                  // 그 안의 keywords를 칩으로 렌더한다.
+                  const isPrimaryLine =
+                    primaryTarget && primaryKeywords.length > 0 && item === primaryTarget.originalSentence;
+
+                  if (isPrimaryLine) {
+                    // 라인을 keywords의 original을 기준으로 토큰화 후 렌더
+                    // 알고리즘: keywords를 순서대로 라인에서 substring으로 찾아 분할
+                    const segments: Array<{ kind: "text" | "chip"; content: string; kwIdx?: number }> = [];
+                    let cursor = 0;
+                    const text = item;
+                    primaryKeywords.forEach((kw, kwIdx) => {
+                      const found = text.indexOf(kw.original, cursor);
+                      if (found < 0) return;
+                      if (found > cursor) {
+                        segments.push({ kind: "text", content: text.slice(cursor, found) });
+                      }
+                      segments.push({ kind: "chip", content: kw.original, kwIdx });
+                      cursor = found + kw.original.length;
+                    });
+                    if (cursor < text.length) {
+                      segments.push({ kind: "text", content: text.slice(cursor) });
+                    }
                     return (
-                      <li key={i} className="ml-[24px] list-disc text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)] relative" onClick={(e) => e.stopPropagation()}>
-                        외부 감사{' '}
-                        <span
-                          onClick={handleFirstBadgeTap}
-                          className="inline-block cursor-pointer transition-colors mx-0.5"
-                        >
-                          {isFirstBadgeModified ? (
-                            <span className="bg-[#E5F2FF] px-[3px] py-0 text-[16px] font-semibold leading-[30px] tracking-[0.0912px] text-[#0066FF]">
-                              대응 과정에서
+                      <li
+                        key={i}
+                        className="ml-[24px] list-disc text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)]"
+                      >
+                        {segments.map((seg, sIdx) => {
+                          if (seg.kind === "text") return <span key={sIdx}>{seg.content}</span>;
+                          const kw = primaryKeywords[seg.kwIdx!];
+                          const modified = !!modifiedKeywords[seg.kwIdx!];
+                          return (
+                            <span
+                              key={sIdx}
+                              onClick={() => toggleKeyword(seg.kwIdx!)}
+                              className="mx-0.5 inline-block cursor-pointer transition-colors"
+                            >
+                              {modified ? (
+                                <span className="bg-[#E5F2FF] px-[3px] py-0 text-[16px] font-semibold leading-[30px] tracking-[0.0912px] text-[#0066FF]">
+                                  {kw.revised}
+                                </span>
+                              ) : (
+                                <span className="bg-[#FEECEC] px-[3px] py-0 text-[16px] font-semibold leading-[30px] tracking-[0.0912px] text-[#FF4242]">
+                                  {kw.original}
+                                </span>
+                              )}
                             </span>
-                          ) : (
-                            <span className="bg-[#FEECEC] px-[3px] py-0 text-[16px] font-semibold leading-[30px] tracking-[0.0912px] text-[#FF4242]">
-                              12년 연속
-                            </span>
-                          )}
-                        </span>
-                        {' '}주요 지적 사항{' '}
-                        <span
-                          onClick={handleSecondBadgeTap}
-                          className="inline-block cursor-pointer transition-colors mx-0.5"
-                        >
-                          {isSecondBadgeModified ? (
-                            <span className="bg-[#E5F2FF] px-[3px] py-0 text-[16px] font-semibold leading-[30px] tracking-[0.0912px] text-[#0066FF]">
-                              없이
-                            </span>
-                          ) : (
-                            <span className="bg-[#FEECEC] px-[3px] py-0 text-[16px] font-semibold leading-[30px] tracking-[0.0912px] text-[#FF4242]">
-                              0건
-                            </span>
-                          )}
-                        </span>
-                        {' '}유지
+                          );
+                        })}
                       </li>
                     );
                   }
-                  if (i === 3) {
-                    return (
-                      <li key={i} className="ml-[24px] list-disc text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)]">
-                        {item}
-                      </li>
-                    );
-                  }
-                  
-                  // Handle revision badge
-                  if (revision) {
-                    return (
-                      <li key={i} className="ml-[24px] list-disc text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)] cursor-pointer" onClick={() => handleAchievementRevisionTap(i)}>
-                        <span className={revision.isModified ? "bg-[#E5F2FF] px-[3px] py-0 text-[16px] font-semibold leading-[30px] tracking-[0.0912px] text-[#0066FF]" : "bg-[#FEECEC] px-[3px] py-0 text-[16px] font-semibold leading-[30px] tracking-[0.0912px] text-[#FF4242]"}>
-                          {revision.isModified ? revision.revised : (revision.original || "")}
-                        </span>
-                      </li>
-                    );
-                  }
-                  
+
+                  // 시나리오 매칭 안 되는 라인 — 일반 텍스트
                   return (
-                    <li key={i} className="ml-[24px] list-disc text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)]">
+                    <li
+                      key={i}
+                      className="ml-[24px] list-disc text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)]"
+                    >
                       {item}
                     </li>
                   );

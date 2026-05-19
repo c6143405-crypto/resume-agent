@@ -56,6 +56,8 @@ export interface ScenarioRefinementOption {
   hint?: string;
   text: string;
   tags?: string[]; // B 타입 전용 시각 라벨 (다른 타입은 무시)
+  // D 타입 전용 — 라인 안에서 변경되는 키워드 단위 매핑
+  keywords?: { original: string; revised: string }[];
 }
 
 // 시나리오 레벨 검토 항목 한 건.
@@ -72,6 +74,8 @@ export interface ScenarioRefinementTarget {
   originalTags?: string[]; // 기존 문장에 붙는 라벨 (예: ["강한 표현"])
   revisedTags?: string[];  // 수정 문장에 붙는 라벨 (예: ["신뢰성", "정확성"])
   reasonTags?: string[];   // 수정 이유 위에 붙는 라벨 (예: ["과장 완화", "신뢰도 개선"])
+  // D 타입 전용 — 라인 안에서 변경되는 키워드 단위 매핑 (단일 수정안일 때)
+  keywords?: { original: string; revised: string }[];
 }
 
 // CM1에서 비교 대상이 되는 한 초안의 전체 데이터.

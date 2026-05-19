@@ -135,7 +135,6 @@ export const EDUCATION_RESEARCH: Scenario = {
     },
   ],
   refinementTargets: [
-    // 1/2 — 단일 수정안: 감사 성과 표현 완화
     {
       title: "감사 성과 표현 완화",
       originalSentence: "12년 연속 정부 정기 감사 연구비 환수 및 주요 지적 사항 0건 유지",
@@ -146,6 +145,10 @@ export const EDUCATION_RESEARCH: Scenario = {
       originalTags: ["단정 표현"],
       revisedTags: ["신뢰성", "안전/신뢰성"],
       reasonTags: ["과장 완화", "신뢰도 개선"],
+      keywords: [
+        { original: "12년 연속", revised: "대응 과정에서" },
+        { original: "주요 지적 사항 0건 유지", revised: "주요 지적 리스크 관리" },
+      ],
     },
     // 2/2 — 다지선다: 연구 데이터 정확도 표현 수위 조정
     {
@@ -157,18 +160,29 @@ export const EDUCATION_RESEARCH: Scenario = {
           hint: "성과를 명확히 유지",
           text: "표본 데이터 통계 검증을 통한 연구 데이터 정확도 99% 수준 유지",
           tags: ["성과 유지", "정확성"],
+          keywords: [
+            { original: "표본 데이터 통계 검증 및", revised: "표본 데이터 통계 검증을 통한" },
+            { original: "정확도 99% 수준 확보", revised: "정확도 99% 수준 유지" },
+          ],
         },
         {
           label: "B",
           hint: "더 신중하고 안전하게 표현",
           text: "표본 데이터 통계 검증 및 연구 데이터 오류 가능성 완화",
           tags: ["안전한 표현", "리스크 완화"],
+          keywords: [
+            { original: "연구 데이터 정확도 99% 수준 확보", revised: "연구 데이터 오류 가능성 완화" },
+          ],
         },
         {
           label: "C",
           hint: "성과 중심으로 압축",
           text: "연구 데이터 검증 체계 운영을 통한 분석 신뢰도 강화",
           tags: ["성과 압축", "신뢰도"],
+          keywords: [
+            { original: "표본 데이터 통계 검증 및 연구 데이터", revised: "연구 데이터 검증 체계" },
+            { original: "정확도 99% 수준 확보", revised: "분석 신뢰도 강화" },
+          ],
         },
       ],
       changeReason:
@@ -188,6 +202,10 @@ export const EDUCATION_RESEARCH: Scenario = {
       originalTags: ["역할 과장"],
       revisedTags: ["명확성", "직무 적합성"],
       reasonTags: ["역할 범위 조정", "연구 적합성 강화"],
+      keywords: [
+        { original: "기획부터 예산, 정산, 실사, 성과 공시까지", revised: "기획, 예산, 정산, 실사, 성과 공시 업무를 연결한" },
+        { original: "연구 행정 전 과정 수행", revised: "연구 행정 운영 관리" },
+      ],
     },
   ],
 };

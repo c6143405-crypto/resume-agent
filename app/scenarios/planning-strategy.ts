@@ -134,7 +134,6 @@ export const PLANNING_STRATEGY: Scenario = {
     },
   ],
   refinementTargets: [
-    // 1/2 — 단일 수정안: 조달 성과 표현 완화
     {
       title: "조달 성과 표현 완화",
       originalSentence: "투자사 및 금융 이해관계자와의 조달 관련 분쟁 0건 유지",
@@ -145,6 +144,10 @@ export const PLANNING_STRATEGY: Scenario = {
       originalTags: ["단정 표현"],
       revisedTags: ["신뢰성", "안전/신뢰성"],
       reasonTags: ["과장 완화", "신뢰도 개선"],
+      keywords: [
+        { original: "조달 관련 분쟁 0건 유지", revised: "조달 관련 리스크 관리" },
+        { original: "투자사 및 금융 이해관계자와의", revised: "투자사 및 금융 이해관계자 대응 과정에서" },
+      ],
     },
     // 2/2 — 다지선다: 전략기획 역할 표현 수위 조정
     {
@@ -156,18 +159,30 @@ export const PLANNING_STRATEGY: Scenario = {
           hint: "성과를 명확히 유지",
           text: "신규 사업 발굴, 사업성 검토, IR 자료 작성, OKR 운영을 포함한 전략기획 업무 수행",
           tags: ["성과 유지", "직무 전문성"],
+          keywords: [
+            { original: "IR", revised: "IR 자료 작성" },
+            { original: "전 과정 수행", revised: "업무 수행" },
+          ],
         },
         {
           label: "B",
           hint: "더 신중하고 안전하게 표현",
           text: "신규 사업 검토, IR 자료 준비, OKR 운영 지원을 통한 전략기획 업무 수행",
           tags: ["안전한 표현", "역할 조정"],
+          keywords: [
+            { original: "신규 사업 발굴부터 사업성 검토", revised: "신규 사업 검토" },
+            { original: "전 과정 수행", revised: "업무 수행" },
+          ],
         },
         {
           label: "C",
           hint: "성과 중심으로 압축",
           text: "신사업·IR·OKR 운영 경험을 바탕으로 전략기획 실행력 강화",
           tags: ["성과 압축", "전략기획"],
+          keywords: [
+            { original: "신규 사업 발굴부터 사업성 검토, IR, OKR 운영까지", revised: "신사업·IR·OKR 운영 경험" },
+            { original: "전략기획 전 과정 수행", revised: "전략기획 실행력 강화" },
+          ],
         },
       ],
       changeReason:
@@ -188,6 +203,10 @@ export const PLANNING_STRATEGY: Scenario = {
       originalTags: ["어려운 표현"],
       revisedTags: ["명확성", "자연스러움"],
       reasonTags: ["전문 용어 완화", "이해도 개선"],
+      keywords: [
+        { original: "후보군을 발굴하고", revised: "후보군 발굴 및" },
+        { original: "PEST, 5-Force 기반", revised: "시장 환경·경쟁 구조 기반의" },
+      ],
     },
   ],
 };

@@ -134,7 +134,6 @@ export const PUBLIC_ADMINISTRATION: Scenario = {
     },
   ],
   refinementTargets: [
-    // 1/2 — 단일 수정안: 감사 성과 표현 완화
     {
       title: "감사 성과 표현 완화",
       originalSentence: "12년 연속 상급 부처 정기 감사 주요 시정·징계 사항 0건 유지",
@@ -145,6 +144,10 @@ export const PUBLIC_ADMINISTRATION: Scenario = {
       originalTags: ["단정 표현"],
       revisedTags: ["신뢰성", "안전/신뢰성"],
       reasonTags: ["과장 완화", "신뢰도 개선"],
+      keywords: [
+        { original: "12년 연속", revised: "대응 과정에서" },
+        { original: "주요 시정·징계 사항 0건 유지", revised: "주요 시정·징계 리스크 관리" },
+      ],
     },
     // 2/2 — 다지선다: 예산 성과 표현 수위 조정
     {
@@ -156,18 +159,29 @@ export const PUBLIC_ADMINISTRATION: Scenario = {
           hint: "성과를 명확히 유지",
           text: "예산 불용률 0.2% 미만 관리를 통한 예산 집행 효율성 확보",
           tags: ["성과 유지", "정확성"],
+          keywords: [
+            { original: "관리로", revised: "관리를 통한" },
+          ],
         },
         {
           label: "B",
           hint: "더 신중하고 안전하게 표현",
           text: "예산 집행 현황 정기 점검을 통한 불용 가능성 완화 및 집행 효율 관리",
           tags: ["안전한 표현", "리스크 완화"],
+          keywords: [
+            { original: "예산 불용률 0.2% 미만 관리", revised: "예산 집행 현황 정기 점검" },
+            { original: "예산 집행 효율성 확보", revised: "불용 가능성 완화 및 집행 효율 관리" },
+          ],
         },
         {
           label: "C",
           hint: "성과 중심으로 압축",
           text: "예산 집행 관리 체계 운영을 통한 공공 예산 운영 효율성 강화",
           tags: ["성과 압축", "신뢰도"],
+          keywords: [
+            { original: "예산 불용률 0.2% 미만 관리", revised: "예산 집행 관리 체계 운영" },
+            { original: "예산 집행 효율성 확보", revised: "공공 예산 운영 효율성 강화" },
+          ],
         },
       ],
       changeReason:
@@ -187,6 +201,10 @@ export const PUBLIC_ADMINISTRATION: Scenario = {
       originalTags: ["역할 과장"],
       revisedTags: ["명확성", "직무 적합성"],
       reasonTags: ["역할 범위 조정", "공공 적합성 강화"],
+      keywords: [
+        { original: "예산 편성부터 집행, 정산까지", revised: "예산 편성, 집행, 정산 업무를 연결한" },
+        { original: "공공 예산 운영 전 과정 수행", revised: "공공 예산 운영 관리" },
+      ],
     },
   ],
 };

@@ -134,7 +134,6 @@ export const SALES_MARKETING: Scenario = {
     },
   ],
   refinementTargets: [
-    // 1/2 — 단일 수정안: 성과 표현 완화
     {
       title: "성과 표현 완화",
       originalSentence: "핵심 유통 채널과의 거래 분쟁 0건 유지",
@@ -145,6 +144,10 @@ export const SALES_MARKETING: Scenario = {
       originalTags: ["단정 표현"],
       revisedTags: ["신뢰성", "안전/신뢰성"],
       reasonTags: ["과장 완화", "신뢰도 개선"],
+      keywords: [
+        { original: "거래 분쟁 0건 유지", revised: "파트너십 리스크 완화" },
+        { original: "핵심 유통 채널과의", revised: "핵심 유통 채널과의 거래 조건 및 커뮤니케이션 관리를 통한" },
+      ],
     },
     // 2/2 — 다지선다: 마케팅 성과 표현 수위 조정
     {
@@ -157,18 +160,30 @@ export const SALES_MARKETING: Scenario = {
           hint: "성과를 명확히 유지",
           text: "퍼포먼스 마케팅 캠페인별 예산 효율 점검 및 허수 트래픽 필터링 기준 운영",
           tags: ["성과 유지", "직무 전문성"],
+          keywords: [
+            { original: "예산 대비 효율 데이터 점검", revised: "예산 효율 점검" },
+            { original: "허수 트래픽 필터링", revised: "허수 트래픽 필터링 기준 운영" },
+          ],
         },
         {
           label: "B",
           hint: "더 신중하고 안전하게 표현",
           text: "광고 성과 데이터 점검을 통한 예산 낭비 가능성 완화 및 집행 효율 관리",
           tags: ["안전한 표현", "리스크 완화"],
+          keywords: [
+            { original: "퍼포먼스 마케팅 캠페인별 예산 대비 효율 데이터 점검", revised: "광고 성과 데이터 점검을 통한 예산 낭비 가능성 완화" },
+            { original: "허수 트래픽 필터링", revised: "집행 효율 관리" },
+          ],
         },
         {
           label: "C",
           hint: "성과 중심으로 압축",
           text: "마케팅 성과 데이터 검토를 통한 광고 예산 운영 효율 개선",
           tags: ["성과 압축", "명확성"],
+          keywords: [
+            { original: "퍼포먼스 마케팅 캠페인별 예산 대비 효율 데이터", revised: "마케팅 성과 데이터" },
+            { original: "허수 트래픽 필터링", revised: "광고 예산 운영 효율 개선" },
+          ],
         },
       ],
       changeReason:
@@ -189,6 +204,10 @@ export const SALES_MARKETING: Scenario = {
       originalTags: ["모호한 표현"],
       revisedTags: ["구체화", "명확성"],
       reasonTags: ["업무 범위 구체화", "운영 역량 강조"],
+      keywords: [
+        { original: "데이터를 함께 관리하며", revised: "데이터 통합 관리를 통한" },
+        { original: "병목 구간 개선", revised: "지연 및 누락 가능성 완화" },
+      ],
     },
   ],
 };
