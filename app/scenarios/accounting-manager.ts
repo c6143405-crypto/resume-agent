@@ -146,6 +146,40 @@ export const ACCOUNTING_MANAGER: Scenario = {
         { original: "12년 연속", revised: "대응 과정에서" },
         { original: "주요 지적 사항 0건 유지", revised: "주요 지적 사항 없이 결산 자료 신뢰도 유지" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence: "외부 회계 감사 12년 연속 주요 지적 사항 0건 유지",
+          revisedSentence:
+            "외부 회계 감사 대응 과정에서 주요 지적 사항 없이 결산 자료 신뢰도 유지",
+          keywords: [
+            { original: "12년 연속", revised: "대응 과정에서" },
+            {
+              original: "주요 지적 사항 0건 유지",
+              revised: "주요 지적 사항 없이 결산 자료 신뢰도 유지",
+            },
+          ],
+        },
+        fit: {
+          originalSentence: "외부 감사 대응 프로세스를 안정적으로 운영해 감사 리스크 관리",
+          revisedSentence: "외부 감사 대응 프로세스 정비를 통한 감사 자료 신뢰도 유지",
+          keywords: [
+            { original: "안정적으로 운영해", revised: "정비를 통한" },
+            { original: "감사 리스크 관리", revised: "감사 자료 신뢰도 유지" },
+          ],
+        },
+        narrative: {
+          originalSentence: "외부 감사 시 요청 자료를 신속히 정리하고 소명 자료를 준비",
+          revisedSentence:
+            "외부 감사 요청 자료 정리 및 소명 자료 준비를 통한 감사 대응 안정화",
+          keywords: [
+            {
+              original: "외부 감사 시 요청 자료를 신속히 정리하고",
+              revised: "외부 감사 요청 자료 정리 및",
+            },
+            { original: "소명 자료를 준비", revised: "소명 자료 준비를 통한 감사 대응 안정화" },
+          ],
+        },
+      },
     },
     // 2/2 — 다지선다: 세무 신고 정확도 표현 수위 조정
     {
@@ -186,6 +220,121 @@ export const ACCOUNTING_MANAGER: Scenario = {
       originalTags: ["수치 근거 부족"],
       revisedTags: ["정확성", "신뢰성"],
       reasonTags: ["수치 부담 완화", "선택권 제공"],
+      byDraft: {
+        achievement: {
+          originalSentence: "부가세·법인세 신고 자료 정확도 99% 수준 유지",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "세무 신고 자료 검증을 통한 정확도 99% 수준 유지",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "부가세·법인세", revised: "세무 신고" },
+                { original: "자료 정확도", revised: "자료 검증을 통한 정확도" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "부가세·법인세 신고 자료 정기 검토를 통한 오류 및 누락 가능성 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "신고 자료 정확도", revised: "신고 자료 정기 검토" },
+                { original: "99% 수준 유지", revised: "오류 및 누락 가능성 완화" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "세무 신고 자료 검증 체계 운영을 통한 신고 데이터 신뢰도 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                { original: "부가세·법인세 신고 자료", revised: "세무 신고 자료 검증 체계" },
+                { original: "정확도 99% 수준 유지", revised: "신고 데이터 신뢰도 강화" },
+              ],
+            },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "세무 신고 기초 자료를 체계화해 신고 오류 및 누락 리스크 감소",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "세무 신고 기초 자료 체계화를 통한 신고 오류 및 누락 리스크 완화",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "자료를 체계화해", revised: "자료 체계화를 통한" },
+                { original: "리스크 감소", revised: "리스크 완화" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "세무 신고 기초 자료 정기 검토를 통한 신고 오류 및 누락 가능성 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "자료를 체계화해", revised: "자료 정기 검토를 통한" },
+                { original: "누락 리스크 감소", revised: "누락 가능성 완화" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "세무 신고 자료 검증 체계 운영을 통한 신고 데이터 신뢰도 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                { original: "세무 신고 기초 자료", revised: "세무 신고 자료 검증 체계" },
+                {
+                  original: "신고 오류 및 누락 리스크 감소",
+                  revised: "신고 데이터 신뢰도 강화",
+                },
+              ],
+            },
+          ],
+        },
+        narrative: {
+          originalSentence:
+            "세무 신고 전 필요한 자료를 항목별로 분류해 누락 리스크 관리",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "세무 신고 자료 항목별 분류를 통한 누락 리스크 완화",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "세무 신고 전 필요한 자료를", revised: "세무 신고 자료" },
+                {
+                  original: "항목별로 분류해 누락 리스크 관리",
+                  revised: "항목별 분류를 통한 누락 리스크 완화",
+                },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "세무 신고 자료 정기 검토를 통한 누락 가능성 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "세무 신고 전 필요한 자료를", revised: "세무 신고 자료" },
+                { original: "누락 리스크 관리", revised: "누락 가능성 완화" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "세무 신고 자료 분류 체계 운영을 통한 신고 누락 리스크 완화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                { original: "세무 신고 전 필요한 자료", revised: "세무 신고 자료 분류 체계" },
+                { original: "누락 리스크 관리", revised: "신고 누락 리스크 완화" },
+              ],
+            },
+          ],
+        },
+      },
     },
     // 추가 제안 — 역할 범위 명확화
     {
@@ -201,6 +350,38 @@ export const ACCOUNTING_MANAGER: Scenario = {
       keywords: [
         { original: "회계 운영 전 과정 담당", revised: "회계 운영 프로세스 관리" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence:
+            "월·연 결산 마감 일정을 관리해 평균 5영업일 이내 마감 체계 유지",
+          revisedSentence:
+            "월·연 결산 마감 일정 관리 및 평균 5영업일 이내 운영 체계 유지",
+          keywords: [
+            { original: "일정을 관리해", revised: "일정 관리 및" },
+            { original: "마감 체계 유지", revised: "운영 체계 유지" },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "결산, 세무, 감사, 보고까지 이어지는 회계 운영 전 과정 담당",
+          revisedSentence:
+            "결산, 세무, 감사, 보고 업무를 연결한 회계 운영 프로세스 관리",
+          keywords: [
+            { original: "보고까지 이어지는", revised: "보고 업무를 연결한" },
+            { original: "회계 운영 전 과정 담당", revised: "회계 운영 프로세스 관리" },
+          ],
+        },
+        narrative: {
+          originalSentence:
+            "12년간 결산·세무·감사 업무를 지속적으로 수행하며 회계 운영 신뢰도 확보",
+          revisedSentence:
+            "결산·세무·감사 업무 수행 경험을 바탕으로 회계 운영 신뢰도 강화",
+          keywords: [
+            { original: "지속적으로 수행하며", revised: "수행 경험을 바탕으로" },
+            { original: "회계 운영 신뢰도 확보", revised: "회계 운영 신뢰도 강화" },
+          ],
+        },
+      },
     },
   ],
 };
