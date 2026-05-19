@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { AiOrb } from "../components/AiOrb";
 import { PageTitleBar } from "../components/PageTitleBar";
@@ -9,6 +9,8 @@ import { HomeBar } from "../components/HomeBar";
 import { StartScreen } from "../components/StartScreen";
 import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
+import { useScenario } from "../hooks/useScenario";
+import type { Draft, ScenarioPersona } from "../scenarios";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
@@ -201,84 +203,22 @@ const MOCK_AI_RESPONSE: { text: string; item: RefinementItem } = {
       "'99%'는 산출 기준이 명확할 때 설득력이 있지만, 근거가 불분명하면 과장으로 보일 수 있습니다. 정확성을 유지했다는 의미는 살리되, 검증 부담이 적은 표현으로 조정했습니다.",
   },
 };
-const DRAFT_DATA: Record<number, DraftData> = {
-  1: {
-    title: "성과 중심 초안",
-    company: "(주) A 의류 유통 기업",
-    period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
-    project: "[프로젝트 1] 월·연 결산 마감 프로세스 운영",
-    description:
-      "직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.",
-    tasks: [
-      "매월 결산 마감 일정 관리",
-      "외부 회계 감사 대응",
-      "부가세·법인세 신고 자료 정리",
-      "결산 종료 후 대표 보고 자료 작성",
-    ],
-    achievements: [
-      "매입·매출 전표 월 평균 1,500여 건 처리 및 검증",
-      "외부 감사 12년 연속 주요 지적 사항 0건 유지",
-      "신고 자료 정확도 99% 수준 유지",
-      "결산 마감 일정을 평균 5영업일 이내로 관리",
-    ],
+// 시나리오 데이터(scenario.drafts[i])를 페이지 내부 DraftData 형식으로 변환하는 어댑터.
+function toDraftData(draft: Draft, persona: ScenarioPersona): DraftData {
+  return {
+    title: draft.draftTitle,
+    company: persona.company,
+    period: `${persona.period} · ${persona.role}`,
+    project: `[프로젝트 ${draft.project.number}] ${draft.project.title}`,
+    description: draft.project.description,
+    tasks: draft.tasks.map((b) => b.text),
+    achievements: draft.achievements.map((b) => b.text),
     criteria: {
-      applied:
-        "월·연 결산 운영 경험을 성과 중심으로 정리했어요. 전표 처리량, 감사 지적 0건, 신고 자료 정확도 99%를 주요 성과로 강조했어요.",
-      improve: "오류 개선 사례가 있으면 더 설득력 있어져요.",
+      applied: draft.whyRecommended,
+      improve: draft.caution,
     },
-  },
-  // 2, 3번은 Phase 4에서 정식 데이터로 교체. 일단 1번 데이터 재사용 (title만 변경)
-  2: {
-    title: "직무 적합 중심 초안",
-    company: "(주) A 의류 유통 기업",
-    period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
-    project: "[프로젝트 1] 월·연 결산 마감 프로세스 운영",
-    description:
-      "직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.",
-    tasks: [
-      "매월 결산 마감 일정 관리",
-      "외부 회계 감사 대응",
-      "부가세·법인세 신고 자료 정리",
-      "결산 종료 후 대표 보고 자료 작성",
-    ],
-    achievements: [
-      "매입·매출 전표 월 평균 1,500여 건 처리 및 검증",
-      "외부 감사 12년 연속 주요 지적 사항 0건 유지",
-      "신고 자료 정확도 99% 수준 유지",
-      "결산 마감 일정을 평균 5영업일 이내로 관리",
-    ],
-    criteria: {
-      applied:
-        "월·연 결산 운영 경험을 성과 중심으로 정리했어요. 전표 처리량, 감사 지적 0건, 신고 자료 정확도 99%를 주요 성과로 강조했어요.",
-      improve: "오류 개선 사례가 있으면 더 설득력 있어져요.",
-    },
-  },
-  3: {
-    title: "경험 서사 중심 초안",
-    company: "(주) A 의류 유통 기업",
-    period: "2012.03 ~ 현재 (12년 2개월) · 회계팀 과장",
-    project: "[프로젝트 1] 월·연 결산 마감 프로세스 운영",
-    description:
-      "직원 30명 연매출 120억 원 규모의 의류 유통 기업에서 월·연 결산 마감을 12년간 전담했습니다.",
-    tasks: [
-      "매월 결산 마감 일정 관리",
-      "외부 회계 감사 대응",
-      "부가세·법인세 신고 자료 정리",
-      "결산 종료 후 대표 보고 자료 작성",
-    ],
-    achievements: [
-      "매입·매출 전표 월 평균 1,500여 건 처리 및 검증",
-      "외부 감사 12년 연속 주요 지적 사항 0건 유지",
-      "신고 자료 정확도 99% 수준 유지",
-      "결산 마감 일정을 평균 5영업일 이내로 관리",
-    ],
-    criteria: {
-      applied:
-        "월·연 결산 운영 경험을 성과 중심으로 정리했어요. 전표 처리량, 감사 지적 0건, 신고 자료 정확도 99%를 주요 성과로 강조했어요.",
-      improve: "오류 개선 사례가 있으면 더 설득력 있어져요.",
-    },
-  },
-};
+  };
+}
 
 // ─── 닫기(X) 아이콘 ───────────────────────────────────────────────────
 function CloseIcon() {
@@ -699,13 +639,18 @@ function DraftDetailBody({ data }: { data: DraftData }) {
 // ─── 모달 (DraftDetail FullScreen) ───────────────────────────────────
 interface DraftDetailModalProps {
   draftIndex: number;
+  data: DraftData;
+  dataMap: Record<number, DraftData>;
   onClose: () => void;
   onSelect: () => void;
 }
-function DraftDetailModal({ draftIndex, onClose, onSelect }: DraftDetailModalProps) {
-  const data = DRAFT_DATA[draftIndex];
+function DraftDetailModal({ draftIndex, data, dataMap, onClose, onSelect }: DraftDetailModalProps) {
+  // data는 부모가 draftIndex로 매핑해 넘긴 초기값. 탭 전환 시에는 dataMap[activeTab+1]을 사용한다.
   const [isVisible, setIsVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  // 모달 열릴 때 카드 인덱스(1·2·3)에 맞는 탭(0·1·2)이 초기 활성.
+  const [activeTab, setActiveTab] = useState(Math.max(0, draftIndex - 1));
+  // 탭에 따라 표시될 본문 데이터. dataMap에서 가져옴.
+  const activeData = dataMap[activeTab + 1] ?? data;
 
   // 마운트 시 페이드인 애니메이션
   useEffect(() => {
@@ -757,7 +702,7 @@ function DraftDetailModal({ draftIndex, onClose, onSelect }: DraftDetailModalPro
           className="flex-1 overflow-y-auto px-5 pb-6"
           style={{ scrollbarGutter: "stable" }}
         >
-          <DraftDetailBody data={data} />
+          <DraftDetailBody data={activeData} />
         </div>
 
         {/* Bottom action */}
@@ -1118,12 +1063,13 @@ function RefinementItemBlock({
 // ─── AI Chat 화면 (CM 02 후반) ────────────────────────────────────────
 interface AiChatScreenProps {
   draftTitle: string;
+  selectedDraftData: DraftData;
   onScrollChange: (scrolled: boolean) => void;
   onFinish: () => void;
   isChatScrolled: boolean;
 }
-function AiChatScreen({ draftTitle, onScrollChange, onFinish, isChatScrolled }: AiChatScreenProps) {
-  const draftData = DRAFT_DATA[1];
+function AiChatScreen({ draftTitle, selectedDraftData, onScrollChange, onFinish, isChatScrolled }: AiChatScreenProps) {
+  const draftData = selectedDraftData;
   const [completedCount, setCompletedCount] = useState(0);
   const [isFirstBadgeModified, setIsFirstBadgeModified] = useState(false);
   const [isSecondBadgeModified, setIsSecondBadgeModified] = useState(false);
@@ -1541,7 +1487,7 @@ function AiChatScreen({ draftTitle, onScrollChange, onFinish, isChatScrolled }: 
 }
 
 // ─── End 화면 (Task 3 완료) ────────────────────────────────────────────
-function EndScreen({ draftTitle }: { draftTitle: string }) {
+function EndScreen({ draftTitle, onContinue }: { draftTitle: string; onContinue: () => void }) {
   return (
     <>
       <section className="flex flex-col items-center gap-5 px-5 py-12">
@@ -1559,6 +1505,15 @@ function EndScreen({ draftTitle }: { draftTitle: string }) {
         <TbdCard label={`${draftTitle} (완성 ver.)`} />
       </div>
       <div className="flex-1" />
+      <div className="px-5 pb-8">
+        <button
+          type="button"
+          onClick={onContinue}
+          className="w-full rounded-xl bg-[#0066FF] px-6 py-4 text-center text-base font-bold text-white transition-colors hover:bg-[#005BE6] active:bg-[#004FCC]"
+        >
+          다음 타입 시작하기
+        </button>
+      </div>
     </>
   );
 }
@@ -1596,7 +1551,30 @@ function Cm01CompleteScreen({ onDraftClick }: { onDraftClick: (idx: number) => v
 type Screen = "start" | "cm1-complete" | "cm2-loading" | "cm2-chat" | "end";
 
 export default function APage() {
+  // 시나리오 데이터 어댑터
+  const scenario = useScenario();
+  const draftDataMap = useMemo<Record<number, DraftData>>(
+    () => ({
+      1: toDraftData(scenario.drafts[0], scenario.persona),
+      2: toDraftData(scenario.drafts[1], scenario.persona),
+      3: toDraftData(scenario.drafts[2], scenario.persona),
+    }),
+    [scenario]
+  );
+
+  const handleContinueToNextStep = () => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get("s") ?? "accounting-manager";
+    const done = params.get("done") ?? "";
+    const doneTypes = done.split(",").filter(Boolean);
+    const currentType = "D";
+    const newDone = doneTypes.includes(currentType) ? done : [...doneTypes, currentType].join(",");
+    window.location.href = `/next-step?from=${currentType}&s=${s}&done=${newDone}`;
+  };
+
   const [screen, setScreen] = useState<Screen>("start");
+  const [confirmedDraftIndex, setConfirmedDraftIndex] = useState<number | null>(null);
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
   const [isChatScrolled, setIsChatScrolled] = useState(false);
 
@@ -1623,7 +1601,7 @@ export default function APage() {
       {(screen === "cm1-complete" || screen === "cm2-loading" || screen === "cm2-chat") && <BackgroundEllipses />}
 
       <StatusBar />
-      <PageTitleBar />
+      <PageTitleBar showBorderBottom={screen === "cm2-chat" && isChatScrolled} />
 
       {screen === "start" && (
         <StartScreen onStart={() => setScreen("cm1-complete")} />
@@ -1633,21 +1611,23 @@ export default function APage() {
       )}
       {screen === "cm2-loading" && (
         <Cm02LoadingScreen
-          draftIndex={1}
-          draftTitle={DRAFT_DATA[1].title}
+          draftIndex={confirmedDraftIndex ?? 1}
+          draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title}
+          draftDirection={scenario.drafts[(confirmedDraftIndex ?? 1) - 1].direction}
           onRefine={() => setScreen("cm2-chat")}
           onFinalize={() => setScreen("end")}
         />
       )}
       {screen === "cm2-chat" && (
         <AiChatScreen
-          draftTitle={DRAFT_DATA[1].title}
+          draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title}
+          selectedDraftData={draftDataMap[confirmedDraftIndex ?? 1]}
           onScrollChange={setIsChatScrolled}
           onFinish={() => setScreen("end")}
           isChatScrolled={isChatScrolled}
         />
       )}
-      {screen === "end" && <EndScreen draftTitle={DRAFT_DATA[1].title} />}
+      {screen === "end" && <EndScreen draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title} onContinue={handleContinueToNextStep} />}
 
       <HomeBar />
 
@@ -1655,8 +1635,11 @@ export default function APage() {
       {selectedDraft !== null && (
         <DraftDetailModal
           draftIndex={selectedDraft}
+          data={draftDataMap[selectedDraft]}
+          dataMap={draftDataMap}
           onClose={() => setSelectedDraft(null)}
           onSelect={() => {
+            setConfirmedDraftIndex(selectedDraft);
             setSelectedDraft(null);
             setScreen("cm2-loading");
           }}

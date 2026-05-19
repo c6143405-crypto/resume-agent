@@ -1052,6 +1052,14 @@ export default function Page() {
   );
   // [CM1 라디오 후보] '이 초안 선택하기' 버튼을 누르기 전, 임시로 골라둔 초안.
   const [cm1Candidate, setCm1Candidate] = useState<Draft | null>(null);
+
+  // cm1Candidate가 scenarioDrafts에서 몇 번째인지 한 번 계산해서
+  // Cm02LoadingScreen의 draftIndex / draftDirection 두 곳에서 재사용한다.
+  // (ACD 페이지의 confirmedDraftIndex 패턴과 동일한 인덱스-파생 구조)
+  const cm02DraftIndex = Math.max(
+    1,
+    scenarioDrafts.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1,
+  );
   // [B 타입 — 초안 상세 펼침] draftId 별로 펼침/접힘 상태 관리.
   const [expandedDrafts, setExpandedDrafts] = useState<Record<string, boolean>>({});
   const toggleDraftExpanded = (draftId: string) => {
@@ -1982,8 +1990,9 @@ export default function Page() {
             </div>
           ) : view === "selected" ? (
             <Cm02LoadingScreen
-              draftIndex={Math.max(1, scenarioDrafts.findIndex((d) => d.draftId === cm1Candidate?.draftId) + 1)}
+              draftIndex={cm02DraftIndex}
               draftTitle={cm1Candidate?.draftTitle ?? ""}
+              draftDirection={scenario.drafts[cm02DraftIndex - 1].direction}
               onRefine={commitCm1Selection}
               onFinalize={() => setView("complete")}
             />
