@@ -1,0 +1,25 @@
+# 🛡 main이 너보다 앞서있으면 push 거부
+# 목적: 옛 base 위에서 작업한 변경이 main을 덮어쓰는 사고 방지
+
+# main 최신 정보 받아옴
+git fetch origin main --quiet
+
+# 현재 브랜치가 origin/main과 갈라진 지점
+BASE=$(git merge-base HEAD origin/main)
+# origin/main 최신 커밋
+REMOTE=$(git rev-parse origin/main)
+
+# BASE와 REMOTE가 다르면 = 내가 origin/main 옛 버전 위에서 작업한 거
+if [ "$BASE" != "$REMOTE" ]; then
+  echo ""
+  echo "❌ 잠깐! 작업 시작 후 main이 업데이트됐어요."
+  echo ""
+  echo "🔁 GitHub Desktop에서 'Pull origin'을 먼저 해주세요."
+  echo "   (또는 Branch 메뉴 → Update from main)"
+  echo ""
+  echo "그래야 다른 사람 작업이 사라지지 않아요."
+  echo ""
+  exit 1
+fi
+
+exit 0
