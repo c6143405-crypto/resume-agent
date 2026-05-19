@@ -148,6 +148,36 @@ export const PLANNING_STRATEGY: Scenario = {
         { original: "조달 관련 분쟁 0건 유지", revised: "조달 관련 리스크 관리" },
         { original: "투자사 및 금융 이해관계자와의", revised: "투자사 및 금융 이해관계자 대응 과정에서" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence: "투자사 및 금융 이해관계자와의 조달 관련 분쟁 0건 유지",
+          revisedSentence: "투자사 및 금융 이해관계자 대응 과정에서 조달 관련 리스크 관리",
+          keywords: [
+            { original: "금융 이해관계자와의", revised: "금융 이해관계자 대응 과정에서" },
+            { original: "분쟁 0건 유지", revised: "리스크 관리" },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "투자 검토 자료와 재무 시나리오를 작성해 자금 조달 및 투자 의사결정 지원",
+          revisedSentence:
+            "투자 검토 자료와 재무 시나리오 작성을 통한 자금 조달 및 투자 의사결정 지원",
+          keywords: [
+            { original: "시나리오를 작성해", revised: "시나리오 작성을 통한" },
+            { original: "자금 조달 및", revised: "자금 조달 및 투자" },
+          ],
+        },
+        narrative: {
+          originalSentence:
+            "투자자, 경영진, 현업 부서의 관점 차이를 조율하며 실행 가능한 전략으로 구체화",
+          revisedSentence:
+            "투자자, 경영진, 현업 부서의 요구를 조율해 실행 가능한 전략 방향으로 구체화",
+          keywords: [
+            { original: "관점 차이를", revised: "요구를" },
+            { original: "전략으로 구체화", revised: "전략 방향으로 구체화" },
+          ],
+        },
+      },
     },
     // 2/2 — 다지선다: 전략기획 역할 표현 수위 조정
     {
@@ -190,6 +220,121 @@ export const PLANNING_STRATEGY: Scenario = {
       originalTags: ["역할 과장"],
       revisedTags: ["명확성", "직무 적합성"],
       reasonTags: ["역할 범위 조정", "전략 역량 강조"],
+      byDraft: {
+        achievement: {
+          originalSentence: "연평균 1,500여 건의 시장·타깃 데이터 검토 체계 운영",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "연평균 1,500여 건의 시장·타깃 데이터 점검 체계 운영을 통한 신사업 후보군 정리",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "검토", revised: "점검" },
+                { original: "체계 운영", revised: "체계 운영을 통한 신사업 후보군 정리" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "시장·타깃 데이터 정기 검토를 통한 신사업 후보군 선별 기준 정비",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "연평균 1,500여 건의", revised: "정기" },
+                { original: "검토 체계 운영", revised: "선별 기준 정비" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "시장·타깃 데이터 검토 기반의 신사업 기회 발굴 역량 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                { original: "검토 체계 운영", revised: "검토 기반의" },
+                { original: "시장·타깃 데이터", revised: "신사업 기회" },
+              ],
+            },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "신규 사업 발굴부터 사업성 검토, IR, OKR 운영까지 전략기획 전 과정 수행",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "신규 사업 발굴, 사업성 검토, IR 자료 작성, OKR 운영을 포함한 전략기획 업무 수행",
+              tags: ["성과 유지", "직무 전문성"],
+              keywords: [
+                { original: "IR", revised: "IR 자료 작성" },
+                { original: "전 과정 수행", revised: "업무 수행" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "신규 사업 검토, IR 자료 준비, OKR 운영 지원을 통한 전략기획 업무 수행",
+              tags: ["안전한 표현", "역할 조정"],
+              keywords: [
+                { original: "신규 사업 발굴부터 사업성 검토", revised: "신규 사업 검토" },
+                { original: "OKR 운영까지", revised: "OKR 운영 지원을 통한" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "신사업·IR·OKR 운영 경험을 바탕으로 전략기획 실행력 강화",
+              tags: ["성과 압축", "전략기획"],
+              keywords: [
+                {
+                  original: "신규 사업 발굴부터 사업성 검토, IR, OKR 운영까지",
+                  revised: "신사업·IR·OKR 운영 경험",
+                },
+                { original: "전략기획 전 과정 수행", revised: "전략기획 실행력 강화" },
+              ],
+            },
+          ],
+        },
+        narrative: {
+          originalSentence:
+            "사업성 분석과 재무 가정을 반복 검토해 의사결정의 불확실성 완화",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "사업성 분석과 재무 가정 반복 검토를 통한 의사결정 불확실성 완화",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "재무 가정을 반복 검토해", revised: "재무 가정 반복 검토를 통한" },
+                { original: "의사결정의", revised: "의사결정" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "사업성 분석과 재무 가정 검토를 통한 의사결정 리스크 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "반복 검토해", revised: "검토를 통한" },
+                { original: "불확실성 완화", revised: "리스크 완화" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "사업성·재무 가정 검토 기반의 전략 의사결정 신뢰도 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                { original: "사업성 분석과 재무 가정", revised: "사업성·재무 가정" },
+                {
+                  original: "의사결정의 불확실성 완화",
+                  revised: "전략 의사결정 신뢰도 강화",
+                },
+              ],
+            },
+          ],
+        },
+      },
     },
     // 추가 제안 — 전문 용어 완화
     {
@@ -207,6 +352,36 @@ export const PLANNING_STRATEGY: Scenario = {
         { original: "후보군을 발굴하고", revised: "후보군 발굴 및" },
         { original: "PEST, 5-Force 기반", revised: "시장 환경·경쟁 구조 기반의" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence:
+            "신규 비즈니스 모델 후보군을 발굴하고 PEST, 5-Force 기반 시장·산업 분석 수행",
+          revisedSentence:
+            "신규 비즈니스 모델 후보군 발굴 및 시장 환경·경쟁 구조 기반의 산업 분석 수행",
+          keywords: [
+            { original: "후보군을 발굴하고", revised: "후보군 발굴 및" },
+            { original: "PEST, 5-Force 기반", revised: "시장 환경·경쟁 구조 기반의" },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "NPV, Payback Period, 손익 시나리오 기반 사업 타당성 분석 자료 작성",
+          revisedSentence:
+            "투자 회수 기간과 손익 시나리오 기반의 사업 타당성 분석 자료 작성",
+          keywords: [
+            { original: "NPV, Payback Period", revised: "투자 회수 기간" },
+            { original: "시나리오 기반", revised: "시나리오 기반의" },
+          ],
+        },
+        narrative: {
+          originalSentence: "투자자 관점에서 필요한 사업 논리와 재무 가정을 IR 자료로 구조화",
+          revisedSentence: "투자자 관점의 사업 논리와 재무 가정을 투자 검토 자료로 구조화",
+          keywords: [
+            { original: "필요한 사업 논리", revised: "사업 논리" },
+            { original: "IR 자료", revised: "투자 검토 자료" },
+          ],
+        },
+      },
     },
   ],
 };
