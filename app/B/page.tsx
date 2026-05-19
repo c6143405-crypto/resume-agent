@@ -3564,7 +3564,7 @@ export default function Page() {
               이 초안 선택하기
             </button>
           </div>
-        ) : view !== "start" && view !== "home" && view !== "selected" && flowStep !== "loadingDraft" && (
+        ) : view !== "start" && view !== "home" && view !== "selected" && view !== "chat" && flowStep !== "loadingDraft" && (
           <div className="flex flex-shrink-0 flex-col px-[20px] pb-[12px]">
             {showDraftQuickButtons && (
               <div className="mb-[12px] flex flex-col items-end gap-[8px]">
