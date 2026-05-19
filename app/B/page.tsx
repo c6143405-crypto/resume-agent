@@ -1181,8 +1181,21 @@ function DraftCriteriaCard({
 }
 
 // ─── 수정된 문장 카드 (Confirm Preview 전용) ────────────────────────
-function ConfirmCriteriaCard() {
+// acceptedRevisions에서 decision === "accept" 인 항목만 렌더링.
+// 위쪽 "기존 초안 문장" 영역 = 채택된 항목들의 original 텍스트
+// 아래쪽 "수정된 초안 문장" 영역 = 채택된 항목들의 revised 텍스트
+function ConfirmCriteriaCard({
+  acceptedRevisions,
+}: {
+  acceptedRevisions: Record<number, AcceptedRevision>;
+}) {
   const [isOpen, setIsOpen] = useState(false);
+  const acceptedItems = Object.values(acceptedRevisions).filter(
+    (rev) => rev.decision === "accept" && rev.revised !== rev.original,
+  );
+
+  if (acceptedItems.length === 0) return null;
+
   return (
     <div
       className="flex w-full flex-col rounded-xl border p-4 transition-colors"
@@ -1219,44 +1232,38 @@ function ConfirmCriteriaCard() {
         <div className="min-h-0">
           <div className="mt-4 h-px w-full bg-line-solid-normal" />
           <div className="mt-4 flex flex-col gap-4">
-            {/* 기존 초안 문장 */}
+            {/* 기존 초안 문장 — 채택된 항목들의 original */}
             <div className="flex flex-col gap-1">
               <h5 className="text-label-1 font-medium text-label-neutral">
                 기존 초안 문장
               </h5>
               <ul className="flex flex-col gap-1 pt-1">
-                <li className="text-body-1-reading text-label-normal flex gap-2 px-1">
-                  <span aria-hidden="true">•</span>
-                  <span className="flex-1">
-                    외부 감사 12년 연속 주요 지적 사항 0건 유지
-                  </span>
-                </li>
-                <li className="text-body-1-reading text-label-normal flex gap-2 px-1">
-                  <span aria-hidden="true">•</span>
-                  <span className="flex-1">
-                    2012.03 ~ 현재 (12년 2개월) · 회계팀 과장
-                  </span>
-                </li>
+                {acceptedItems.map((rev, i) => (
+                  <li
+                    key={`orig-${i}`}
+                    className="flex gap-2 px-1 text-body-1-reading text-label-normal"
+                  >
+                    <span aria-hidden="true">•</span>
+                    <span className="flex-1">{rev.original}</span>
+                  </li>
+                ))}
               </ul>
             </div>
-            {/* 수정된 초안 문장 */}
+            {/* 수정된 초안 문장 — 채택된 항목들의 revised */}
             <div className="flex flex-col gap-1">
               <h5 className="text-label-1 font-medium text-label-neutral">
                 수정된 초안 문장
               </h5>
               <ul className="flex flex-col gap-1 pt-1">
-                <li className="text-body-1-reading text-label-normal flex gap-2 px-1">
-                  <span aria-hidden="true">•</span>
-                  <span className="flex-1">
-                    외부 회계 감사 대응 과정에서 주요 지적 사항 없이 결산 자료의 정확성을 유지
-                  </span>
-                </li>
-                <li className="text-body-1-reading text-label-normal flex gap-2 px-1">
-                  <span aria-hidden="true">•</span>
-                  <span className="flex-1">
-                    2012.03 ~ 2024.05 · 회계팀 과장
-                  </span>
-                </li>
+                {acceptedItems.map((rev, i) => (
+                  <li
+                    key={`rev-${i}`}
+                    className="flex gap-2 px-1 text-body-1-reading text-primary-normal"
+                  >
+                    <span aria-hidden="true">•</span>
+                    <span className="flex-1">{rev.revised}</span>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
@@ -1391,7 +1398,7 @@ function ConfirmPreviewModal({
   };
 
   return (
-    <div className="absolute inset-0 z-50">
+    <div className="fixed inset-0 z-50">
       <button
         type="button"
         aria-label="닫기"
@@ -1443,7 +1450,7 @@ function ConfirmPreviewModal({
           style={{ scrollbarGutter: "stable" }}
           onScroll={handleScroll}
         >
-          <ConfirmCriteriaCard />
+          <ConfirmCriteriaCard acceptedRevisions={acceptedRevisions} />
           <ConfirmPreviewBody data={data} acceptedRevisions={acceptedRevisions} />
         </div>
 
