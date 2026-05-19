@@ -144,6 +144,7 @@ export const SALES_MARKETING: Scenario = {
         "\"매출 극대화\", \"총괄 지휘\"는 역할이 과장되어 보일 수 있습니다. 실제 수행한 영업·마케팅 업무와 기여 범위가 자연스럽게 드러나도록 조정했습니다.",
       originalTags: ["강한 표현"],
       revisedTags: ["역할 명확화", "자연스러움"],
+      reasonTags: ["역할 범위 조정", "자연스러운 표현"],
     },
     {
       title: "성과 표현 수위",
@@ -173,6 +174,7 @@ export const SALES_MARKETING: Scenario = {
         "\"분쟁 0건\", \"2012년부터 현재까지\"는 강한 성과 표현이지만, 근거가 부족하면 단정적으로 보일 수 있습니다. 성과를 얼마나 직접적으로 보여줄지 선택할 수 있도록 표현 수위를 나눴습니다.",
       originalTags: ["단정 표현"],
       revisedTags: ["선택형", "표현 수위"],
+      reasonTags: ["성과 표현 조정", "파트너십 강조"],
     },
     {
       title: "전문 용어 완화",
@@ -184,6 +186,7 @@ export const SALES_MARKETING: Scenario = {
         "\"허수 트래픽\", \"사전 차단\"은 다소 기술적이고 단정적으로 보일 수 있습니다. 마케팅 예산 관리와 성과 개선이라는 직무 역량이 더 쉽게 드러나도록 바꿨습니다.",
       originalTags: ["어려운 표현"],
       revisedTags: ["쉬운 표현", "직무 적합성"],
+      reasonTags: ["쉬운 표현", "직무 이해도 개선"],
     },
   ],
 };

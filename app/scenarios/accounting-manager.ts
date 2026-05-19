@@ -142,6 +142,7 @@ export const ACCOUNTING_MANAGER: Scenario = {
         "\"독자적으로 전담\", \"무결점\", \"완수\"는 실제보다 과장된 인상을 줄 수 있습니다. 담당 범위와 운영 안정성이 드러나도록 표현하면 더 신뢰감 있습니다.",
       originalTags: ["강한 표현"],
       revisedTags: ["신뢰성", "안정성"],
+      reasonTags: ["과장 완화", "역할 범위 명확화"],
     },
     // 2/2 — 다지선다: 감사 성과 표현 수위
     {
@@ -171,6 +172,7 @@ export const ACCOUNTING_MANAGER: Scenario = {
         "\"12년 연속\", \"0건\"은 강한 성과 표현이지만, 증빙이 부족하면 단정적으로 보일 수 있습니다. 성과를 얼마나 직접적으로 보여줄지 선택할 수 있도록 표현 수위를 나눴습니다.",
       originalTags: ["단정 표현"],
       revisedTags: ["선택형", "표현 수위"],
+      reasonTags: ["감사 성과 조정", "신뢰도 개선"],
     },
     // 추가 제안 — 수치 근거 보강
     {
@@ -182,6 +184,7 @@ export const ACCOUNTING_MANAGER: Scenario = {
         "\"정확도 99%\"는 산정 기준이 없으면 신뢰도가 낮아질 수 있습니다. 수치를 줄이고, 실제 수행한 검토 업무와 리스크 관리 역량이 보이도록 조정했습니다.",
       originalTags: ["수치 근거 부족"],
       revisedTags: ["정확성", "안전/신뢰성"],
+      reasonTags: ["수치 근거 보완", "리스크 완화"],
     },
   ],
 };

@@ -993,6 +993,7 @@ interface RefinementItem {
   // B 타입 전용 시각 라벨 (다른 타입은 무시)
   originalTags?: string[];
   revisedTags?: string[];
+  reasonTags?: string[]; // 수정 이유 칩 (B 전용)
 }
 
 // 두 번째 검토 항목 mock (다지선다 — 첫 번째 채택/유지 후 등장)
@@ -1025,6 +1026,7 @@ function toRefinementItem(
     reason: target.changeReason,
     originalTags: target.originalTags,
     revisedTags: target.revisedTags,
+    reasonTags: target.reasonTags,
   };
 }
 
@@ -1851,7 +1853,7 @@ function RefinementItemBlock({
 
       {/* 기존 문장 */}
       <div className="flex w-full flex-col gap-1">
-        <span className="text-label-2 font-medium text-label-neutral">
+        <span className="text-[13px] font-medium leading-[18px] tracking-[0.252px] text-label-neutral" style={{ fontFamily: "Pretendard" }}>
           기존 문장
         </span>
         {item.originalTags && item.originalTags.length > 0 && (
@@ -1859,7 +1861,7 @@ function RefinementItemBlock({
             {item.originalTags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center rounded-md bg-[#FEECEC] px-2 py-0.5 text-[12px] font-medium text-[#E52222]"
+                className="inline-flex items-center justify-center gap-1 rounded-lg bg-[#FEECEC] px-2 py-[5px] text-[12px] font-medium text-[#E52222]"
               >
                 {tag}
               </span>
@@ -1873,7 +1875,7 @@ function RefinementItemBlock({
 
       {/* 수정 문장 — single 또는 다지선다 */}
       <div className="flex w-full flex-col gap-1">
-        <span className="text-label-2 font-medium text-primary-normal">
+        <span className="text-[13px] font-medium leading-[18px] tracking-[0.252px] text-primary-normal" style={{ fontFamily: "Pretendard" }}>
           수정 문장
         </span>
         {item.revisedTags && item.revisedTags.length > 0 && (
@@ -1881,7 +1883,7 @@ function RefinementItemBlock({
             {item.revisedTags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center rounded-md bg-[#E5F2FF] px-2 py-0.5 text-[12px] font-medium text-[#0066FF]"
+                className="inline-flex items-center justify-center gap-2.5 rounded-lg border border-[#EAF2FE] bg-[#EAF2FE] px-[10px] py-1 text-[12px] font-medium text-[#0066FF] opacity-80"
               >
                 {tag}
               </span>
@@ -1907,7 +1909,7 @@ function RefinementItemBlock({
                     {opt.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center rounded-md bg-[#E5F2FF] px-2 py-0.5 text-[12px] font-medium text-[#0066FF]"
+                        className="inline-flex items-center justify-center gap-2.5 rounded-lg border border-[#EAF2FE] bg-[#EAF2FE] px-[10px] py-1 text-[12px] font-medium text-[#0066FF] opacity-80"
                       >
                         {tag}
                       </span>
@@ -1926,9 +1928,21 @@ function RefinementItemBlock({
       {/* 수정 이유 (있을 때만) */}
       {item.reason && (
         <div className="flex w-full flex-col gap-1">
-          <span className="text-label-2 font-medium text-label-neutral">
+          <span className="text-[13px] font-medium leading-[18px] tracking-[0.252px] text-label-neutral" style={{ fontFamily: "Pretendard" }}>
             수정 이유
           </span>
+          {item.reasonTags && item.reasonTags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {item.reasonTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center justify-center gap-1 rounded-lg bg-[rgba(112,115,124,0.08)] px-2 py-[5px] text-[12px] font-medium text-[rgba(55,56,60,0.61)]"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
           <p className="w-full text-body-1 font-normal text-label-neutral">
             {item.reason}
           </p>
@@ -3295,7 +3309,7 @@ export default function Page() {
         className="relative isolate mx-auto flex h-[100dvh] max-h-[932px] w-full max-w-[480px] flex-col overflow-hidden"
         style={{ background: screenBackground }}
       >
-        {(view === "home" || view === "selected" || view === "chat") && <BackgroundEllipses />}
+        {(view === "home" || view === "selected") && <BackgroundEllipses />}
         <StatusBar />
         <PageTitleBar />
 
@@ -3564,7 +3578,7 @@ export default function Page() {
               이 초안 선택하기
             </button>
           </div>
-        ) : view !== "start" && view !== "home" && view !== "selected" && flowStep !== "loadingDraft" && (
+        ) : view !== "start" && view !== "home" && view !== "selected" && view !== "chat" && flowStep !== "loadingDraft" && (
           <div className="flex flex-shrink-0 flex-col px-[20px] pb-[12px]">
             {showDraftQuickButtons && (
               <div className="mb-[12px] flex flex-col items-end gap-[8px]">

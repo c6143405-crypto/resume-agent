@@ -144,6 +144,7 @@ export const PLANNING_STRATEGY: Scenario = {
         "\"비즈니스 스케일업\", \"IR 디렉팅\", \"총괄 지휘\"는 역할이 과장되어 보일 수 있습니다. 실제 수행한 전략기획 업무와 기여 범위가 자연스럽게 드러나도록 조정했습니다.",
       originalTags: ["강한 표현"],
       revisedTags: ["역할 명확화", "신뢰성"],
+      reasonTags: ["역할 범위 조정", "전략 업무 명확화"],
     },
     {
       title: "성과 표현 수위",
@@ -172,6 +173,7 @@ export const PLANNING_STRATEGY: Scenario = {
         "\"12년 연속\", \"투자 유치 성공\", \"위반 Zero\"는 강한 성과 표현이지만, 개인의 직접 성과로 보기 어려울 수 있습니다. 성과를 얼마나 직접적으로 보여줄지 선택할 수 있도록 표현 수위를 나눴습니다.",
       originalTags: ["단정 표현"],
       revisedTags: ["선택형", "표현 수위"],
+      reasonTags: ["성과 표현 조정", "조달 리스크 완화"],
     },
     {
       title: "수치 근거 보강",
@@ -182,6 +184,7 @@ export const PLANNING_STRATEGY: Scenario = {
         "\"오차율 1% 미만\"은 산정 기준이 없으면 신뢰도가 낮아질 수 있습니다. 수치를 줄이고, 사업성 검토와 재무 가정 검증 역량이 드러나도록 조정했습니다.",
       originalTags: ["수치 근거 부족"],
       revisedTags: ["정확성", "전략 적합성"],
+      reasonTags: ["수치 근거 보완", "분석 역량 강조"],
     },
   ],
 };

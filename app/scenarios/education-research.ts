@@ -145,6 +145,7 @@ export const EDUCATION_RESEARCH: Scenario = {
         "\"프로세스를 정립\", \"통계적 무결성\", \"총괄 전담\"이 한 문장에 함께 들어가 역할이 과장되어 보일 수 있습니다. 담당 업무와 범위가 명확하게 드러나도록 문장을 정리했습니다.",
       originalTags: ["역할 과장"],
       revisedTags: ["명확성", "연구 적합성"],
+      reasonTags: ["역할 범위 명확화", "연구 행정 문체"],
     },
     {
       title: "감사 성과 표현 수위",
@@ -173,6 +174,7 @@ export const EDUCATION_RESEARCH: Scenario = {
         "\"12년 연속\", \"Zero\"는 강한 성과 표현이지만, 증빙이 부족하면 단정적으로 보일 수 있습니다. 성과를 얼마나 직접적으로 보여줄지 선택할 수 있도록 표현 수위를 나눴습니다.",
       originalTags: ["단정 표현"],
       revisedTags: ["선택형", "표현 수위"],
+      reasonTags: ["감사 표현 조정", "환수 리스크 완화"],
     },
     {
       title: "문장 오류 및 표현 정리",
@@ -184,6 +186,7 @@ export const EDUCATION_RESEARCH: Scenario = {
         "\"최종 최종\", \"평과\"처럼 오탈자가 포함되어 있어 완성도가 낮아 보일 수 있습니다. 보고 대상과 성과가 자연스럽게 읽히도록 문장을 정리했습니다.",
       originalTags: ["오탈자"],
       revisedTags: ["정확성", "완성도"],
+      reasonTags: ["오탈자 수정", "완성도 개선"],
     },
   ],
 };
