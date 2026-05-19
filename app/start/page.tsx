@@ -16,9 +16,8 @@ const JOB_OPTIONS: { label: string; scenarioId: string }[] = [
   { label: "영업 / 마케팅", scenarioId: "sales-marketing" },
   { label: "기획 / 전략", scenarioId: "planning-strategy" },
   { label: "행정 / 공공", scenarioId: "public-administration" },
-  { label: "교육 / 연구", scenarioId: "general-office" },
-  { label: "IT / 디자인", scenarioId: "it-planning" },
-  { label: "기타", scenarioId: "general-office" },
+  { label: "교육 / 연구", scenarioId: "education-research" },
+  { label: "IT / 전산 운영", scenarioId: "it-operations" },
 ];
 
 const ALL_TYPES = ["A", "B", "C", "D"] as const;

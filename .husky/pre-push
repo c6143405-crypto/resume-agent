@@ -1,0 +1,36 @@
+# 🛡 main이 너보다 앞서있으면 push 거부
+# 목적: 옛 base 위에서 작업한 변경이 다른 사람의 main 변경을 덮어쓰는 사고 방지
+
+# main 최신 정보 받아옴
+git fetch origin main --quiet
+
+# 갈라진 지점 vs origin/main 최신
+BASE=$(git merge-base HEAD origin/main)
+REMOTE=$(git rev-parse origin/main)
+
+if [ "$BASE" != "$REMOTE" ]; then
+  echo ""
+  echo "❌ 잠깐! 작업 시작 후 main이 업데이트됐어요."
+  echo ""
+  echo "📥 아직 받지 못한 변경:"
+  # 머지 커밋(Merge pull request ...)은 노이즈라 제외, 각 커밋의 작성자와 메시지 표시
+  git log HEAD..origin/main --pretty=format:"   • %an — %s" --no-merges
+  echo ""
+  echo ""
+  echo "📂 영향받은 파일:"
+  # 변경된 파일 목록 (최대 10개)
+  git diff --name-only HEAD..origin/main | sed 's/^/   • /' | head -10
+  TOTAL=$(git diff --name-only HEAD..origin/main | wc -l | tr -d ' ')
+  if [ "$TOTAL" -gt 10 ]; then
+    echo "   ... 외 $((TOTAL - 10))개 파일"
+  fi
+  echo ""
+  echo "🔁 GitHub Desktop에서 'Pull origin'을 먼저 해주세요."
+  echo "   (또는 Branch 메뉴 → Update from main)"
+  echo ""
+  echo "그래야 위 변경이 사라지지 않아요."
+  echo ""
+  exit 1
+fi
+
+exit 0
