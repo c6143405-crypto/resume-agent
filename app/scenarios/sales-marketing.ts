@@ -148,6 +148,37 @@ export const SALES_MARKETING: Scenario = {
         { original: "거래 분쟁 0건 유지", revised: "파트너십 리스크 완화" },
         { original: "핵심 유통 채널과의", revised: "핵심 유통 채널과의 거래 조건 및 커뮤니케이션 관리를 통한" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence: "핵심 유통 채널과의 거래 분쟁 0건 유지",
+          revisedSentence:
+            "핵심 유통 채널과의 거래 조건 및 커뮤니케이션 관리를 통한 파트너십 리스크 완화",
+          keywords: [
+            { original: "거래 분쟁", revised: "거래 조건 및 커뮤니케이션 관리" },
+            { original: "0건 유지", revised: "파트너십 리스크 완화" },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "바이어 커뮤니케이션과 계약 조건 조율을 통해 파트너십 관리 역량 확보",
+          revisedSentence:
+            "바이어 커뮤니케이션과 계약 조건 조율을 통한 파트너십 운영 역량 강화",
+          keywords: [
+            { original: "통해", revised: "통한" },
+            { original: "관리 역량 확보", revised: "운영 역량 강화" },
+          ],
+        },
+        narrative: {
+          originalSentence:
+            "신규 유통 채널 개척과 기존 파트너 관리 경험을 통해 매출 파이프라인 안정화",
+          revisedSentence:
+            "신규 유통 채널 발굴과 기존 파트너 운영 경험을 통한 매출 파이프라인 관리 안정화",
+          keywords: [
+            { original: "개척과", revised: "발굴과" },
+            { original: "파트너 관리 경험을 통해", revised: "파트너 운영 경험을 통한" },
+          ],
+        },
+      },
     },
     // 2/2 — 다지선다: 마케팅 성과 표현 수위 조정
     {
@@ -191,6 +222,117 @@ export const SALES_MARKETING: Scenario = {
       originalTags: ["어려운 표현"],
       revisedTags: ["명확성", "직무 적합성"],
       reasonTags: ["전문 용어 완화", "직무 역량 강화"],
+      byDraft: {
+        achievement: {
+          originalSentence:
+            "퍼포먼스 마케팅 캠페인별 예산 대비 효율 데이터 점검 및 허수 트래픽 필터링",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "퍼포먼스 마케팅 캠페인별 예산 효율 점검 및 허수 트래픽 필터링 기준 운영",
+              tags: ["성과 유지", "직무 전문성"],
+              keywords: [
+                { original: "예산 대비 효율 데이터 점검", revised: "예산 효율 점검" },
+                { original: "허수 트래픽 필터링", revised: "허수 트래픽 필터링 기준 운영" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "광고 성과 데이터 점검을 통한 예산 낭비 가능성 완화 및 집행 효율 관리",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "퍼포먼스 마케팅 캠페인별", revised: "광고 성과" },
+                { original: "허수 트래픽 필터링", revised: "예산 낭비 가능성 완화" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "마케팅 성과 데이터 검토를 통한 광고 예산 운영 효율 개선",
+              tags: ["성과 압축", "명확성"],
+              keywords: [
+                { original: "퍼포먼스 마케팅 캠페인별", revised: "마케팅 성과" },
+                { original: "허수 트래픽 필터링", revised: "광고 예산 운영 효율 개선" },
+              ],
+            },
+          ],
+        },
+        fit: {
+          originalSentence: "매체별 광고 성과와 기여도를 분석해 마케팅 예산 배분 기준 수립",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "매체별 광고 성과와 기여도 분석을 통한 마케팅 예산 배분 기준 마련",
+              tags: ["성과 유지", "직무 전문성"],
+              keywords: [
+                { original: "기여도를 분석해", revised: "기여도 분석을 통한" },
+                { original: "기준 수립", revised: "기준 마련" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "매체별 광고 성과 검토를 통한 예산 배분 기준 정비",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "광고 성과와 기여도", revised: "광고 성과" },
+                { original: "마케팅 예산 배분 기준 수립", revised: "예산 배분 기준 정비" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "광고 성과 분석을 통한 마케팅 예산 운영 효율 개선",
+              tags: ["성과 압축", "명확성"],
+              keywords: [
+                { original: "매체별 광고 성과와 기여도", revised: "광고 성과" },
+                { original: "예산 배분 기준 수립", revised: "예산 운영 효율 개선" },
+              ],
+            },
+          ],
+        },
+        narrative: {
+          originalSentence: "광고 성과 데이터를 점검해 실제 매출 기여도가 낮은 집행 항목 개선",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "광고 성과 데이터 점검을 통한 실제 매출 기여도 낮은 집행 항목 개선",
+              tags: ["성과 유지", "직무 전문성"],
+              keywords: [
+                { original: "데이터를 점검해", revised: "데이터 점검을 통한" },
+                { original: "기여도가 낮은", revised: "기여도 낮은" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "광고 성과 데이터 검토를 통한 매출 기여도 낮은 집행 항목 조정",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "데이터를 점검해", revised: "데이터 검토를 통한" },
+                { original: "집행 항목 개선", revised: "집행 항목 조정" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "광고 성과 데이터 기반의 마케팅 집행 효율 개선",
+              tags: ["성과 압축", "명확성"],
+              keywords: [
+                { original: "데이터를 점검해", revised: "데이터 기반의" },
+                {
+                  original: "실제 매출 기여도가 낮은 집행 항목 개선",
+                  revised: "마케팅 집행 효율 개선",
+                },
+              ],
+            },
+          ],
+        },
+      },
     },
     // 추가 제안 — 영업 운영 역량 구체화
     {
@@ -208,6 +350,35 @@ export const SALES_MARKETING: Scenario = {
         { original: "데이터를 함께 관리하며", revised: "데이터 통합 관리를 통한" },
         { original: "병목 구간 개선", revised: "지연 및 누락 가능성 완화" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence: "월평균 1,500여 건의 B2B 주문 데이터 검증 및 출하 누락 리스크 관리",
+          revisedSentence:
+            "월평균 1,500여 건의 B2B 주문 데이터 검토 및 출하 누락 가능성 완화",
+          keywords: [
+            { original: "데이터 검증", revised: "데이터 검토" },
+            { original: "리스크 관리", revised: "가능성 완화" },
+          ],
+        },
+        fit: {
+          originalSentence: "B2B 주문·출하 데이터 관리로 영업 운영 정확도 강화",
+          revisedSentence: "B2B 주문·출하 데이터 점검을 통한 영업 운영 안정성 강화",
+          keywords: [
+            { original: "데이터 관리로", revised: "데이터 점검을 통한" },
+            { original: "정확도 강화", revised: "안정성 강화" },
+          ],
+        },
+        narrative: {
+          originalSentence:
+            "주문·출하·프로모션 데이터를 함께 관리하며 영업 운영의 병목 구간 개선",
+          revisedSentence:
+            "주문·출하·프로모션 데이터 통합 관리를 통한 영업 운영 지연 및 누락 가능성 완화",
+          keywords: [
+            { original: "데이터를 함께 관리하며", revised: "데이터 통합 관리를 통한" },
+            { original: "병목 구간 개선", revised: "지연 및 누락 가능성 완화" },
+          ],
+        },
+      },
     },
   ],
 };

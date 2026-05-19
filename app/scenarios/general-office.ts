@@ -215,6 +215,38 @@ export const GENERAL_OFFICE: Scenario = {
         { original: "12년 연속", revised: "12년간" },
         { original: "지적 사항 0건 유지", revised: "주요 지적 사항 없이 노무 리스크 관리" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence: "12년 연속 고용노동부 점검 및 노사 분쟁 지적 사항 0건 유지",
+          revisedSentence:
+            "12년간 고용노동부 점검 및 노사 이슈 대응 과정에서 주요 지적 사항 없이 노무 리스크 관리",
+          keywords: [
+            { original: "12년 연속", revised: "12년간" },
+            {
+              original: "노사 분쟁 지적 사항 0건 유지",
+              revised: "노사 이슈 대응 과정에서 주요 지적 사항 없이 노무 리스크 관리",
+            },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "노무 컴플라이언스 관리 역량을 바탕으로 규제 기관 지적 사항 0건 유지",
+          revisedSentence:
+            "노무 컴플라이언스 관리 체계를 기반으로 규제 기관 주요 지적 리스크 관리",
+          keywords: [
+            { original: "관리 역량을 바탕으로", revised: "관리 체계를 기반으로" },
+            { original: "지적 사항 0건 유지", revised: "주요 지적 리스크 관리" },
+          ],
+        },
+        narrative: {
+          originalSentence: "노무 리스크를 선제적으로 관리해 장기간 분쟁 없는 근무 환경 유지",
+          revisedSentence: "노무 리스크 관리 체계 운영을 통한 안정적인 근무 환경 유지",
+          keywords: [
+            { original: "선제적으로 관리해", revised: "관리 체계 운영을 통한" },
+            { original: "장기간 분쟁 없는", revised: "안정적인" },
+          ],
+        },
+      },
     },
     // 2/2 — 다지선다: 성과 표현 수위 조정
     {
@@ -255,6 +287,124 @@ export const GENERAL_OFFICE: Scenario = {
       originalTags: ["수치 근거 부족"],
       revisedTags: ["정확성", "신뢰성"],
       reasonTags: ["수치 부담 완화", "선택권 제공"],
+      byDraft: {
+        achievement: {
+          originalSentence: "급여 집행 및 4대 보험 신고 데이터 정확도 99.9% 수준 확보",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "급여 집행 및 4대 보험 신고 데이터 검증을 통한 정확도 99.9% 수준 유지",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "데이터 정확도", revised: "데이터 검증을 통한 정확도" },
+                { original: "수준 확보", revised: "수준 유지" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "급여 집행 및 4대 보험 신고 데이터 정기 검토를 통한 신고 오류 최소화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "데이터 정확도 99.9% 수준", revised: "데이터 정기 검토를 통한" },
+                { original: "확보", revised: "신고 오류 최소화" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "급여 및 4대 보험 신고 데이터 검증 체계 운영을 통한 인사·노무 데이터 정확성 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                {
+                  original: "급여 집행 및 4대 보험 신고 데이터",
+                  revised: "급여 및 4대 보험 신고 데이터 검증 체계",
+                },
+                { original: "정확도 99.9% 수준 확보", revised: "인사·노무 데이터 정확성 강화" },
+              ],
+            },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "인사-급여 데이터 상호 검증 체계를 구축해 급여 및 원천징수 오류 리스크 감소",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "인사-급여 데이터 상호 검증 체계 구축을 통한 급여 및 원천징수 오류 발생 가능성 감소",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "체계를 구축해", revised: "체계 구축을 통한" },
+                { original: "오류 리스크 감소", revised: "오류 발생 가능성 감소" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "인사-급여 데이터 정기 검토를 통한 급여 및 원천징수 오류 가능성 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "상호 검증 체계를 구축해", revised: "정기 검토를 통한" },
+                { original: "오류 리스크 감소", revised: "오류 가능성 완화" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "인사-급여 데이터 검증 체계 운영을 통한 급여 운영 신뢰도 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                { original: "상호 검증 체계", revised: "검증 체계 운영" },
+                {
+                  original: "급여 및 원천징수 오류 리스크 감소",
+                  revised: "급여 운영 신뢰도 강화",
+                },
+              ],
+            },
+          ],
+        },
+        narrative: {
+          originalSentence:
+            "급여·4대 보험 데이터를 반복 검증해 임직원이 신뢰할 수 있는 보상 운영 유지",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "급여·4대 보험 데이터 반복 검증을 통한 임직원 신뢰 기반 보상 운영 유지",
+              tags: ["성과 유지", "신뢰성"],
+              keywords: [
+                { original: "데이터를 반복 검증해", revised: "데이터 반복 검증을 통한" },
+                { original: "임직원이 신뢰할 수 있는", revised: "임직원 신뢰 기반" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "급여·4대 보험 데이터 정기 검토를 통한 보상 운영 오류 가능성 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "반복 검증해", revised: "정기 검토를 통한" },
+                {
+                  original: "임직원이 신뢰할 수 있는 보상 운영 유지",
+                  revised: "보상 운영 오류 가능성 완화",
+                },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "급여·4대 보험 데이터 검증 체계 운영을 통한 보상 운영 신뢰도 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                { original: "데이터를 반복 검증해", revised: "데이터 검증 체계 운영을 통한" },
+                { original: "보상 운영 유지", revised: "보상 운영 신뢰도 강화" },
+              ],
+            },
+          ],
+        },
+      },
     },
     // 추가 제안: 역할 범위 명확화
     {
@@ -272,6 +422,38 @@ export const GENERAL_OFFICE: Scenario = {
         { original: "운영 체계를 도입해", revised: "운영 체계 정비를 통한" },
         { original: "리스크 사전 차단", revised: "리스크 완화" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence:
+            "주 52시간 근무제 및 유연근무제 운영 체계를 도입해 불법 연장근로 리스크 사전 차단",
+          revisedSentence:
+            "주 52시간 근무제 및 유연근무제 운영 체계 정비를 통한 불법 연장근로 리스크 완화",
+          keywords: [
+            { original: "운영 체계를 도입해", revised: "운영 체계 정비를 통한" },
+            { original: "리스크 사전 차단", revised: "리스크 완화" },
+          ],
+        },
+        fit: {
+          originalSentence: "취업규칙, 근로계약서, 근태 기준을 법 개정 사항에 맞춰 점검 및 보완",
+          revisedSentence:
+            "취업규칙, 근로계약서, 근태 기준의 법 개정 사항 반영 및 운영 기준 보완",
+          keywords: [
+            { original: "근태 기준을", revised: "근태 기준의" },
+            {
+              original: "법 개정 사항에 맞춰 점검 및 보완",
+              revised: "법 개정 사항 반영 및 운영 기준 보완",
+            },
+          ],
+        },
+        narrative: {
+          originalSentence: "근로시간, 계약서, 취업규칙을 점검해 노무 이슈를 사전에 예방",
+          revisedSentence: "근로시간, 계약서, 취업규칙 점검을 통한 노무 이슈 예방 체계 정비",
+          keywords: [
+            { original: "취업규칙을 점검해", revised: "취업규칙 점검을 통한" },
+            { original: "노무 이슈를 사전에 예방", revised: "노무 이슈 예방 체계 정비" },
+          ],
+        },
+      },
     },
   ],
 };

@@ -149,6 +149,36 @@ export const EDUCATION_RESEARCH: Scenario = {
         { original: "12년 연속", revised: "대응 과정에서" },
         { original: "주요 지적 사항 0건 유지", revised: "주요 지적 리스크 관리" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence: "12년 연속 정부 정기 감사 연구비 환수 및 주요 지적 사항 0건 유지",
+          revisedSentence: "정부 정기 감사 대응 과정에서 연구비 환수 및 주요 지적 리스크 관리",
+          keywords: [
+            { original: "12년 연속", revised: "대응 과정에서" },
+            { original: "주요 지적 사항 0건 유지", revised: "주요 지적 리스크 관리" },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "교육부·한국연구재단 대응 프로세스를 운영해 실사 및 감사 리스크 관리",
+          revisedSentence:
+            "교육부·한국연구재단 대응 자료 체계를 운영해 실사 및 감사 리스크 완화",
+          keywords: [
+            { original: "대응 프로세스", revised: "대응 자료 체계" },
+            { original: "리스크 관리", revised: "리스크 완화" },
+          ],
+        },
+        narrative: {
+          originalSentence:
+            "실사 대응과 성과 보고 과정을 표준화해 반복 가능한 연구 행정 체계 구축",
+          revisedSentence:
+            "실사 대응과 성과 보고 절차 정비를 통한 연구 행정 운영 체계 구축",
+          keywords: [
+            { original: "보고 과정을 표준화해", revised: "보고 절차 정비를 통한" },
+            { original: "반복 가능한 연구 행정 체계", revised: "연구 행정 운영 체계" },
+          ],
+        },
+      },
     },
     // 2/2 — 다지선다: 연구 데이터 정확도 표현 수위 조정
     {
@@ -190,6 +220,124 @@ export const EDUCATION_RESEARCH: Scenario = {
       originalTags: ["수치 근거 부족"],
       revisedTags: ["정확성", "신뢰성"],
       reasonTags: ["수치 부담 완화", "선택권 제공"],
+      byDraft: {
+        achievement: {
+          originalSentence: "표본 데이터 통계 검증 및 연구 데이터 정확도 99% 수준 확보",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "표본 데이터 통계 검증을 통한 연구 데이터 정확도 99% 수준 유지",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "통계 검증 및", revised: "통계 검증을 통한" },
+                { original: "수준 확보", revised: "수준 유지" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "표본 데이터 통계 검증 및 연구 데이터 오류 가능성 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "정확도 99% 수준 확보", revised: "오류 가능성 완화" },
+                { original: "연구 데이터 정확도", revised: "연구 데이터 오류" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "연구 데이터 검증 체계 운영을 통한 분석 신뢰도 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                {
+                  original: "표본 데이터 통계 검증 및 연구 데이터",
+                  revised: "연구 데이터 검증 체계",
+                },
+                { original: "정확도 99% 수준 확보", revised: "분석 신뢰도 강화" },
+              ],
+            },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "연구 데이터 품질 검토를 통해 학술 보고서와 성과 공시 신뢰도 강화",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "연구 데이터 품질 검토를 통한 학술 보고서와 성과 공시 신뢰도 강화",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "검토를 통해", revised: "검토를 통한" },
+                { original: "학술 보고서와", revised: "학술 보고서와 성과" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "연구 데이터 품질 점검을 통한 학술 보고서 오류 가능성 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "품질 검토", revised: "품질 점검" },
+                { original: "성과 공시 신뢰도 강화", revised: "오류 가능성 완화" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "연구 데이터 검증 체계 운영을 통한 학술 성과 신뢰도 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                { original: "품질 검토", revised: "검증 체계 운영" },
+                { original: "학술 보고서와 성과 공시", revised: "학술 성과" },
+              ],
+            },
+          ],
+        },
+        narrative: {
+          originalSentence:
+            "데이터 정제와 검증 절차를 운영하며 연구 결과의 해석 오류 가능성 감소",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "데이터 정제와 검증 절차 운영을 통한 연구 결과 해석 오류 가능성 감소",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "절차를 운영하며", revised: "절차 운영을 통한" },
+                { original: "연구 결과의", revised: "연구 결과" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "데이터 정제와 검증 기준 점검을 통한 연구 결과 해석 오류 가능성 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "검증 절차를 운영하며", revised: "검증 기준 점검을 통한" },
+                { original: "오류 가능성 감소", revised: "오류 가능성 완화" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "연구 데이터 정제·검증 체계 운영을 통한 분석 신뢰도 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                {
+                  original: "데이터 정제와 검증 절차",
+                  revised: "연구 데이터 정제·검증 체계",
+                },
+                {
+                  original: "연구 결과의 해석 오류 가능성 감소",
+                  revised: "분석 신뢰도 강화",
+                },
+              ],
+            },
+          ],
+        },
+      },
     },
     // 추가 제안 — 역할 범위 명확화
     {
@@ -206,6 +354,40 @@ export const EDUCATION_RESEARCH: Scenario = {
         { original: "기획부터 예산, 정산, 실사, 성과 공시까지", revised: "기획, 예산, 정산, 실사, 성과 공시 업무를 연결한" },
         { original: "연구 행정 전 과정 수행", revised: "연구 행정 운영 관리" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence: "중간 평가 및 최종 보고 자료 제출 리드타임 5영업일 이내 단축",
+          revisedSentence:
+            "중간 평가 및 최종 보고 자료 제출 일정 관리를 통한 보고 지연 가능성 완화",
+          keywords: [
+            { original: "리드타임 5영업일 이내", revised: "일정 관리를 통한" },
+            { original: "단축", revised: "보고 지연 가능성 완화" },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "국책 교육사업 기획부터 예산, 정산, 실사, 성과 공시까지 연구 행정 전 과정 수행",
+          revisedSentence:
+            "국책 교육사업 기획, 예산, 정산, 실사, 성과 공시 업무를 연결한 연구 행정 운영 관리",
+          keywords: [
+            {
+              original: "기획부터 예산, 정산, 실사, 성과 공시까지",
+              revised: "기획, 예산, 정산, 실사, 성과 공시 업무를 연결한",
+            },
+            { original: "연구 행정 전 과정 수행", revised: "연구 행정 운영 관리" },
+          ],
+        },
+        narrative: {
+          originalSentence:
+            "연구진, 행정 부서, 외부 평가기관 사이의 요구를 조율하며 과제 운영 병목 완화",
+          revisedSentence:
+            "연구진, 행정 부서, 외부 평가기관 간 요구 조율을 통한 과제 운영 지연 가능성 완화",
+          keywords: [
+            { original: "사이의 요구를 조율하며", revised: "간 요구 조율을 통한" },
+            { original: "병목 완화", revised: "지연 가능성 완화" },
+          ],
+        },
+      },
     },
   ],
 };

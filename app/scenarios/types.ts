@@ -60,6 +60,17 @@ export interface ScenarioRefinementOption {
   keywords?: { original: string; revised: string }[];
 }
 
+// byDraft 매핑에 들어가는 초안별 검토 데이터.
+// 시나리오 상위 검토 항목과 동일한 의미를 갖는다.
+// 초안마다 originalSentence가 다르므로, 각 direction별로 별도 정의한다.
+// 파일럿이 어떤 초안을 골라도 매칭되는 문장이 있도록 보장하기 위한 구조.
+export interface ByDraftRefinement {
+  originalSentence: string;
+  revisedSentence?: string;
+  keywords?: { original: string; revised: string }[];
+  options?: ScenarioRefinementOption[];
+}
+
 // 시나리오 레벨 검토 항목 한 건.
 // - 단일 수정안: revisedSentence 사용
 // - 다지선다: options 배열 사용
@@ -76,6 +87,14 @@ export interface ScenarioRefinementTarget {
   reasonTags?: string[];   // 수정 이유 위에 붙는 라벨 (예: ["과장 완화", "신뢰도 개선"])
   // D 타입 전용 — 라인 안에서 변경되는 키워드 단위 매핑 (단일 수정안일 때)
   keywords?: { original: string; revised: string }[];
+  // 초안별 검토 문장 매핑 — direction(achievement/fit/narrative)을 키로 사용.
+  // 정의된 direction은 위쪽 originalSentence/revisedSentence/keywords/options를 덮어쓴다.
+  // 정의 안 된 direction은 위쪽 값을 그대로 사용한다 (백워드 호환).
+  byDraft?: {
+    achievement?: ByDraftRefinement;
+    fit?: ByDraftRefinement;
+    narrative?: ByDraftRefinement;
+  };
 }
 
 // CM1에서 비교 대상이 되는 한 초안의 전체 데이터.
