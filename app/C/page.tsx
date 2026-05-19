@@ -1082,16 +1082,45 @@ function RefinementCarousel({
   resolvedSteps: number[];
   onItemResolve: (step: number, decision: "accept" | "keep", label?: string) => void;
 }) {
+  // 각 카드 DOM ref — 카드 처리 후 다음 카드로 자동 스크롤하기 위해
+  const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  const handleResolveAndScroll = (
+    step: number,
+    decision: "accept" | "keep",
+    label?: string,
+  ) => {
+    onItemResolve(step, decision, label);
+    // 다음 카드(미처리 중인 가장 가까운 다음 카드)로 자동 스크롤
+    const currentIdx = items.findIndex((it) => it.step === step);
+    const nextIdx = items.findIndex(
+      (it, i) => i > currentIdx && !resolvedSteps.includes(it.step),
+    );
+    if (nextIdx >= 0) {
+      // setTimeout으로 state 업데이트 직후 스크롤 (opacity 전환과 자연스럽게)
+      setTimeout(() => {
+        cardRefs.current[nextIdx]?.scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest",
+        });
+      }, 150);
+    }
+  };
+
   return (
     <div
       className="-mx-5 flex w-[calc(100%+40px)] snap-x snap-mandatory gap-2 overflow-x-auto px-5 pb-4"
       style={{ scrollbarWidth: "none" }}
     >
-      {items.map((item) => {
+      {items.map((item, idx) => {
         const isResolved = resolvedSteps.includes(item.step);
         return (
           <div
             key={item.step}
+            ref={(el) => {
+              cardRefs.current[idx] = el;
+            }}
             className={`flex w-full flex-shrink-0 snap-center transition-opacity ${
               isResolved ? "opacity-50" : "opacity-100"
             }`}
@@ -1099,8 +1128,8 @@ function RefinementCarousel({
             <div className={`w-full ${isResolved ? "pointer-events-none" : ""}`}>
               <RefinementItemBlock
                 item={item}
-                onAccept={(label) => onItemResolve(item.step, "accept", label)}
-                onKeep={() => onItemResolve(item.step, "keep")}
+                onAccept={(label) => handleResolveAndScroll(item.step, "accept", label)}
+                onKeep={() => handleResolveAndScroll(item.step, "keep")}
               />
             </div>
           </div>
