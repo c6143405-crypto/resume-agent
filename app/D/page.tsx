@@ -12,7 +12,7 @@ import { StartScreen } from "../components/StartScreen";
 import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
 import { useScenario } from "../hooks/useScenario";
-import type { Draft, ScenarioPersona, ScenarioRefinementTarget } from "../scenarios";
+import type { Draft, DraftDirection, ScenarioPersona, ScenarioRefinementTarget } from "../scenarios";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
@@ -1063,12 +1063,13 @@ function RefinementItemBlock({
 // ─── AI Chat 화면 (CM 02 후반) ────────────────────────────────────────
 interface AiChatScreenProps {
   draftTitle: string;
+  draftDirection: DraftDirection;
   selectedDraftData: DraftData;
   onScrollChange: (scrolled: boolean) => void;
   onFinish: () => void;
   isChatScrolled: boolean;
 }
-function AiChatScreen({ draftTitle, selectedDraftData, onScrollChange, onFinish, isChatScrolled }: AiChatScreenProps) {
+function AiChatScreen({ draftTitle, draftDirection, selectedDraftData, onScrollChange, onFinish, isChatScrolled }: AiChatScreenProps) {
   const draftData = selectedDraftData;
   const [completedCount, setCompletedCount] = useState(0);
   const [isFirstBadgeModified, setIsFirstBadgeModified] = useState(false);
@@ -1079,7 +1080,19 @@ function AiChatScreen({ draftTitle, selectedDraftData, onScrollChange, onFinish,
   // 그 안의 keywords를 빨강(original)/파랑(revised) 칩으로 표시한다.
   // 각 키워드 칩은 독립적으로 toggle 가능 (modifiedKeywords state).
   const chatScenario = useScenario();
-  const primaryTarget = chatScenario.refinementTargets?.[0];
+  // byDraft 분기 — 선택된 초안(direction)에 맞는 데이터가 있으면 그걸 우선 사용.
+  // 없으면 시나리오 상위 originalSentence/revisedSentence/keywords/options를 그대로 사용 (백워드 호환).
+  const rawPrimaryTarget = chatScenario.refinementTargets?.[0];
+  const byDraftEntry = rawPrimaryTarget?.byDraft?.[draftDirection];
+  const primaryTarget: ScenarioRefinementTarget | undefined = rawPrimaryTarget
+    ? {
+        ...rawPrimaryTarget,
+        originalSentence: byDraftEntry?.originalSentence ?? rawPrimaryTarget.originalSentence,
+        revisedSentence: byDraftEntry?.revisedSentence ?? rawPrimaryTarget.revisedSentence,
+        keywords: byDraftEntry?.keywords ?? rawPrimaryTarget.keywords,
+        options: byDraftEntry?.options ?? rawPrimaryTarget.options,
+      }
+    : undefined;
   const primaryKeywords = primaryTarget?.keywords ?? [];
   // 키워드 인덱스별로 modified 여부 저장 (true = revised 보임, false = original 빨강 칩)
   const [modifiedKeywords, setModifiedKeywords] = useState<Record<number, boolean>>({});
@@ -1703,6 +1716,7 @@ export default function APage() {
       {screen === "cm2-chat" && (
         <AiChatScreen
           draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title}
+          draftDirection={scenario.drafts[(confirmedDraftIndex ?? 1) - 1].direction}
           selectedDraftData={draftDataMap[confirmedDraftIndex ?? 1]}
           onScrollChange={setIsChatScrolled}
           onFinish={() => setScreen("end")}
