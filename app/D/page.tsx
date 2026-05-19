@@ -1281,6 +1281,91 @@ function AiChatScreen({ draftTitle, selectedDraftData, onScrollChange, onFinish,
     setCompletedCount(0);
   };
 
+  // confirm 모드 — "이대로 반영하기" 클릭 후 노출되는 확인 화면 (A 타입 스타일)
+  if (mode === "confirm") {
+    return (
+      <>
+        <div
+          className="flex-1 overflow-y-auto"
+          style={{ scrollbarGutter: "stable" }}
+          onScroll={handleScroll}
+        >
+          <div className="flex w-full flex-col gap-[20px] px-[20px] pt-[16px] pb-[24px]">
+            <div className="flex items-center gap-[8px]">
+              <AiOrb size={20} />
+              <span className="text-[16px] font-semibold leading-[26px] tracking-[0.0912px] text-[#171719]">
+                AI 에이전트
+              </span>
+            </div>
+            <div className="flex flex-col gap-[4px]">
+              <p className="text-[18px] font-bold leading-[26px] tracking-[-0.004px] text-[#000]">
+                {acceptedCount}가지 수정 사항이 모두 반영되었어요.
+              </p>
+              <p className="text-[16px] font-normal leading-[26px] tracking-[0.0912px] text-[rgba(46,47,51,0.88)]">
+                초안을 더 수정할까요?
+                <br />
+                최종 마무리 단계로 넘어갈까요?
+              </p>
+            </div>
+            <div className="h-px w-full bg-[rgba(112,115,124,0.22)]" />
+            <div className="flex w-full flex-col gap-[8px]">
+              <span className="text-[13px] font-medium leading-[18px] tracking-[0.252px] text-[#0066FF]">
+                초안 미리보기
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  /* TODO: D 스타일 ConfirmPreviewModal 열기 (Step C) */
+                }}
+                className="flex w-full items-center gap-[8px] rounded-[12px] border border-[#E8EEF5] bg-white px-[16px] py-[14px] transition-colors hover:bg-[rgba(0,0,0,0.02)]"
+              >
+                <span className="flex-1 text-left text-[16px] font-bold leading-[24px] text-[#171719]">
+                  {draftTitle}
+                </span>
+                <Image src="/file.png" alt="" width={20} height={20} className="opacity-50" />
+              </button>
+            </div>
+            <div className="flex w-full gap-[8px]">
+              <button
+                type="button"
+                onClick={handleBackToChat}
+                className="flex h-[44px] flex-1 items-center justify-center rounded-[10px] bg-[#0066FF] px-[16px] py-[8px] text-[15px] font-semibold leading-[24px] tracking-[0.144px] text-white"
+              >
+                추가 검토하기
+              </button>
+              <button
+                type="button"
+                onClick={onFinish}
+                className="flex h-[44px] flex-1 items-center justify-center rounded-[10px] border border-[#0066FF] bg-white px-[16px] py-[8px] text-[15px] font-semibold leading-[24px] tracking-[0.144px] text-[#0066FF]"
+              >
+                최종 단계로 넘어가기
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="flex w-full gap-[8px] px-[20px] py-[16px] pb-[calc(20px+env(safe-area-inset-bottom))]">
+          <input
+            type="text"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            placeholder="어떻게 바꾸고 싶은지 입력해주세요."
+            className="flex-1 rounded-[12px] border border-[rgba(112,115,124,0.22)] bg-white px-[16px] py-[14px] text-[15px] outline-none placeholder:text-[rgba(46,47,51,0.45)]"
+          />
+          <button
+            type="button"
+            onClick={handleSend}
+            className="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#0066FF]"
+            aria-label="보내기"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M3 12L21 3l-9 18-2-7-7-2z" fill="#FFF" />
+            </svg>
+          </button>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       {/* Progress Section */}
@@ -1367,13 +1452,17 @@ function AiChatScreen({ draftTitle, selectedDraftData, onScrollChange, onFinish,
 
                   if (isPrimaryLine) {
                     // 라인을 keywords의 original을 기준으로 토큰화 후 렌더
-                    // 알고리즘: keywords를 순서대로 라인에서 substring으로 찾아 분할
+                    // 키워드의 *라인 내 위치*를 먼저 계산하고 위치 순서로 정렬해서 처리
+                    // (사용자가 키워드를 어느 순서로 주든 라인 등장 순서대로 칩 표시)
                     const segments: Array<{ kind: "text" | "chip"; content: string; kwIdx?: number }> = [];
-                    let cursor = 0;
                     const text = item;
-                    primaryKeywords.forEach((kw, kwIdx) => {
-                      const found = text.indexOf(kw.original, cursor);
-                      if (found < 0) return;
+                    const positioned = primaryKeywords
+                      .map((kw, kwIdx) => ({ kw, kwIdx, found: text.indexOf(kw.original) }))
+                      .filter((x) => x.found >= 0)
+                      .sort((a, b) => a.found - b.found);
+                    let cursor = 0;
+                    positioned.forEach(({ kw, kwIdx, found }) => {
+                      if (found < cursor) return; // 겹침 방지
                       if (found > cursor) {
                         segments.push({ kind: "text", content: text.slice(cursor, found) });
                       }
