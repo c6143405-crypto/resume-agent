@@ -1064,12 +1064,13 @@ function RefinementItemBlock({
 interface AiChatScreenProps {
   draftTitle: string;
   draftDirection: DraftDirection;
+  draftIndex: number;
   selectedDraftData: DraftData;
   onScrollChange: (scrolled: boolean) => void;
   onFinish: () => void;
   isChatScrolled: boolean;
 }
-function AiChatScreen({ draftTitle, draftDirection, selectedDraftData, onScrollChange, onFinish, isChatScrolled }: AiChatScreenProps) {
+function AiChatScreen({ draftTitle, draftDirection, draftIndex, selectedDraftData, onScrollChange, onFinish, isChatScrolled }: AiChatScreenProps) {
   const draftData = selectedDraftData;
   const [completedCount, setCompletedCount] = useState(0);
   const [isFirstBadgeModified, setIsFirstBadgeModified] = useState(false);
@@ -1101,6 +1102,8 @@ function AiChatScreen({ draftTitle, draftDirection, selectedDraftData, onScrollC
   };
   // ─── confirm 모드 ("이대로 반영하기" 클릭 시) ─────────────────────────
   const [mode, setMode] = useState<"chat" | "confirm">("chat");
+  // confirm 모드에서 "초안 미리보기" 박스 클릭 시 띄울 모달
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const originalLine = primaryTarget?.originalSentence ?? "";
   const finalizedLine = primaryKeywords.reduce(
     (acc, kw, idx) => (modifiedKeywords[idx] ? acc.replace(kw.original, kw.revised) : acc),
@@ -1328,9 +1331,7 @@ function AiChatScreen({ draftTitle, draftDirection, selectedDraftData, onScrollC
               </span>
               <button
                 type="button"
-                onClick={() => {
-                  /* TODO: D 스타일 ConfirmPreviewModal 열기 (Step C) */
-                }}
+                onClick={() => setShowPreviewModal(true)}
                 className="flex w-full items-center gap-[8px] rounded-[12px] border border-[#E8EEF5] bg-white px-[16px] py-[14px] transition-colors hover:bg-[rgba(0,0,0,0.02)]"
               >
                 <span className="flex-1 text-left text-[16px] font-bold leading-[24px] text-[#171719]">
@@ -1376,6 +1377,13 @@ function AiChatScreen({ draftTitle, draftDirection, selectedDraftData, onScrollC
             </svg>
           </button>
         </div>
+        {showPreviewModal && (
+          <ConfirmPreviewModal
+            draftIndex={draftIndex}
+            draftTitle={draftTitle}
+            onClose={() => setShowPreviewModal(false)}
+          />
+        )}
       </>
     );
   }
@@ -1717,6 +1725,7 @@ export default function APage() {
         <AiChatScreen
           draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title}
           draftDirection={scenario.drafts[(confirmedDraftIndex ?? 1) - 1].direction}
+          draftIndex={confirmedDraftIndex ?? 1}
           selectedDraftData={draftDataMap[confirmedDraftIndex ?? 1]}
           onScrollChange={setIsChatScrolled}
           onFinish={() => setScreen("end")}
