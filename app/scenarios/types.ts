@@ -42,6 +42,33 @@ export interface DraftRefinementTarget {
   changeReason: string;
 }
 
+
+// ─── CM2 채팅 단계의 검토 항목 ─────────────────────────────────
+// 각 시나리오마다 사용자가 다듬을 검토 항목을 정의한다.
+// 첫 두 개는 CM2 진입 시 캐러셀에 동시 노출되고, 나머지는 사용자가
+// "다른 제안도 보고 싶어요" 같은 요청을 했을 때 추가로 노출된다.
+
+// 다지선다 옵션 한 개.
+// label = "A"/"B"/"C", hint = 해당 옵션의 방향 설명 (옵션 카드 위에 표시),
+// text = 실제 수정 문장.
+export interface ScenarioRefinementOption {
+  label: string;
+  hint?: string;
+  text: string;
+}
+
+// 시나리오 레벨 검토 항목 한 건.
+// - 단일 수정안: revisedSentence 사용
+// - 다지선다: options 배열 사용
+// 둘 중 하나만 채운다.
+export interface ScenarioRefinementTarget {
+  title?: string;
+  originalSentence: string;
+  revisedSentence?: string;
+  options?: ScenarioRefinementOption[];
+  changeReason: string;
+}
+
 // CM1에서 비교 대상이 되는 한 초안의 전체 데이터.
 export interface Draft {
   draftId: string;             // 예: "accounting-manager:draft-01"
@@ -71,4 +98,8 @@ export interface Scenario {
   jobCategory: string;            // 구글폼 응답 매칭용 카테고리 (예: "회계/재무")
   persona: ScenarioPersona;
   drafts: [Draft, Draft, Draft];  // 성과 / 직무 / 서사 3종 고정
+  // CM2 채팅 단계의 시나리오별 검토 항목.
+  // [0], [1] = 캐러셀에 동시 노출되는 기본 2개
+  // [2+] = 사용자가 추가 제안을 요청했을 때 노출되는 추가 항목
+  refinementTargets?: ScenarioRefinementTarget[];
 }

@@ -6,11 +6,13 @@ import { AiOrb } from "../components/AiOrb";
 import { PageTitleBar } from "../components/PageTitleBar";
 import { StatusBar } from "../components/StatusBar";
 import { HomeBar } from "../components/HomeBar";
+import { EndScreen } from "../components/EndScreen";
+import { TbdCard } from "../components/TbdCard";
 import { StartScreen } from "../components/StartScreen";
 import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
 import { useScenario } from "../hooks/useScenario";
-import type { Draft, ScenarioPersona } from "../scenarios";
+import type { Draft, ScenarioPersona, ScenarioRefinementTarget } from "../scenarios";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
@@ -21,26 +23,6 @@ import type { Draft, ScenarioPersona } from "../scenarios";
  */
 
 // ─── TBD placeholder 카드 (그래픽 미확정) ──────────────────────────────
-function TbdCard({ label }: { label?: string }) {
-  return (
-    <div className="relative w-full overflow-hidden rounded-3xl bg-[#E73E3E] px-6 py-20 text-center">
-      {label ? (
-        <>
-          <p className="mb-1 text-xs text-white opacity-50">{`'${label}'`}</p>
-          <p className="mb-1 text-5xl font-bold text-white">TBD</p>
-          <p className="text-xs text-white opacity-50">그래픽 디자인</p>
-        </>
-      ) : (
-        <>
-          <p className="mb-1 text-xs text-white opacity-50">T2에서 확정한</p>
-          <p className="mb-1 text-5xl font-bold text-white">TBD</p>
-          <p className="text-xs text-white opacity-50">ID 카드 그래픽 디자인</p>
-        </>
-      )}
-    </div>
-  );
-}
-
 // ─── 배경 그라데이션 원 ───────────────────────────────────────────────
 function BackgroundEllipses() {
   return (
@@ -137,7 +119,7 @@ interface RefinementItem {
   title: string;
   original: string;
   revised?: string; // 단일 수정안일 때
-  options?: { label: string; text: string }[]; // 다지선다일 때
+  options?: { label: string; hint?: string; text: string }[]; // 다지선다일 때
   reason?: string;
 }
 
@@ -153,6 +135,24 @@ const SECOND_REFINEMENT_ITEM: RefinementItem = {
     { label: "C", text: "기간 생략하고 성과 중심" },
   ],
 };
+
+// ─── 시나리오의 ScenarioRefinementTarget → 페이지 내부 RefinementItem 변환 ───
+// scenario.refinementTargets가 있으면 시나리오 데이터에서, 없으면 기존 mock으로 fallback.
+function toRefinementItem(
+  target: ScenarioRefinementTarget,
+  step: number,
+  total: number,
+): RefinementItem {
+  return {
+    step,
+    total,
+    title: target.title ?? "",
+    original: target.originalSentence,
+    revised: target.revisedSentence,
+    options: target.options,
+    reason: target.changeReason,
+  };
+}
 
 // 사용자 ↔ AI 메시지 히스토리
 type ChatMessage =
@@ -1012,14 +1012,18 @@ function RefinementItemBlock({
             </p>
           )}
           {item.options && (
-            <div className="flex flex-col items-start gap-1 self-stretch">
+            <div className="flex flex-col items-start gap-3 self-stretch">
               {item.options.map((opt) => (
-                <p
-                  key={opt.label}
-                  className="font-pretendard text-body-1-reading font-bold text-primary-normal"
-                >
-                  {`${opt.label} ${opt.text}`}
-                </p>
+                <div key={opt.label} className="flex flex-col items-start gap-1 self-stretch">
+                  {opt.hint && (
+                    <p className="text-body-2-reading font-medium text-label-neutral">
+                      {`${opt.label}. ${opt.hint}`}
+                    </p>
+                  )}
+                  <p className="font-pretendard text-body-1-reading font-bold text-primary-normal">
+                    {opt.hint ? opt.text : `${opt.label} ${opt.text}`}
+                  </p>
+                </div>
               ))}
             </div>
           )}
@@ -1032,6 +1036,46 @@ function RefinementItemBlock({
       </div>
 
       <ChatActionButtons item={item} onAccept={onAccept} onKeep={onKeep} />
+    </div>
+  );
+}
+
+// ─── 두 검토 항목을 좌우로 슬라이드해서 보는 캐러셀 ─────────────
+// 한 화면에 1/2, 2/2를 동시에 보유하고 사용자가 swipe/scroll해서 본다.
+// 각 카드는 독립적으로 채택/유지 처리되며, 처리 후엔 카드가 비활성화된다.
+function RefinementCarousel({
+  items,
+  resolvedSteps,
+  onItemResolve,
+}: {
+  items: RefinementItem[];
+  resolvedSteps: number[];
+  onItemResolve: (step: number, label?: string) => void;
+}) {
+  return (
+    <div
+      className="-mx-5 flex w-[calc(100%+40px)] snap-x snap-mandatory gap-2 overflow-x-auto px-5 pb-4"
+      style={{ scrollbarWidth: "none" }}
+    >
+      {items.map((item) => {
+        const isResolved = resolvedSteps.includes(item.step);
+        return (
+          <div
+            key={item.step}
+            className={`flex w-full flex-shrink-0 snap-center transition-opacity ${
+              isResolved ? "opacity-50" : "opacity-100"
+            }`}
+          >
+            <div className={`w-full ${isResolved ? "pointer-events-none" : ""}`}>
+              <RefinementItemBlock
+                item={item}
+                onAccept={(label) => onItemResolve(item.step, label)}
+                onKeep={() => onItemResolve(item.step)}
+              />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1051,7 +1095,14 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
   const [confirmPreviewOpen, setConfirmPreviewOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const [firstItem, setFirstItem] = useState<RefinementItem>({
+  // 시나리오 데이터에서 검토 항목을 가져온다. 없으면 아래 mock으로 fallback.
+  const chatScenario = useScenario();
+  const refinementTargets = chatScenario.refinementTargets;
+
+    const [firstItem, setFirstItem] = useState<RefinementItem>(() =>
+    refinementTargets?.[0]
+      ? toRefinementItem(refinementTargets[0], 1, 2)
+      : {
     step: 1,
     total: 2,
     title: "외부 감사 기간 표현",
@@ -1060,7 +1111,17 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
       "외부 회계 감사 대응 과정에서 주요 지적 사항 없이 결산 자료의 정확성을 유지했습니다.",
     reason:
       "기간을 명시하지 않고 성과 중심으로 표현하면 더 안전하고 신뢰성 있습니다.",
-  });
+  },
+  );
+
+  // 두 번째 검토 항목 — 첫 번째와 함께 캐러셀에 동시 노출된다.
+  const [secondItem] = useState<RefinementItem>(() =>
+    refinementTargets?.[1]
+      ? toRefinementItem(refinementTargets[1], 2, 2)
+      : SECOND_REFINEMENT_ITEM,
+  );
+  // 처리(채택/유지)된 step 목록. 둘 다 처리되면 confirm 메시지를 트리거한다.
+  const [resolvedSteps, setResolvedSteps] = useState<number[]>([]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     onScrollChange(e.currentTarget.scrollTop > 0);
@@ -1224,34 +1285,28 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
     ]);
   };
 
-  // 첫 번째 채택/유지 → "좋아요. 다음 항목을 볼게요." + 두 번째 항목 추가
-  const handleFirstResolve = () => {
-    const alreadyHasSecond = messages.some(
-      (m) => m.kind === "ai" && m.item?.step === 2
-    );
-    if (alreadyHasSecond) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        kind: "ai",
-        text: "좋아요. 다음 항목을 볼게요.",
-        item: SECOND_REFINEMENT_ITEM,
-      },
-    ]);
-  };
-
-  // 두 번째 채택/유지 → confirm 메시지 추가
-  const handleSecondResolve = () => {
-    const alreadyHasConfirm = messages.some((m) => m.kind === "confirm");
-    if (alreadyHasConfirm) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        kind: "confirm",
-        text: "2가지 수정 사항이 모두 반영되었어요.\n\n초안을 더 수정할까요?\n최종 마무리 단계로 넘어갈까요?",
-        draftTitle,
-      },
-    ]);
+  // 캐러셀 카드 처리 통합 핸들러 (step 1 또는 2).
+  // 처리된 step을 resolvedSteps에 추가하고, 둘 다 처리되면 confirm 메시지를 띄운다.
+  const handleItemResolve = (step: number, _label?: string) => {
+    setResolvedSteps((prev) => {
+      if (prev.includes(step)) return prev;
+      const next = [...prev, step];
+      // 두 항목 모두 처리됐을 때 confirm 메시지 추가
+      if (next.length === 2) {
+        setMessages((msgs) => {
+          if (msgs.some((m) => m.kind === "confirm")) return msgs;
+          return [
+            ...msgs,
+            {
+              kind: "confirm",
+              text: "2가지 수정 사항이 모두 반영되었어요.\n\n초안을 더 수정할까요?\n최종 마무리 단계로 넘어갈까요?",
+              draftTitle,
+            },
+          ];
+        });
+      }
+      return next;
+    });
   };
 
   return (
@@ -1276,11 +1331,11 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
             {/* 구분선 */}
             <div className="h-px w-full bg-line-solid-normal" />
 
-            {/* 검토 항목 */}
-            <RefinementItemBlock
-              item={firstItem}
-              onAccept={() => handleFirstResolve()}
-              onKeep={() => handleFirstResolve()}
+            {/* 검토 항목 — 1/2, 2/2 두 카드를 캐러셀로 동시 노출 */}
+            <RefinementCarousel
+              items={[firstItem, secondItem]}
+              resolvedSteps={resolvedSteps}
+              onItemResolve={handleItemResolve}
             />
 
             {/* 사용자 직접 입력 안내 (메시지 없을 때만) */}
@@ -1326,8 +1381,10 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
                 // ai
                 console.log('sections:', msg.sections, 'text:', msg.text);
                 const step = msg.item?.step;
-                const resolve =
-                  step === 2 ? handleSecondResolve : handleFirstResolve;
+                // 캐러셀로 통합 후엔 메시지 안의 item 처리도 같은 핸들러로
+                const resolve = () => {
+                  if (step) handleItemResolve(step);
+                };
                 return (
                   <div
                     key={i}
@@ -1398,37 +1455,6 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
 }
 
 // ─── End 화면 (Task 3 완료) ────────────────────────────────────────────
-function EndScreen({ draftTitle, onContinue }: { draftTitle: string; onContinue: () => void }) {
-  return (
-    <>
-      <section className="flex flex-col items-center gap-5 px-5 py-12">
-        <AiOrb size={40} />
-        <div className="flex flex-col items-center gap-2">
-          <h2 className="text-heading-1 text-center font-bold text-label-strong">
-            경력기술서 초안 작성을 완료했어요
-          </h2>
-          <p className="text-body-1-reading text-center text-label-neutral">
-            다음 단계에서 경력기술서를 최종 마무리할게요
-          </p>
-        </div>
-      </section>
-      <div className="px-5">
-        <TbdCard label={`${draftTitle} (완성 ver.)`} />
-      </div>
-      <div className="flex-1" />
-      <div className="px-5 pb-8">
-        <button
-          type="button"
-          onClick={onContinue}
-          className="w-full rounded-xl bg-[#0066FF] px-6 py-4 text-center text-base font-bold text-white transition-colors hover:bg-[#005BE6] active:bg-[#004FCC]"
-        >
-          다음 타입 시작하기
-        </button>
-      </div>
-    </>
-  );
-}
-
 // ─── Page export ───────────────────────────────────────────────────────
 type Screen = "start" | "cm1" | "cm2-loading" | "cm2-chat" | "end";
 
@@ -1514,7 +1540,7 @@ export default function APage() {
           onFinish={() => setScreen("end")}
         />
       )}
-      {screen === "end" && <EndScreen draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title} onContinue={handleContinueToNextStep} />}
+      {screen === "end" && <EndScreen draftTitle={draftDataMap[confirmedDraftIndex ?? 1].title} draftDirection={scenario.drafts[(confirmedDraftIndex ?? 1) - 1].direction} onContinue={handleContinueToNextStep} />}
 
       <HomeBar />
 
