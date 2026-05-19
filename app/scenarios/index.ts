@@ -50,4 +50,6 @@ export type {
   DraftProject,
   DraftRefinementTarget,
   ScenarioPersona,
+  ScenarioRefinementTarget,
+  ScenarioRefinementOption,
 } from "./types";

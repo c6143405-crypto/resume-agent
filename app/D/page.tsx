@@ -12,7 +12,7 @@ import { StartScreen } from "../components/StartScreen";
 import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
 import { useScenario } from "../hooks/useScenario";
-import type { Draft, ScenarioPersona } from "../scenarios";
+import type { Draft, ScenarioPersona, ScenarioRefinementTarget } from "../scenarios";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
@@ -142,7 +142,7 @@ interface RefinementItem {
   title: string;
   original: string;
   revised?: string; // 단일 수정안일 때
-  options?: { label: string; text: string }[]; // 다지선다일 때
+  options?: { label: string; hint?: string; text: string }[]; // 다지선다일 때
   reason?: string;
 }
 
@@ -158,6 +158,24 @@ const SECOND_REFINEMENT_ITEM: RefinementItem = {
     { label: "C", text: "기간 생략하고 성과 중심" },
   ],
 };
+
+// ─── 시나리오의 ScenarioRefinementTarget → 페이지 내부 RefinementItem 변환 ───
+// scenario.refinementTargets가 있으면 시나리오 데이터에서, 없으면 기존 mock으로 fallback.
+function toRefinementItem(
+  target: ScenarioRefinementTarget,
+  step: number,
+  total: number,
+): RefinementItem {
+  return {
+    step,
+    total,
+    title: target.title ?? "",
+    original: target.originalSentence,
+    revised: target.revisedSentence,
+    options: target.options,
+    reason: target.changeReason,
+  };
+}
 
 // 사용자 ↔ AI 메시지 히스토리
 type ChatMessage =

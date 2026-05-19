@@ -12,7 +12,7 @@ import { StartScreen } from "../components/StartScreen";
 import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
 import { useScenario } from "../hooks/useScenario";
-import type { Draft, ScenarioPersona } from "../scenarios";
+import type { Draft, ScenarioPersona, ScenarioRefinementTarget } from "../scenarios";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
@@ -104,7 +104,7 @@ interface RefinementItem {
   title: string;
   original: string;
   revised?: string; // 단일 수정안일 때
-  options?: { label: string; text: string }[]; // 다지선다일 때
+  options?: { label: string; hint?: string; text: string }[]; // 다지선다일 때
   reason?: string;
 }
 
@@ -120,6 +120,24 @@ const SECOND_REFINEMENT_ITEM: RefinementItem = {
     { label: "C", text: "기간 생략하고 성과 중심" },
   ],
 };
+
+// ─── 시나리오의 ScenarioRefinementTarget → 페이지 내부 RefinementItem 변환 ───
+// scenario.refinementTargets가 있으면 시나리오 데이터에서, 없으면 기존 mock으로 fallback.
+function toRefinementItem(
+  target: ScenarioRefinementTarget,
+  step: number,
+  total: number,
+): RefinementItem {
+  return {
+    step,
+    total,
+    title: target.title ?? "",
+    original: target.originalSentence,
+    revised: target.revisedSentence,
+    options: target.options,
+    reason: target.changeReason,
+  };
+}
 
 // 사용자 ↔ AI 메시지 히스토리
 type ChatMessage =
@@ -1003,15 +1021,18 @@ function RefinementItemBlock({
           </p>
         )}
         {item.options && (
-          <div className="flex flex-col items-start gap-1 self-stretch">
+          <div className="flex flex-col items-start gap-3 self-stretch">
             {item.options.map((opt) => (
-              <p
-                key={opt.label}
-                className="font-pretendard text-body-1 font-bold text-primary-normal"
-                /* text-body-1, font-bold, text-primary-normal */
-              >
-                {`${opt.label}. ${opt.text}`}
-              </p>
+              <div key={opt.label} className="flex flex-col items-start gap-1 self-stretch">
+                {opt.hint && (
+                  <p className="text-body-2-reading font-medium text-label-neutral">
+                    {`${opt.label}. ${opt.hint}`}
+                  </p>
+                )}
+                <p className="font-pretendard text-body-1 font-bold text-primary-normal">
+                  {opt.hint ? opt.text : `${opt.label}. ${opt.text}`}
+                </p>
+              </div>
             ))}
           </div>
         )}
@@ -1056,7 +1077,14 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
   const [confirmPreviewOpen, setConfirmPreviewOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const [firstItem, setFirstItem] = useState<RefinementItem>({
+  // 시나리오 데이터에서 검토 항목을 가져온다. 없으면 아래 mock으로 fallback.
+  const chatScenario = useScenario();
+  const refinementTargets = chatScenario.refinementTargets;
+
+    const [firstItem, setFirstItem] = useState<RefinementItem>(() =>
+    refinementTargets?.[0]
+      ? toRefinementItem(refinementTargets[0], 1, 2)
+      : {
     step: 1,
     total: 2,
     title: "외부 감사 기간 표현",
@@ -1065,7 +1093,8 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
       "외부 회계 감사 대응 과정에서 주요 지적 사항 없이 결산 자료의 정확성을 유지했습니다.",
     reason:
       "기간을 명시하지 않고 성과 중심으로 표현하면 더 안전하고 신뢰성 있습니다.",
-  });
+  },
+  );
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     onScrollChange(e.currentTarget.scrollTop > 0);
@@ -1239,7 +1268,9 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
       {
         kind: "ai",
         text: "좋아요. 다음 항목을 볼게요.",
-        item: SECOND_REFINEMENT_ITEM,
+        item: refinementTargets?.[1]
+          ? toRefinementItem(refinementTargets[1], 2, 2)
+          : SECOND_REFINEMENT_ITEM,
       },
     ]);
   };
