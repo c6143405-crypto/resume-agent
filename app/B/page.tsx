@@ -1391,7 +1391,7 @@ function ConfirmPreviewModal({
   };
 
   return (
-    <div className="absolute inset-0 z-50">
+    <div className="fixed inset-0 z-50">
       <button
         type="button"
         aria-label="닫기"
