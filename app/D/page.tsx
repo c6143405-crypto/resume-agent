@@ -642,7 +642,7 @@ interface DraftDetailModalProps {
   data: DraftData;
   dataMap: Record<number, DraftData>;
   onClose: () => void;
-  onSelect: () => void;
+  onSelect: (draftIndex: number) => void;
 }
 function DraftDetailModal({ draftIndex, data, dataMap, onClose, onSelect }: DraftDetailModalProps) {
   // data는 부모가 draftIndex로 매핑해 넘긴 초기값. 탭 전환 시에는 dataMap[activeTab+1]을 사용한다.
@@ -709,7 +709,7 @@ function DraftDetailModal({ draftIndex, data, dataMap, onClose, onSelect }: Draf
         <div className="flex w-full flex-col items-center px-5 py-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
           <button
             type="button"
-            onClick={onSelect}
+            onClick={() => onSelect(activeTab + 1)}
             className="w-full rounded-xl bg-primary-normal px-7 py-3.5 text-center text-headline-2 font-semibold text-static-white transition-colors hover:bg-primary-strong active:bg-primary-heavy"
           >
             이 초안 선택하기
@@ -1734,8 +1734,8 @@ export default function APage() {
           data={draftDataMap[selectedDraft]}
           dataMap={draftDataMap}
           onClose={() => setSelectedDraft(null)}
-          onSelect={() => {
-            setConfirmedDraftIndex(selectedDraft);
+          onSelect={(idx) => {
+            setConfirmedDraftIndex(idx);
             setSelectedDraft(null);
             setScreen("cm2-loading");
           }}
