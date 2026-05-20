@@ -148,6 +148,37 @@ export const IT_OPERATIONS: Scenario = {
       keywords: [
         { original: "사용자 지원 업무 전반 수행", revised: "사용자 지원 업무를 연결한 전산 운영 관리" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence: "주요 사내 시스템의 정기 점검 체계를 운영해 업무 중단 리스크 감소",
+          revisedSentence: "주요 사내 시스템 정기 점검 체계 운영을 통한 업무 중단 가능성 완화",
+          keywords: [
+            { original: "정기 점검 체계를 운영해", revised: "정기 점검 체계 운영을 통한" },
+            { original: "리스크 감소", revised: "가능성 완화" },
+          ],
+        },
+        fit: {
+          originalSentence: "사내 IT 인프라 운영과 사용자 지원 업무 전반 수행",
+          revisedSentence: "사내 IT 인프라 운영과 사용자 지원 업무를 연결한 전산 운영 관리",
+          keywords: [
+            { original: "사용자 지원 업무 전반", revised: "사용자 지원 업무를 연결한" },
+            { original: "수행", revised: "전산 운영 관리" },
+          ],
+        },
+        narrative: {
+          originalSentence:
+            "장기간 사내 전산 운영을 맡으며 업무 연속성과 조직 신뢰도를 높이는 IT 운영 역량 확보",
+          revisedSentence:
+            "사내 전산 운영 경험을 바탕으로 업무 연속성과 조직 신뢰도 유지에 기여",
+          keywords: [
+            {
+              original: "장기간 사내 전산 운영을 맡으며",
+              revised: "사내 전산 운영 경험을 바탕으로",
+            },
+            { original: "IT 운영 역량 확보", revised: "유지에 기여" },
+          ],
+        },
+      },
     },
     // 2/2 — 다지선다: 사용자 지원 업무 구체화
     {
@@ -189,6 +220,116 @@ export const IT_OPERATIONS: Scenario = {
       originalTags: ["모호한 표현"],
       revisedTags: ["구체화", "명확성"],
       reasonTags: ["업무 범위 구체화", "지원 역량 강조"],
+      byDraft: {
+        achievement: {
+          originalSentence: "계정·권한 관리 기준을 정비해 보안 사고 가능성 완화",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "계정·권한 관리 기준 정비를 통한 보안 사고 가능성 축소",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "기준을 정비해", revised: "기준 정비를 통한" },
+                { original: "가능성 완화", revised: "가능성 축소" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "계정·권한 관리 기준 점검을 통한 보안 관리 리스크 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "기준을 정비해", revised: "기준 점검을 통한" },
+                { original: "보안 사고 가능성", revised: "보안 관리 리스크" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "계정·권한 관리 체계 운영을 통한 사내 보안 안정성 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                { original: "관리 기준", revised: "관리 체계" },
+                { original: "보안 사고 가능성 완화", revised: "사내 보안 안정성 강화" },
+              ],
+            },
+          ],
+        },
+        fit: {
+          originalSentence: "권한 관리와 계정 회수 절차를 통해 기본 보안 관리 역량 강화",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "권한 관리와 계정 회수 절차 운영을 통한 기본 보안 관리 역량 강화",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "절차를 통해", revised: "절차 운영을 통한" },
+                { original: "기본 보안 관리", revised: "기본 보안 관리 역량" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "권한 관리와 계정 회수 절차 점검을 통한 보안 관리 리스크 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "절차를 통해", revised: "절차 점검을 통한" },
+                { original: "역량 강화", revised: "리스크 완화" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "계정·권한 관리 체계 운영을 통한 사내 보안 안정성 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                { original: "권한 관리와 계정 회수 절차", revised: "계정·권한 관리 체계" },
+                { original: "기본 보안 관리 역량 강화", revised: "사내 보안 안정성 강화" },
+              ],
+            },
+          ],
+        },
+        narrative: {
+          originalSentence: "시스템 권한, 백업, 보안 점검을 루틴화해 안정적인 운영 체계 구축",
+          options: [
+            {
+              label: "A",
+              hint: "성과를 명확히 유지",
+              text: "시스템 권한, 백업, 보안 점검 루틴화를 통한 안정적인 운영 기반 구축",
+              tags: ["성과 유지", "정확성"],
+              keywords: [
+                { original: "점검을 루틴화해", revised: "점검 루틴화를 통한" },
+                { original: "운영 체계", revised: "운영 기반" },
+              ],
+            },
+            {
+              label: "B",
+              hint: "더 신중하고 안전하게 표현",
+              text: "시스템 권한, 백업, 보안 점검 절차 정비를 통한 운영 리스크 완화",
+              tags: ["안전한 표현", "리스크 완화"],
+              keywords: [
+                { original: "점검을 루틴화해", revised: "점검 절차 정비를 통한" },
+                { original: "안정적인 운영 체계 구축", revised: "운영 리스크 완화" },
+              ],
+            },
+            {
+              label: "C",
+              hint: "성과 중심으로 압축",
+              text: "권한·백업·보안 점검 체계 운영을 통한 전산 운영 안정성 강화",
+              tags: ["성과 압축", "신뢰도"],
+              keywords: [
+                {
+                  original: "시스템 권한, 백업, 보안 점검",
+                  revised: "권한·백업·보안 점검 체계",
+                },
+                { original: "안정적인 운영 체계 구축", revised: "전산 운영 안정성 강화" },
+              ],
+            },
+          ],
+        },
+      },
     },
     // 추가 제안 — 리스크 표현 완화
     {
@@ -205,6 +346,35 @@ export const IT_OPERATIONS: Scenario = {
         { original: "복구 점검 체계 운영으로", revised: "복구 점검을 통한" },
         { original: "자료 유실 리스크 감소", revised: "자료 유실 가능성 완화" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence: "데이터 백업 및 복구 점검 체계 운영으로 자료 유실 리스크 감소",
+          revisedSentence:
+            "데이터 백업 일정 관리 및 복구 점검을 통한 자료 유실 가능성 완화",
+          keywords: [
+            { original: "복구 점검 체계 운영으로", revised: "복구 점검을 통한" },
+            { original: "자료 유실 리스크 감소", revised: "자료 유실 가능성 완화" },
+          ],
+        },
+        fit: {
+          originalSentence: "전산 자산과 유지보수 계약 관리를 통해 IT 운영 비용과 리스크 관리",
+          revisedSentence:
+            "전산 자산과 유지보수 계약 점검을 통한 IT 운영 비용 및 리스크 관리",
+          keywords: [
+            { original: "계약 관리를 통해", revised: "계약 점검을 통한" },
+            { original: "비용과 리스크 관리", revised: "비용 및 리스크 관리" },
+          ],
+        },
+        narrative: {
+          originalSentence: "외부 업체와 장애 원인 및 조치 일정을 조율해 업무 지연 최소화",
+          revisedSentence:
+            "외부 업체와 장애 원인 및 조치 일정 조율을 통한 업무 지연 가능성 완화",
+          keywords: [
+            { original: "조치 일정을 조율해", revised: "조치 일정 조율을 통한" },
+            { original: "업무 지연 최소화", revised: "업무 지연 가능성 완화" },
+          ],
+        },
+      },
     },
   ],
 };
