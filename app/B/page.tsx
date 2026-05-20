@@ -2127,21 +2127,9 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
             whyRecommended: selectedDraftData.criteria.applied,
             caution: selectedDraftData.criteria.improve,
           },
-          draftOptions: Object.entries(draftOptionsMap).map(([draftId, draft]) => ({
-            draftId,
-            draftTitle: draft.title,
-            draftContent: [
-              draft.company,
-              draft.period,
-              draft.project,
-              draft.description,
-              ...draft.tasks,
-              ...draft.achievements,
-            ].join("\n"),
-            draftDirection: draft.title,
-            whyRecommended: draft.criteria.applied,
-            caution: draft.criteria.improve,
-          })),
+          // CM2 채팅에서는 초안 비교를 하지 않으므로 draftOptions를 보내지 않는다.
+          // (프롬프트에 초안 전체가 들어가면 AI가 "다른 거 보여줘"에 초안을 펼치는 버그)
+          draftOptions: [],
         }),
       });
 
