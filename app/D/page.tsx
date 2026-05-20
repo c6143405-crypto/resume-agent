@@ -1256,6 +1256,32 @@ function AiChatScreen({ draftTitle, draftDirection, draftIndex, selectedDraftDat
     // Add user message
     setMessages((prev) => [...prev, { kind: "user", content: text }]);
 
+    // "다른 거 보여줘"(ASK_ALTERNATIVE) / "다음 거"(NEXT_ITEM) → 다음 검토 항목으로 이동.
+    // AI를 호출하지 않고, 미리 준비된 refinementTargets의 다음 항목을 화면에 띄운다.
+    const intent = classifyUserIntent(text);
+    if (intent === "ASK_ALTERNATIVE" || intent === "NEXT_ITEM") {
+      const total = chatScenario.refinementTargets?.length ?? 0;
+      if (currentTargetIndex + 1 < total) {
+        setCurrentTargetIndex((i) => i + 1);
+        setModifiedKeywords({}); // 새 검토 항목이므로 칩 상태 초기화
+        setMode("chat");
+        setMessages((prev) => [
+          ...prev,
+          { kind: "ai", content: "다음 검토 문장을 가져왔어요. 아래에서 확인해 주세요." },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            kind: "ai",
+            content:
+              "준비된 검토 문장은 여기까지예요. 지금까지 다듬은 내용으로 마무리하거나, 다른 부분을 말씀해 주세요.",
+          },
+        ]);
+      }
+      return;
+    }
+
     // Check for selective revision application
     if (text.includes("1안") && (text.includes("만 적용") || text.includes("으로"))) {
       // Apply only first revision section
