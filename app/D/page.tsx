@@ -13,6 +13,7 @@ import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
 import { useScenario } from "../hooks/useScenario";
 import type { Draft, DraftDirection, ScenarioPersona, ScenarioRefinementTarget } from "../scenarios";
+import { classifyUserIntent } from "../classify-intent";
 
 /**
  * A 타입 (미니멀 텍스트형) — 새 디자인 진행 중
@@ -217,6 +218,22 @@ function toDraftData(draft: Draft, persona: ScenarioPersona): DraftData {
       applied: draft.whyRecommended,
       improve: draft.caution,
     },
+  };
+}
+
+// scenario.drafts[i]를 /api/chat(route.ts)이 기대하는 DraftPayload 형식으로 변환.
+// route.ts는 selectedDraft / draftOptions를 이 형식으로 받아 CM1/CM2 응답에 활용한다.
+function toDraftPayload(d: Draft) {
+  return {
+    draftId: d.draftId,
+    draftTitle: d.draftTitle,
+    draftDirection: d.direction,
+    whyRecommended: d.whyRecommended,
+    caution: d.caution,
+    draftContent:
+      `[프로젝트] ${d.project.title}\n${d.project.description}\n` +
+      `[업무]\n${d.tasks.map((t) => t.text).join("\n")}\n` +
+      `[성과]\n${d.achievements.map((a) => a.text).join("\n")}`,
   };
 }
 
@@ -1277,9 +1294,15 @@ function AiChatScreen({ draftTitle, draftDirection, draftIndex, selectedDraftDat
             { type: "user", text },
           ],
           prototypeType: "D",
+          currentStep: "CM2",
+          userIntent: classifyUserIntent(text),
           typeStylePrompt: "",
           userMessage: `${text}\n\n[현재 초안 내용]\n${JSON.stringify(draftData, null, 2)}`,
           currentAiDraft: draftData.achievements.join("\n"),
+          selectedDraft: toDraftPayload(
+            chatScenario.drafts[draftIndex - 1] ?? chatScenario.drafts[0],
+          ),
+          draftOptions: chatScenario.drafts.map(toDraftPayload),
         }),
       });
       const data = await response.json();

@@ -2101,8 +2101,8 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
             { type: "user", text },
           ],
           currentStep: "CM2",
-          prototypeType: "A",
-          userIntent: "MODIFY_CONTENT",
+          prototypeType: "B",
+          userIntent: classifyUserIntent(text),
           userMessage: [
             text,
             "",

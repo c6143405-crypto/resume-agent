@@ -12,6 +12,7 @@ import { StartScreen } from "../components/StartScreen";
 import { Cm02LoadingScreen } from "../components/Cm02LoadingScreen";
 import { useSyncBodyBackground } from "../hooks/useSyncBodyBackground";
 import { useScenario } from "../hooks/useScenario";
+import { classifyUserIntent } from "../classify-intent";
 import type { Draft, ScenarioPersona, ScenarioRefinementTarget } from "../scenarios";
 
 /**
@@ -1208,7 +1209,7 @@ function AiChatScreen({ draftTitle, selectedDraftData, draftOptionsMap, onScroll
           ],
           currentStep: "CM2",
           prototypeType: "A",
-          userIntent: "MODIFY_CONTENT",
+          userIntent: classifyUserIntent(text),
           userMessage: [
             text,
             "",
