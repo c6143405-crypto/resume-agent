@@ -17,8 +17,10 @@ export type UserIntent =
   | "MODIFY_CONTENT"
   | "ASK_REASON"
   | "ASK_ALTERNATIVE"
+  | "NEXT_ITEM"
   | "UNCERTAIN"
-  | "LOW_CONFIDENCE";
+  | "LOW_CONFIDENCE"
+  | "CLARIFY";
 
 export type DecisionStatus =
   | "draft"
