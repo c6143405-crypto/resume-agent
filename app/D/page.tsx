@@ -1104,12 +1104,19 @@ function AiChatScreen({ draftTitle, draftDirection, draftIndex, selectedDraftDat
   // 없으면 시나리오 상위 originalSentence/revisedSentence/keywords/options를 그대로 사용 (백워드 호환).
   const rawPrimaryTarget = chatScenario.refinementTargets?.[currentTargetIndex];
   const byDraftEntry = rawPrimaryTarget?.byDraft?.[draftDirection];
+  // 다지선다([1]번) 항목은 keywords가 없고 options만 있다.
+  // D는 칩 2개 방식이므로, 그 경우 options의 첫 번째(성과 유지 버전)를 칩 소스로 사용한다.
+  const optionFallback = byDraftEntry?.options?.[0] ?? rawPrimaryTarget?.options?.[0];
   const primaryTarget: ScenarioRefinementTarget | undefined = rawPrimaryTarget
     ? {
         ...rawPrimaryTarget,
         originalSentence: byDraftEntry?.originalSentence ?? rawPrimaryTarget.originalSentence,
-        revisedSentence: byDraftEntry?.revisedSentence ?? rawPrimaryTarget.revisedSentence,
-        keywords: byDraftEntry?.keywords ?? rawPrimaryTarget.keywords,
+        revisedSentence:
+          byDraftEntry?.revisedSentence ??
+          rawPrimaryTarget.revisedSentence ??
+          optionFallback?.text,
+        keywords:
+          byDraftEntry?.keywords ?? rawPrimaryTarget.keywords ?? optionFallback?.keywords,
         options: byDraftEntry?.options ?? rawPrimaryTarget.options,
       }
     : undefined;
