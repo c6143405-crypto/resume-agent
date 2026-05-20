@@ -356,6 +356,38 @@ export const PUBLIC_ADMINISTRATION: Scenario = {
         { original: "예산 편성부터 집행, 정산까지", revised: "예산 편성, 집행, 정산 업무를 연결한" },
         { original: "공공 예산 운영 전 과정 수행", revised: "공공 예산 운영 관리" },
       ],
+      byDraft: {
+        achievement: {
+          originalSentence: "국고 보조금 정산 자료 오류율 1% 미만 관리",
+          revisedSentence: "국고 보조금 정산 자료 정기 검토를 통한 오류 가능성 완화",
+          keywords: [
+            { original: "오류율 1% 미만", revised: "정기 검토를 통한" },
+            { original: "관리", revised: "오류 가능성 완화" },
+          ],
+        },
+        fit: {
+          originalSentence:
+            "정부 출연금·보조금 예산 편성부터 집행, 정산까지 공공 예산 운영 전 과정 수행",
+          revisedSentence:
+            "정부 출연금·보조금 예산 편성, 집행, 정산 업무를 연결한 공공 예산 운영 관리",
+          keywords: [
+            {
+              original: "예산 편성부터 집행, 정산까지",
+              revised: "예산 편성, 집행, 정산 업무를 연결한",
+            },
+            { original: "공공 예산 운영 전 과정 수행", revised: "공공 예산 운영 관리" },
+          ],
+        },
+        narrative: {
+          originalSentence: "부서별 자료 수집과 증빙 검토 흐름을 표준화해 행정 병목 완화",
+          revisedSentence:
+            "부서별 자료 수집과 증빙 검토 절차 정비를 통한 행정 지연 가능성 완화",
+          keywords: [
+            { original: "검토 흐름을 표준화해", revised: "검토 절차 정비를 통한" },
+            { original: "행정 병목 완화", revised: "행정 지연 가능성 완화" },
+          ],
+        },
+      },
     },
   ],
 };
