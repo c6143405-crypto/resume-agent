@@ -1098,9 +1098,11 @@ function AiChatScreen({ draftTitle, draftDirection, draftIndex, selectedDraftDat
   // 그 안의 keywords를 빨강(original)/파랑(revised) 칩으로 표시한다.
   // 각 키워드 칩은 독립적으로 toggle 가능 (modifiedKeywords state).
   const chatScenario = useScenario();
+  // 현재 검토 중인 항목 인덱스. "다른 거 보여줘" 입력 시 +1 되어 다음 검토 항목으로 이동.
+  const [currentTargetIndex, setCurrentTargetIndex] = useState(0);
   // byDraft 분기 — 선택된 초안(direction)에 맞는 데이터가 있으면 그걸 우선 사용.
   // 없으면 시나리오 상위 originalSentence/revisedSentence/keywords/options를 그대로 사용 (백워드 호환).
-  const rawPrimaryTarget = chatScenario.refinementTargets?.[0];
+  const rawPrimaryTarget = chatScenario.refinementTargets?.[currentTargetIndex];
   const byDraftEntry = rawPrimaryTarget?.byDraft?.[draftDirection];
   const primaryTarget: ScenarioRefinementTarget | undefined = rawPrimaryTarget
     ? {
@@ -1302,7 +1304,8 @@ function AiChatScreen({ draftTitle, draftDirection, draftIndex, selectedDraftDat
           selectedDraft: toDraftPayload(
             chatScenario.drafts[draftIndex - 1] ?? chatScenario.drafts[0],
           ),
-          draftOptions: chatScenario.drafts.map(toDraftPayload),
+          // CM2 채팅에서는 초안 비교를 하지 않으므로 draftOptions를 보내지 않는다.
+          draftOptions: [],
         }),
       });
       const data = await response.json();
